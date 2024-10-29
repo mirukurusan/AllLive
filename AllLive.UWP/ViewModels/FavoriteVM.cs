@@ -4,6 +4,7 @@ using AllLive.UWP.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -179,7 +180,7 @@ namespace AllLive.UWP.ViewModels
             FileSavePicker picker = new FileSavePicker();
             picker.FileTypeChoices.Add("Json", new List<string>() { ".json" });
             picker.SuggestedStartLocation = PickerLocationId.Desktop;
-            picker.SuggestedFileName = "favorite.json";
+            picker.SuggestedFileName = "AllLive.json";
 
             var file = await picker.PickSaveFileAsync();
             if (file != null)
@@ -216,7 +217,13 @@ namespace AllLive.UWP.ViewModels
                             AddTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.M")
                         });
                     }
-                    var json = JsonSerializer.Serialize(items);
+                    var options = new JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        IncludeFields = true,
+                        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                    };
+                    var json = JsonSerializer.Serialize(items, options);
                     await FileIO.WriteTextAsync(file, json);
                     Utils.ShowMessageToast("导出成功");
                 }
