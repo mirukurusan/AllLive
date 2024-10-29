@@ -25,6 +25,8 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
+using Windows.ApplicationModel.Core;
+using Windows.UI.Core;
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
 
 namespace AllLive.UWP.Views
@@ -86,9 +88,69 @@ namespace AllLive.UWP.Views
                 StandardControl.Visibility = Visibility.Visible;
             }
 
+            // 新窗口打开，调整UI
+            if (SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
+            {
+                ApplicationView.GetForCurrentView().Consolidated += LiveRoomPage_Consolidated;
+                TitleBar.Visibility = Visibility.Visible;
+                // 自定义标题栏
+                CoreApplication.GetCurrentView().TitleBar.ExtendViewIntoTitleBar = true;
+                Window.Current.SetTitleBar(TitleBar);
+                SetTitleBarColor();
+            }
 
         }
 
+        private void LiveRoomPage_Consolidated(ApplicationView sender, ApplicationViewConsolidatedEventArgs args)
+        {
+            StopPlay();
+            // 关闭窗口
+            CoreWindow.GetForCurrentThread().Close();
+        }
+
+     
+        private void SetTitleBarColor()
+        {
+            var settingTheme = SettingHelper.GetValue<int>(SettingHelper.THEME, 0);
+            UISettings uiSettings = new UISettings();
+            var color = uiSettings.GetColorValue(UIColorType.Foreground);
+            if (settingTheme != 0)
+            {
+                color = settingTheme == 1 ? Colors.Black : Colors.White;
+
+            }
+            ApplicationViewTitleBar titleBar = ApplicationView.GetForCurrentView().TitleBar;
+
+            titleBar.ButtonBackgroundColor = Colors.Transparent;
+            titleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+            titleBar.ButtonForegroundColor = color;
+            titleBar.ButtonBackgroundColor = Colors.Transparent;
+            titleBar.BackgroundColor = Colors.Transparent;
+        }
+        private void HideTitleBar(bool hide)
+        {
+            if (SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
+            {
+                if (hide)
+                {
+                    Grid.SetRow(GridContent, 0);
+                    Grid.SetRowSpan(GridContent, 2);
+                    TitleBarGrid.Visibility = Visibility.Collapsed;
+                    Window.Current.SetTitleBar(null);
+                }
+                else
+                {
+                    Grid.SetRow(GridContent, 1);
+                    Grid.SetRowSpan(GridContent, 1);
+                    TitleBarGrid.Visibility = Visibility.Visible;
+                    Window.Current.SetTitleBar(TitleBar);
+                }
+            }
+            else
+            {
+                MessageCenter.HideTitlebar(hide);
+            }
+        }
         private void ClearXboxSettingBind()
         {
             XboxSuperChat.ClearValue(ListView.ItemsSourceProperty);
@@ -591,6 +653,7 @@ namespace AllLive.UWP.Views
                 }
 
                 var siteInfo = MainVM.Sites.FirstOrDefault(x => x.LiveSite.Equals(pageArgs.Site));
+
                 liveRoomVM.SiteLogo = siteInfo.Logo;
                 liveRoomVM.SiteName = siteInfo.Name;
 
@@ -1166,7 +1229,7 @@ namespace AllLive.UWP.Views
         private void SetFullScreen(bool e)
         {
             ApplicationView view = ApplicationView.GetForCurrentView();
-            MessageCenter.HideTitlebar(e);
+            HideTitleBar(e);
             if (e)
             {
 
@@ -1203,7 +1266,7 @@ namespace AllLive.UWP.Views
         }
         private async void MiniWidnows(bool mini)
         {
-            MessageCenter.HideTitlebar(mini);
+            HideTitleBar(mini);
             isMini = mini;
             ApplicationView view = ApplicationView.GetForCurrentView();
             if (mini)

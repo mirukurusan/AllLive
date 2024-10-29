@@ -26,6 +26,7 @@ namespace AllLive.UWP.ViewModels
             KeepSC = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.KEEP_SUPER_CHAT, true);
             AddFavoriteCommand = new RelayCommand(AddFavorite);
             RemoveFavoriteCommand = new RelayCommand(RemoveFavorite);
+
         }
         public ICommand AddFavoriteCommand { get; set; }
         public ICommand RemoveFavoriteCommand { get; set; }
@@ -228,6 +229,8 @@ namespace AllLive.UWP.ViewModels
                 RoomID = result.RoomID.Equals("0") ? roomId.ToString() : result.RoomID;
                 Online = result.Online;
                 Title = result.Title;
+                SetWindowTitle();
+
                 Name = result.UserName;
                 MessageCenter.ChangeTitle(Name + (string.IsNullOrEmpty(Title) ? "" : $" - {Title}"), Site);
                 if (!string.IsNullOrEmpty(result.UserAvatar))
@@ -337,6 +340,13 @@ namespace AllLive.UWP.ViewModels
             }
         }
 
+        private void SetWindowTitle()
+        {
+            if (SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
+            {
+                Windows.UI.ViewManagement.ApplicationView.GetForCurrentView().Title = $"{Title} - {SiteName}";
+            }
+        }
 
         private void AddFavorite()
         {
