@@ -109,14 +109,11 @@ namespace AllLive.UWP.Views
             {
                 var index = liveRoomVM.Lines.IndexOf(liveRoomVM.CurrentLine);
                 //尝试切换
-                if (index == liveRoomVM.Lines.Count - 1)
-                {
-                    liveRoomVM.Living = false;
-                }
-                else
+                if (index < liveRoomVM.Lines.Count - 1)
                 {
                     liveRoomVM.CurrentLine = liveRoomVM.Lines[index + 1];
                 }
+                liveRoomVM.Living = false;
                 RequestDisplay(false);
             });
         }
@@ -429,6 +426,7 @@ namespace AllLive.UWP.Views
                 }
 
                 var config = new MediaSourceConfig();
+                config.Video.VideoOutputAllow10bit = true;
                 config.FFmpegOptions.Add("rtsp_transport", "tcp");
                 config.FFmpegOptions.Add("rw_timeout", 8 * 1000000);
                 config.FFmpegOptions.Add("reconnect_at_eof", 1);

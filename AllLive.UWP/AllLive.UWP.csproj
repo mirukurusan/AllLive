@@ -19,7 +19,7 @@
     <WindowsXamlEnableOverview>true</WindowsXamlEnableOverview>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-    <PackageCertificateThumbprint>FB8DE75407FDDEAC41E9CEEC3E83B38DC6804100</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>0C6B42A6479062484144293DA17953232E361F74</PackageCertificateThumbprint>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
@@ -353,10 +353,10 @@
       <Version>5.1.100</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client">
-      <Version>8.0.8</Version>
+      <Version>8.0.10</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Data.Sqlite">
-      <Version>8.0.8</Version>
+      <Version>8.0.10</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.14</Version>
@@ -377,7 +377,7 @@
       <Version>2.8.6</Version>
     </PackageReference>
     <PackageReference Include="NLog">
-      <Version>5.3.3</Version>
+      <Version>5.3.4</Version>
     </PackageReference>
     <PackageReference Include="ZXing.Net">
       <Version>0.16.9</Version>
@@ -409,6 +409,6 @@
   </Target>
   -->
   <PropertyGroup>
-	<LangVersion>8.0</LangVersion>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 </Project>

@@ -1,11 +1,7 @@
 ﻿using AllLive.Core;
-using AllLive.Core.Danmaku;
-using AllLive.Core.Helper;
 using AllLive.Core.Interface;
 using AllLive.UWP.Helper;
-using Newtonsoft.Json;
 using System;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AllLive.ConsoleApp
@@ -158,8 +154,8 @@ namespace AllLive.ConsoleApp
                 Console.WriteLine(detail.Status ? "直播中" : "未开播");
                 Console.ResetColor();
                 var danmaku = site.GetDanmaku();
-                danmaku.NewMessage += Danmaku_NewMessage;
-                danmaku.OnClose += Danmaku_OnClose;
+                danmaku.NewMessageEvent += Danmaku_NewMessage;
+                danmaku.CloseEvent += Danmaku_OnClose;
                 Console.WriteLine($"【开始获取弹幕，按任意键结束】");
                 danmaku.Start(detail.DanmakuData).Wait();
                 Console.ReadKey();
