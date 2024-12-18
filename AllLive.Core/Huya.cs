@@ -225,7 +225,7 @@ namespace AllLive.Core
         private async Task<JsonNode> GetRoomInfo(object roomId)
         {
             Dictionary<string, string> headers = new Dictionary<string, string>();
-            headers.Add("user-agent", "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36 Edg/117.0.0.0");
+            headers.Add("user-agent", "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.4430.91 Mobile Safari/537.36 Edg/117.0.0.0");
             var result = await HttpUtil.GetString($"https://m.huya.com/{roomId}", headers);
             var jsonStr = Regex.Match(result, @"window\.HNF_GLOBAL_INIT.=.\{[\s\S]*?\}[\s\S]*?</script>", RegexOptions.Singleline).Groups[0].Value;
             jsonStr = Regex.Replace(jsonStr, @"window\.HNF_GLOBAL_INIT.=.", "").Replace("</script>", "");

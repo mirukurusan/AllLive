@@ -360,7 +360,7 @@ namespace AllLive.UWP.ViewModels
             });
             FavoriteID = DatabaseHelper.CheckFavorite(RoomID, Site.Name);
             IsFavorite = true;
-            MessageCenter.UpdateFavorite();
+            //MessageCenter.UpdateFavorite();
         }
         private void RemoveFavorite()
         {
