@@ -4,6 +4,7 @@ using AllLive.UWP.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -106,6 +107,10 @@ namespace AllLive.UWP.ViewModels
             }
             finally
             {
+                if (SettingHelper.GetValue<bool>(SettingHelper.SORT_BY_STATUS, false))
+                {
+                    Items = new ObservableCollection<FavoriteItem>(Items.OrderByDescending(x => x.Status));
+                }
                 IsEmpty = Items.Count == 0;
                 LoadingProgress = 1;
                 Loading = false;

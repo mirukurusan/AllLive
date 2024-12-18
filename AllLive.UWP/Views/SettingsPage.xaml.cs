@@ -111,6 +111,17 @@ namespace AllLive.UWP.Views
                     SettingHelper.SetValue(SettingHelper.MOUSE_BACK, swMouseClosePage.IsOn);
                 });
             });
+
+            //按直播状态排序
+            swSortByStatus.IsOn = SettingHelper.GetValue<bool>(SettingHelper.SORT_BY_STATUS, false);
+            swSortByStatus.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                swSortByStatus.Toggled += new RoutedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.SORT_BY_STATUS, swSortByStatus.IsOn);
+                });
+            });
+
             //视频解码
             cbDecoder.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_DECODER, 0);
             cbDecoder.Loaded += new RoutedEventHandler((sender, e) =>

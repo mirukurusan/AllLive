@@ -42,6 +42,10 @@ namespace AllLive.UWP.Helper
         /// 鼠标功能键返回、关闭页面
         /// </summary>
         public const string MOUSE_BACK = "MouseBack";
+        /// <summary>
+        /// 按直播状态排序关注列表
+        /// </summary>
+        public const string SORT_BY_STATUS = "SortByStatus";
 
         /// <summary>
         /// 视频解码
