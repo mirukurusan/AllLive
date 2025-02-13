@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<PackageReference Include="Jint" Version="4.1.0" />
-	<PackageReference Include="protobuf-net" Version="3.2.45" />
+	<PackageReference Include="Jint" Version="4.2.2" />
+	<PackageReference Include="protobuf-net" Version="3.2.46" />
 	<PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 

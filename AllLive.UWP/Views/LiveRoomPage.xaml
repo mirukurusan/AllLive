@@ -501,6 +501,16 @@
                                         <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE103;" />
                                     </Button>
                                     <Button
+                                        x:Name="PlayBtnRefresh"
+                                        Width="48"
+                                        Height="48"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Click="BottomBtnRefresh_Click"
+                                        ToolTipService.ToolTip="刷新">
+                                        <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE72C;" />
+                                    </Button>
+                                    <Button
                                         x:Name="PlayBtnSettingsDanmaku"
                                         Width="48"
                                         Height="48"
