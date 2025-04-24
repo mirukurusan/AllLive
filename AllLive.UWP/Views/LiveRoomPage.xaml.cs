@@ -515,9 +515,10 @@ namespace AllLive.UWP.Views
                 }
                 else if (liveRoomVM.SiteName == "虎牙直播")
                 {
-                    //config.FFmpegOptions.Add("user_agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
-                    //config.FFmpegOptions.Add("referer", "https://www.huya.com");
-                    config.FFmpegOptions.Add("user_agent", "HYSDK(Windows, 21000308)");
+                    //config.FFmpegOptions.Add("user_agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1");
+                    //config.FFmpegOptions.Add("referer", "https://m.huya.com");
+                    var currentTs = Utils.GetTimeStamp() / 1000;
+                    config.FFmpegOptions.Add("user_agent", $"HYSDK(Windows, {currentTs})");
                 }
                 try
                 {

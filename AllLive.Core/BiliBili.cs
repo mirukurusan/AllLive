@@ -27,16 +27,20 @@ namespace AllLive.Core
         /// </summary>
         public long UserId { get; set; }
 
-        private Dictionary<string, string> GetRequestHeader(bool withBuvid3 = false)
-        {
-            var headers = new Dictionary<string, string>();
-            headers.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
+        private readonly string uuid = Guid.NewGuid().ToString();
 
+        private Dictionary<string, string> GetRequestHeader(bool withBuvid3 = true)
+        {
+            var headers = new Dictionary<string, string>()
+            {
+                {"user-agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0" },
+                {"referer","https://live.bilibili.com/" }
+            };
             if (string.IsNullOrEmpty(Cookie))
             {
                 if (withBuvid3)
                 {
-                    headers.Add("cookie", "buvid3=" + System.Guid.NewGuid());
+                    headers.Add("cookie", $"buvid3={uuid}");
                 }
             }
             else
@@ -82,14 +86,18 @@ namespace AllLive.Core
                 Rooms = new List<LiveRoomItem>(),
 
             };
-            var result = await HttpUtil.GetString($"https://api.live.bilibili.com/xlive/web-interface/v1/second/getList?platform=web&parent_area_id={category.ParentID}&area_id={category.ID}&sort_type=&page={page}");
+            var url = $"https://api.live.bilibili.com/xlive/web-interface/v1/second/getList";
+            var query = $"platform=web&parent_area_id={category.ParentID}&area_id={category.ID}&sort_type=&page={page}";
+            query = await GetWbiSign(query);
+            var result = await HttpUtil.GetString($"{url}?{query}", headers: GetRequestHeader());
+
             var obj = JsonNode.Parse(result);
             categoryResult.HasMore = obj["data"]["has_more"].ToInt32() == 1;
             foreach (var item in obj["data"]["list"].AsArray())
             {
                 categoryResult.Rooms.Add(new LiveRoomItem()
                 {
-                    Cover = item["cover"].ToString() + "@300w.jpg",
+                    Cover = item["cover"].ToString() + "@400w.jpg",
                     Online = item["online"].ToInt32(),
                     RoomID = item["roomid"].ToString(),
                     Title = item["title"].ToString(),
@@ -105,14 +113,17 @@ namespace AllLive.Core
                 Rooms = new List<LiveRoomItem>(),
 
             };
-            var result = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Area/getListByAreaID?areaId=0&sort=online&pageSize=30&page={page}");
+            var url = $"https://api.live.bilibili.com/xlive/web-interface/v1/second/getListByArea";
+            var query = $"platform=web&sort=online&page_size=30&page={page}";
+            query = await GetWbiSign(query);
+            var result = await HttpUtil.GetString($"{url}?{query}", headers: GetRequestHeader());
             var obj = JsonNode.Parse(result);
-            categoryResult.HasMore = (obj["data"].AsArray()).Count > 0;
-            foreach (var item in obj["data"].AsArray())
+            categoryResult.HasMore = (obj["data"]["list"].AsArray()).Count > 0;
+            foreach (var item in obj["data"]["list"].AsArray())
             {
                 categoryResult.Rooms.Add(new LiveRoomItem()
                 {
-                    Cover = item["cover"].ToString() + "@300w.jpg",
+                    Cover = item["cover"].ToString() + "@400w.jpg",
                     Online = item["online"].ToInt32(),
                     RoomID = item["roomid"].ToString(),
                     Title = item["title"].ToString(),
@@ -162,7 +173,7 @@ namespace AllLive.Core
             {
                 searchResult.Rooms.Add(new LiveRoomItem()
                 {
-                    Cover = "https:" + item["cover"].ToString() + "@300w.jpg",
+                    Cover = "https:" + item["cover"].ToString() + "@400w.jpg",
                     Online = item["online"].ToInt32(),
                     RoomID = item["roomid"].ToString(),
                     Title = Regex.Replace(item["title"].ToString(), @"<em.*?/em>", ""),
