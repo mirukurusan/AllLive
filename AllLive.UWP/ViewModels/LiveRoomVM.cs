@@ -1,19 +1,14 @@
 ﻿using AllLive.Core.Interface;
 using AllLive.Core.Models;
+using AllLive.UWP.Helper;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.ObjectModel;
-using Windows.UI.Core;
-using AllLive.UWP.Helper;
-using System.Windows.Input;
-using Windows.UI.ViewManagement;
-using Windows.UI.Xaml;
-using Windows.ApplicationModel.Core;
 using System.ComponentModel;
+using System.Linq;
 using System.Timers;
+using System.Windows.Input;
+using Windows.UI.Core;
 
 namespace AllLive.UWP.ViewModels
 {
@@ -270,10 +265,14 @@ namespace AllLive.UWP.ViewModels
                         //HDR无法播放
                         qualities = qualities.Where(x => !x.Quality.Contains("HDR")).ToList();
                     }
+                    //清晰度设置
+                    var videoQuality = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY, Utils.IsXbox ? 1 : 0);
                     Qualities = qualities;
                     if (Qualities != null && Qualities.Count > 0)
                     {
-                        CurrentQuality = Qualities[0];
+                        int index = (int)Math.Round((4 - videoQuality) * (Qualities.Count - 1) / 4.0);
+                        index = Math.Clamp(index, 0, Qualities.Count - 1);
+                        CurrentQuality = Qualities[index];
                     }
                     // var u = await Site.GetPlayUrls(result, q[0]);
                     //ChangedPlayUrl?.Invoke(this, u[0]);

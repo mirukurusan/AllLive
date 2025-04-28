@@ -54,6 +54,11 @@ namespace AllLive.UWP.Helper
         public const string VIDEO_DECODER = "VideoDecoder";
 
         /// <summary>
+        /// 默认清晰度
+        /// </summary>
+        public const string VIDEO_QUALITY = "VideoQuality";
+
+        /// <summary>
         /// 音量
         /// </summary>
         public const string PLAYER_VOLUME = "PlayerVolume";
