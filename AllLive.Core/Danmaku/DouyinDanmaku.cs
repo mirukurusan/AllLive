@@ -181,7 +181,7 @@ namespace AllLive.Core.Danmaku
                 NewMessage?.Invoke(this, new LiveMessage()
                 {
                     Type = LiveMessageType.Online,
-                    Data = roomUserSeqMessage.totalUser,
+                    Data = roomUserSeqMessage.Total,
                     Color = DanmakuColor.White,
                     Message = "",
                     UserName = "",
