@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Core;
 using Windows.Foundation;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
@@ -17,6 +18,7 @@ using Windows.Media.Playback;
 using Windows.Storage;
 using Windows.System.Display;
 using Windows.UI;
+using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
@@ -25,8 +27,6 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
-using Windows.ApplicationModel.Core;
-using Windows.UI.Core;
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
 
 namespace AllLive.UWP.Views
@@ -108,7 +108,7 @@ namespace AllLive.UWP.Views
             CoreWindow.GetForCurrentThread().Close();
         }
 
-     
+
         private void SetTitleBarColor()
         {
             var settingTheme = SettingHelper.GetValue<int>(SettingHelper.THEME, 0);
@@ -517,7 +517,10 @@ namespace AllLive.UWP.Views
                 {
                     //config.FFmpegOptions.Add("user_agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1");
                     //config.FFmpegOptions.Add("referer", "https://m.huya.com");
-                    var currentTs = Utils.GetTimeStamp() / 1000;
+                    var validTs = 20000308;
+                    var sysTs = Utils.GetTimeStamp() / 1000;
+                    var last8 = sysTs % 100000000;
+                    long currentTs = last8 > validTs ? last8 : (validTs + sysTs / 100);
                     config.FFmpegOptions.Add("user_agent", $"HYSDK(Windows, {currentTs})");
                 }
                 try
