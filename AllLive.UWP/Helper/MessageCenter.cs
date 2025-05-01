@@ -87,15 +87,15 @@ namespace AllLive.UWP.Helper
             //}
             //else
             //{
-                NavigatePage(typeof(LiveRoomPage), arg);
-                //(Window.Current.Content as Frame).Navigate(typeof(LiveRoomPage), arg);
-           // }
+            NavigatePage(typeof(LiveRoomPage), arg);
+            //(Window.Current.Content as Frame).Navigate(typeof(LiveRoomPage), arg);
+            // }
 
         }
 
         public async static void NavigatePage(Type page, object data)
         {
-            if(SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false)&& page == typeof(LiveRoomPage))
+            if (SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false) && page == typeof(LiveRoomPage))
             {
                 CoreApplicationView newView = CoreApplication.CreateNewView();
                 int newViewId = 0;
@@ -110,7 +110,7 @@ namespace AllLive.UWP.Helper
                     //ApplicationView.GetForCurrentView().Consolidated += (sender, args) =>
                     //{
                     //    frame.Navigate(typeof(BlankPage));
-                      
+
                     //    //newView.CoreWindow.Close();
                     //};
                 });
@@ -120,10 +120,10 @@ namespace AllLive.UWP.Helper
             {
                 NavigatePageEvent?.Invoke(page, data);
             }
-            
+
         }
 
-        
+
 
         public static void ChangeTitle(string title, ILiveSite site = null)
         {

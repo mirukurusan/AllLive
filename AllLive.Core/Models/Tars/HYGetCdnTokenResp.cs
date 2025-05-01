@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Tup.Tars;
+﻿using Tup.Tars;
 
 namespace AllLive.Core.Models.Tars
 {

@@ -219,5 +219,5 @@ namespace AllLive.Core.Danmaku
             return new ArraySegment<byte>(wscmd.toByteArray());
         }
     }
-    
+
 }

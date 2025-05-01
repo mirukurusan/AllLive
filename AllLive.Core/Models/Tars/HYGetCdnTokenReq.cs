@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Tup.Tars;
+﻿using Tup.Tars;
 
 namespace AllLive.Core.Models.Tars
 {
-    public class HYGetCdnTokenReq:TarsStruct
+    public class HYGetCdnTokenReq : TarsStruct
     {
         public string url { get; set; } = "";
         public string cdn_type { get; set; } = "";

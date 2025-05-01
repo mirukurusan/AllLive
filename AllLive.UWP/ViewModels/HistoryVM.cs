@@ -1,5 +1,4 @@
-﻿using AllLive.Core.Models;
-using AllLive.UWP.Helper;
+﻿using AllLive.UWP.Helper;
 using AllLive.UWP.Models;
 using System;
 using System.Collections.Generic;
