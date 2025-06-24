@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using NSDanmaku.Model;
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -27,6 +28,7 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
+
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
 
 namespace AllLive.UWP.Views
@@ -49,6 +51,9 @@ namespace AllLive.UWP.Views
         private bool isMini = false;
         DispatcherTimer timer_focus;
         DispatcherTimer controlTimer;
+
+        private static string? playUserAgent;
+        private static readonly HttpClient httpClient = new HttpClient();
 
         public LiveRoomPage()
         {
@@ -515,13 +520,8 @@ namespace AllLive.UWP.Views
                 }
                 else if (liveRoomVM.SiteName == "虎牙直播")
                 {
-                    //config.FFmpegOptions.Add("user_agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1");
-                    //config.FFmpegOptions.Add("referer", "https://m.huya.com");
-                    var validTs = 20000308;
-                    var sysTs = Utils.GetTimeStamp() / 1000;
-                    var last8 = sysTs % 100000000;
-                    long currentTs = last8 > validTs ? last8 : (validTs + sysTs / 100);
-                    config.FFmpegOptions.Add("user_agent", $"HYSDK(Windows, {currentTs})");
+                    var ua = await GetHuYaUA();
+                    config.FFmpegOptions.Add("user_agent", ua);
                 }
                 try
                 {
@@ -544,6 +544,33 @@ namespace AllLive.UWP.Views
                 Utils.ShowMessageToast("播放失败" + ex.Message);
             }
 
+        }
+
+        public static async Task<string> GetHuYaUA()
+        {
+            if (!string.IsNullOrEmpty(playUserAgent))
+            {
+                return playUserAgent;
+            }
+
+            try
+            {
+                var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                var url = $"https://github.iill.moe/xiaoyaocz/dart_simple_live/master/assets/play_config.json?ts={timestamp}";
+                var response = await httpClient.GetStringAsync(url);
+                using var doc = JsonDocument.Parse(response);
+                playUserAgent = doc.RootElement
+                    .GetProperty("huya")
+                    .GetProperty("user_agent")
+                    .GetString();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
+
+            return playUserAgent ??
+                   "HYSDK(Windows, 30000002)_APP(pc_exe&6080100&official)_SDK(trans&2.23.0.4969)";
         }
 
         private async void PlayError()
@@ -786,8 +813,8 @@ namespace AllLive.UWP.Views
                 });
             });
 
-            var fullWindowMode = SettingHelper.GetValue<bool>(SettingHelper.FULL_WINDOW_MODE, true);
-            SetFullWindow(fullWindowMode);
+            // var fullWindowMode = SettingHelper.GetValue<bool>(SettingHelper.FULL_WINDOW_MODE, true);
+            // SetFullWindow(fullWindowMode);
             //弹幕开关
             var state = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.SHOW, true) ? Visibility.Visible : Visibility.Collapsed;
             DanmuControl.Visibility = state;
