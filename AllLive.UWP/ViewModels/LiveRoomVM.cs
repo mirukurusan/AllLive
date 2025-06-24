@@ -283,10 +283,15 @@ namespace AllLive.UWP.ViewModels
                         //HDR无法播放
                         qualities = qualities.Where(x => !x.Quality.Contains("HDR")).ToList();
                     }
+                    //清晰度设置
+                    var videoQuality = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY, Utils.IsXbox ? 1 : 0);
                     Qualities = qualities;
                     if (Qualities != null && Qualities.Count > 0)
                     {
                         CurrentQuality = Qualities[0];
+                        int index = (int)Math.Round((4 - videoQuality) * (Qualities.Count - 1) / 4.0);
+                        index = Math.Clamp(index, 0, Qualities.Count - 1);
+                        CurrentQuality = Qualities[index];
                     }
                     // var u = await Site.GetPlayUrls(result, q[0]);
                     //ChangedPlayUrl?.Invoke(this, u[0]);

@@ -56,7 +56,7 @@ namespace AllLive.UWP.Views
         private bool isMini = false;
         DispatcherTimer timer_focus;
         DispatcherTimer controlTimer;
-        
+
         // 标志位：是否已经清理过资源
         private bool isCleanedUp = false;
 
@@ -70,7 +70,7 @@ namespace AllLive.UWP.Views
             dispRequest = new DisplayRequest();
 
             Window.Current.CoreWindow.KeyDown += CoreWindow_KeyDown;
-          
+
             liveRoomVM.ChangedPlayUrl += LiveRoomVM_ChangedPlayUrl;
             liveRoomVM.AddDanmaku += LiveRoomVM_AddDanmaku;
             //每过2秒就设置焦点
@@ -118,7 +118,7 @@ namespace AllLive.UWP.Views
         {
             // 取消所有事件订阅
             CleanupEventSubscriptions();
-            
+
             StopPlay();
             // 关闭窗口
             CoreWindow.GetForCurrentThread().Close();
@@ -132,14 +132,14 @@ namespace AllLive.UWP.Views
                 return;
             }
             isCleanedUp = true;
-            
+
             // 取消 ViewModel 事件订阅
             if (liveRoomVM != null)
             {
                 liveRoomVM.ChangedPlayUrl -= LiveRoomVM_ChangedPlayUrl;
                 liveRoomVM.AddDanmaku -= LiveRoomVM_AddDanmaku;
             }
-            
+
             // 取消 MediaPlayer 事件订阅
             if (mediaPlayer != null)
             {
@@ -151,7 +151,7 @@ namespace AllLive.UWP.Views
                 mediaPlayer.MediaEnded -= MediaPlayer_MediaEnded;
                 mediaPlayer.MediaFailed -= MediaPlayer_MediaFailed;
             }
-            
+
             // 取消 Timer 事件订阅
             if (timer_focus != null)
             {
@@ -161,14 +161,14 @@ namespace AllLive.UWP.Views
             {
                 controlTimer.Tick -= ControlTimer_Tick;
             }
-            
+
             // 取消窗口事件订阅
             try
             {
                 Window.Current.CoreWindow.KeyDown -= CoreWindow_KeyDown;
             }
             catch { }
-            
+
             // 如果是新窗口模式，取消 Consolidated 事件
             if (SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
             {
@@ -180,7 +180,7 @@ namespace AllLive.UWP.Views
             }
         }
 
-     
+
         private void SetTitleBarColor()
         {
             var settingTheme = SettingHelper.GetValue<int>(SettingHelper.THEME, 0);
@@ -656,7 +656,7 @@ namespace AllLive.UWP.Views
             {
                 controlTimer.Stop();
             }
-            
+
             Window.Current.CoreWindow.PointerCursor = new Windows.UI.Core.CoreCursor(Windows.UI.Core.CoreCursorType.Arrow, 0);
 
             liveRoomVM?.Stop();
@@ -717,7 +717,7 @@ namespace AllLive.UWP.Views
         {
             // 清理所有事件订阅
             CleanupEventSubscriptions();
-            
+
             // 停止播放并清理资源
             StopPlay();
 
@@ -861,6 +861,16 @@ namespace AllLive.UWP.Views
                     Utils.ShowMessageToast("更改清晰度或刷新后生效");
                 });
             });
+            quality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY, Utils.IsXbox ? 1 : 0);
+            quality.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                quality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY, quality.SelectedIndex);
+                    Utils.ShowMessageToast("更改清晰度或刷新后生效");
+                });
+            });
+
             //弹幕开关
             var state = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.SHOW, true) ? Visibility.Visible : Visibility.Collapsed;
             DanmuControl.Visibility = state;

@@ -52,6 +52,12 @@ namespace AllLive.UWP.Helper
         /// 视频解码
         /// </summary>
         public const string VIDEO_DECODER = "VideoDecoder";
+        //public const string SORTWARE_DECODING = "sortwareDecoding";
+
+        /// <summary>
+        /// 默认清晰度
+        /// </summary>
+        public const string VIDEO_QUALITY = "VideoQuality";
 
         /// <summary>
         /// 音量
@@ -91,7 +97,7 @@ namespace AllLive.UWP.Helper
         {
             public const string TOP_MARGIN = "LiveTopMargin";
             /// <summary>
-            /// 显示弹幕 
+            /// 显示弹幕
             /// </summary>
             public const string SHOW = "LiveDanmuShowBool";
             /// <summary>

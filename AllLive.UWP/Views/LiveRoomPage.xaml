@@ -1114,6 +1114,20 @@
                                             <ComboBoxItem>强制软解</ComboBoxItem>
                                         </ComboBox.Items>
                                     </ComboBox>
+                                    <TextBlock>默认清晰度</TextBlock>
+                                    <TextBlock FontSize="12">默认清晰度</TextBlock>
+                                    <ComboBox
+                                        x:Name="quality"
+                                        Width="140"
+                                        Margin="0,8,0,0">
+                                        <ComboBox.Items>
+                                            <ComboBoxItem>最低</ComboBoxItem>
+                                            <ComboBoxItem>较低</ComboBoxItem>
+                                            <ComboBoxItem>中等</ComboBoxItem>
+                                            <ComboBoxItem>较高</ComboBoxItem>
+                                            <ComboBoxItem>最高</ComboBoxItem>
+                                        </ComboBox.Items>
+                                    </ComboBox>
                                     <TextBlock Margin="0,12,0,0">保留醒目留言</TextBlock>
                                     <ToggleSwitch x:Name="swKeepSC" Margin="0,4,0,0" />
                                     <TextBlock Margin="0,12,0,0">互动文字大小</TextBlock>
