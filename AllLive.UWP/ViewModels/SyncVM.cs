@@ -300,7 +300,7 @@ namespace AllLive.UWP.ViewModels
             }
             string app = "聚合直播";
             string platform = Utils.IsXbox ? "xbox" : "windows";
-            string version = $"{SystemInformation.Instance.ApplicationVersion.Major}.{SystemInformation.Instance.ApplicationVersion.Minor}.{SystemInformation.Instance.ApplicationVersion.Build}"; ;
+            string version = $"{SystemInformation.Instance.ApplicationVersion.Major}.{SystemInformation.Instance.ApplicationVersion.Minor}.{SystemInformation.Instance.ApplicationVersion.Build}";
             var resp = await connection?.InvokeAsync<Resp<int>>("JoinRoom", roomId.ToUpper(), app, platform, version);
             if (resp.IsSuccess)
             {
@@ -502,7 +502,7 @@ namespace AllLive.UWP.ViewModels
         public bool IsSuccess { get; set; } = true;
         public string Message { get; set; } = "";
 
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public T Data { get; set; }
 
         public static Resp<T> Error(string message)

@@ -155,7 +155,7 @@ namespace AllLive.UWP.ViewModels
                 try
                 {
                     var json = await FileIO.ReadTextAsync(file);
-                    var items = JsonSerializer.Deserialize<List<FavoriteJsonItem>>(json);
+                    var items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<FavoriteJsonItem>>(json);
                     foreach (var item in items)
                     {
 
