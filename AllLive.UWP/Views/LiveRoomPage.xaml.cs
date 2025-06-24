@@ -776,6 +776,15 @@ namespace AllLive.UWP.Views
                     Utils.ShowMessageToast("更改清晰度或刷新后生效");
                 });
             });
+            quality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY, Utils.IsXbox ? 1 : 0);
+            quality.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                quality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY, quality.SelectedIndex);
+                    Utils.ShowMessageToast("更改清晰度或刷新后生效");
+                });
+            });
 
             var fullWindowMode = SettingHelper.GetValue<bool>(SettingHelper.FULL_WINDOW_MODE, true);
             SetFullWindow(fullWindowMode);

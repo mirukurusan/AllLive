@@ -54,6 +54,11 @@ namespace AllLive.UWP.Helper
         //public const string SORTWARE_DECODING = "sortwareDecoding";
 
         /// <summary>
+        /// 默认清晰度
+        /// </summary>
+        public const string VIDEO_QUALITY = "VideoQuality";
+
+        /// <summary>
         /// 默认是否满窗口播放
         /// </summary>
         public const string FULL_WINDOW_MODE = "fullWindowMode";

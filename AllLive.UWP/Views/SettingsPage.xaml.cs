@@ -141,6 +141,16 @@ namespace AllLive.UWP.Views
                 });
             });
 
+            //默认清晰度
+            quality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY, 0);
+            quality.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                quality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY, quality.SelectedIndex);
+                });
+            });
+
             //新窗口打开
             swNewWindow.IsOn = SettingHelper.GetValue<bool>(SettingHelper.NEW_WINDOW_LIVEROOM, false);
             swNewWindow.Loaded += new RoutedEventHandler((sender, e) =>

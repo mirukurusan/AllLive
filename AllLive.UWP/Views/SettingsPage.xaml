@@ -139,6 +139,7 @@
                     </Grid>
                     <Grid
                         Padding="8,12"
+                        Margin="0,0,0,12"
                         Background="{ThemeResource LayerFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
@@ -155,6 +156,29 @@
                                 <ComboBoxItem>自动</ComboBoxItem>
                                 <ComboBoxItem>硬件解码</ComboBoxItem>
                                 <ComboBoxItem>软件解码</ComboBoxItem>
+                            </ComboBox.Items>
+                        </ComboBox>
+                    </Grid>
+                    <Grid
+                        Padding="8,12"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock>默认清晰度</TextBlock>
+                            <TextBlock FontSize="12" Foreground="Gray">默认清晰度</TextBlock>
+                        </StackPanel>
+                        <ComboBox
+                            x:Name="quality"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                            <ComboBox.Items>
+                                <ComboBoxItem>最低</ComboBoxItem>
+                                <ComboBoxItem>较低</ComboBoxItem>
+                                <ComboBoxItem>中等</ComboBoxItem>
+                                <ComboBoxItem>较高</ComboBoxItem>
+                                <ComboBoxItem>最高</ComboBoxItem>
                             </ComboBox.Items>
                         </ComboBox>
                     </Grid>
