@@ -17,6 +17,8 @@
 	<PackageReference Include="Jint" Version="4.2.2" />
 	<PackageReference Include="protobuf-net" Version="3.2.46" />
 	<PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="WebSocketSharp-netstandard-customheaders" Version="1.0.3" />
   </ItemGroup>
 
 </Project>

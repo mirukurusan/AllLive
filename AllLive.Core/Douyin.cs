@@ -1,15 +1,15 @@
-﻿using AllLive.Core.Danmaku;
-using AllLive.Core.Helper;
-using AllLive.Core.Interface;
-using AllLive.Core.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using AllLive.Core.Danmaku;
+using AllLive.Core.Helper;
+using AllLive.Core.Interface;
+using AllLive.Core.Models;
+using Newtonsoft.Json.Linq;
 
 namespace AllLive.Core
 {
@@ -67,12 +67,12 @@ namespace AllLive.Core
             }
             renderData = renderData.Trim().Replace("\\\"", "\"").Replace("\\\\", "\\").Replace("]\\n", "");
             // 解析JSON数据
-            var renderDataJson = JsonNode.Parse(renderData);
-            foreach (var item in renderDataJson["categoryData"].AsArray())
+            var renderDataJson = JObject.Parse(renderData);
+            foreach (var item in renderDataJson["categoryData"])
             {
                 List<LiveSubCategory> subs = new List<LiveSubCategory>();
                 var id = $"{item["partition"]["id_str"]},{item["partition"]["type"]}";
-                foreach (var subItem in item["sub_partition"].AsArray())
+                foreach (var subItem in item["sub_partition"])
                 {
                     var subCategory = new LiveSubCategory()
                     {
@@ -114,10 +114,10 @@ namespace AllLive.Core
                     {"req_from","2" }
                 }
             );
-            var json = JsonNode.Parse(resp);
-            var hasMore = (json["data"]["data"].AsArray()).Count >= 15;
+            var json = JObject.Parse(resp);
+            var hasMore = (json["data"]["data"] as JArray).Count >= 15;
             var items = new List<LiveRoomItem>();
-            foreach (var item in json["data"]["data"].AsArray())
+            foreach (var item in json["data"]["data"])
             {
                 var roomItem = new LiveRoomItem()
                 {
@@ -125,7 +125,7 @@ namespace AllLive.Core
                     Title = item["room"]["title"].ToString(),
                     Cover = item["room"]["cover"]["url_list"][0].ToString(),
                     UserName = item["room"]["owner"]["nickname"].ToString(),
-                    Online = item["room"]["room_view_stats"]?["display_value"]?.ToInt32() ?? 0,
+                    Online = item["room"]["room_view_stats"]?["display_value"]?.ToObject<int>()??0,
                 };
                 items.Add(roomItem);
             }
@@ -150,10 +150,10 @@ namespace AllLive.Core
                     {"partition_type","1"},
                 }
             );
-            var json = JsonNode.Parse(resp);
-            var hasMore = (json["data"]["data"].AsArray()).Count >= 15;
+            var json = JObject.Parse(resp);
+            var hasMore = (json["data"]["data"] as JArray).Count >= 15;
             var items = new List<LiveRoomItem>();
-            foreach (var item in json["data"]["data"].AsArray())
+            foreach (var item in json["data"]["data"])
             {
                 var roomItem = new LiveRoomItem()
                 {
@@ -161,7 +161,7 @@ namespace AllLive.Core
                     Title = item["room"]["title"].ToString(),
                     Cover = item["room"]["cover"]["url_list"][0].ToString(),
                     UserName = item["room"]["owner"]["nickname"].ToString(),
-                    Online = item["room"]["room_view_stats"]?["display_value"]?.ToInt32() ?? 0,
+                    Online = item["room"]["room_view_stats"]?["display_value"]?.ToObject<int>()??0,
                 };
                 items.Add(roomItem);
             }
@@ -206,7 +206,7 @@ namespace AllLive.Core
             var userUniqueId = GenerateRandomNumber(12).ToString();
             var room = roomData["data"]["room"];
             var owner = room["owner"];
-            var status = room["status"].ToInt32();
+            var status = room["status"].ToObject<int>();
             // roomId是一次性的，用户每次重新开播都会生成一个新的roomId
             // 所以如果roomId对应的直播间状态不是直播中，就通过webRid获取直播间信息
             if (status == 4)
@@ -225,7 +225,7 @@ namespace AllLive.Core
                 UserName = owner["nickname"].ToString(),
                 UserAvatar = owner["avatar_thumb"]["url_list"][0].ToString(),
                 Online = roomStatus
-                  ? (room["room_view_stats"]?["display_value"]?.ToInt32() ?? 0)
+                  ? (room["room_view_stats"]?["display_value"]?.ToObject<int>()??0)
                   : 0,
                 Status = roomStatus,
                 Url = $"https://live.douyin.com/{webRid}",
@@ -282,7 +282,7 @@ namespace AllLive.Core
 
             var owner = roomData["owner"];
 
-            var roomStatus = roomData["status"].ToInt32() == 2;
+            var roomStatus = roomData["status"].ToObject<int>() == 2;
 
             // 主要是为了获取cookie,用于弹幕websocket连接
             var headers = await GetRequestHeaders();
@@ -298,7 +298,7 @@ namespace AllLive.Core
                     ? owner["avatar_thumb"]["url_list"][0].ToString()
                     : userData["avatar_thumb"]["url_list"][0].ToString(),
                 Online = roomStatus
-                    ? (roomData["room_view_stats"]?["display_value"]?.ToInt32() ?? 0)
+                    ? (roomData["room_view_stats"]?["display_value"]?.ToObject<int>()??0)
                     : 0,
                 Status = roomStatus,
                 Url = $"https://live.douyin.com/{webRid}",
@@ -326,7 +326,7 @@ namespace AllLive.Core
             var room = roomData["roomStore"]["roomInfo"]["room"];
             var owner = room["owner"];
             var anchor = roomData["roomStore"]["roomInfo"]["anchor"];
-            var roomStatus = room["status"].ToInt32() == 2;
+            var roomStatus = room["status"].ToObject<int>() == 2;
 
             // 主要是为了获取cookie,用于弹幕websocket连接
             var headers = await GetRequestHeaders();
@@ -342,7 +342,7 @@ namespace AllLive.Core
                     ? owner["avatar_thumb"]["url_list"][0].ToString()
                     : anchor["avatar_thumb"]["url_list"][0].ToString(),
                 Online = roomStatus
-                    ? (room["room_view_stats"]?["display_value"]?.ToInt32() ?? 0)
+                    ? (room["room_view_stats"]?["display_value"]?.ToObject<int>()??0)
                     : 0,
                 Status = roomStatus,
                 Url = $"https://live.douyin.com/{webRid}",
@@ -392,7 +392,7 @@ namespace AllLive.Core
             return webInfo["userStore"]["odin"]["user_unique_id"].ToString();
         }
 
-        private async Task<JsonNode> GetRoomDataHtml(string webRid)
+        private async Task<JToken> GetRoomDataHtml(string webRid)
         {
             var dyCookie = await GetWebCookie(webRid);
             var resp = await HttpUtil.GetString($"https://live.douyin.com/{webRid}",
@@ -412,10 +412,10 @@ namespace AllLive.Core
                 throw new Exception("无法读取直播间数据");
             }
             json = json.Trim().Replace("\\\"", "\"").Replace("\\\\", "\\").Replace("]\\n", "");
-            return JsonNode.Parse(json);
+            return JObject.Parse(json);
         }
 
-        private async Task<JsonNode> GetRoomDataApi(string webRid)
+        private async Task<JToken> GetRoomDataApi(string webRid)
         {
             var resp = await HttpUtil.GetString($"https://live.douyin.com/webcast/room/web/enter/",
                 headers: await GetRequestHeaders(),
@@ -440,10 +440,10 @@ namespace AllLive.Core
                     {"browser_version","125.0.0.0" }
                 }
             );
-            return JsonNode.Parse(resp)["data"];
+            return JObject.Parse(resp)["data"];
         }
 
-        private async Task<JsonNode> GetRoomDataByRoomID(string roomId)
+        private async Task<JToken> GetRoomDataByRoomID(string roomId)
         {
             var resp = await HttpUtil.GetString($"https://webcast.amemv.com/webcast/room/reflow/info/",
                 headers: await GetRequestHeaders(),
@@ -457,7 +457,7 @@ namespace AllLive.Core
                     {"app_id","6383" },
                 }
             );
-            return JsonNode.Parse(resp);
+            return JObject.Parse(resp);
         }
 
         public Task<List<LivePlayQuality>> GetPlayQuality(LiveRoomDetail roomDetail)
@@ -467,27 +467,27 @@ namespace AllLive.Core
             {
                 return Task.FromResult(qualities);
             }
-            var data = roomDetail.Data as JsonNode;
+            var data = roomDetail.Data as JToken;
             var qulityList = data["live_core_sdk_data"]["pull_data"]["options"]["qualities"];
             var streamData = data["live_core_sdk_data"]["pull_data"]["stream_data"].ToString();
 
             if (!streamData.StartsWith("{"))
             {
-                var flvList = data["flv_pull_url"].AsArray();
-                var hlsList = data["hls_pull_url_map"].AsArray();
-                foreach (var quality in qulityList.AsArray())
+                var flvList = (data["flv_pull_url"] as JToken).Values().Cast<string>().ToList();
+                var hlsList = (data["hls_pull_url_map"] as JToken).Values().Cast<string>().ToList();
+                foreach (var quality in qulityList)
                 {
-                    int level = quality["level"].ToInt32();
+                    int level = quality["level"].ToObject<int>();
                     List<String> urls = new List<string>();
                     var flvIndex = flvList.Count - level;
                     if (flvIndex >= 0 && flvIndex < flvList.Count)
                     {
-                        urls.Add(flvList[flvIndex].ToString());
+                        urls.Add(flvList[flvIndex]);
                     }
                     var hlsIndex = hlsList.Count - level;
                     if (hlsIndex >= 0 && hlsIndex < hlsList.Count)
                     {
-                        urls.Add(hlsList[hlsIndex].ToString());
+                        urls.Add(hlsList[hlsIndex]);
                     }
                     var qualityItem = new LivePlayQuality()
                     {
@@ -503,8 +503,8 @@ namespace AllLive.Core
             }
             else
             {
-                var qualityData = JsonNode.Parse(streamData)["data"] as JsonNode;
-                foreach (var quality in qulityList.AsArray())
+                var qualityData = JObject.Parse(streamData)["data"] as JObject;
+                foreach (var quality in qulityList)
                 {
                     List<string> urls = new List<string>();
 
@@ -524,7 +524,7 @@ namespace AllLive.Core
                     var qualityItem = new LivePlayQuality()
                     {
                         Quality = quality["name"].ToString(),
-                        Sort = quality["level"].ToInt32(),
+                        Sort = quality["level"].ToObject<int>(),
                         Data = urls,
                     };
                     if (urls.Count > 0)
@@ -591,9 +591,9 @@ namespace AllLive.Core
             {
                 { "accept", "application/json, text/plain, */*" },
                 { "accept-language", "zh-CN,zh;q=0.9,en;q=0.8" },
-                { "cookie", cookie },
+                { "cookie", cookie },  
                 { "priority", "u=1, i" },
-                { "referer", $"https://www.douyin.com/search/{Uri.EscapeUriString(keyword)}?type=live" },
+                { "referer", $"https://www.douyin.com/search/{Uri.EscapeUriString(keyword)}?type=live" }, 
                 { "sec-ch-ua", "\"Microsoft Edge\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\"" },
                 { "sec-ch-ua-mobile", "?0" },
                 { "sec-ch-ua-platform", "\"Windows\"" },
@@ -603,18 +603,18 @@ namespace AllLive.Core
                 { "user-agent", USER_AGENT }
             };
             var resp = await HttpUtil.GetString(requestUrl, headers);
-            var json = JsonNode.Parse(resp);
-            var items = new List<LiveRoomItem>();
-            foreach (var item in json["data"].AsArray())
+            var json = JObject.Parse(resp);
+            var items =new List<LiveRoomItem>();
+            foreach (var item in json["data"])
             {
-                var itemData = JsonNode.Parse(item["lives"]["rawdata"].ToString());
+                var itemData = JObject.Parse(item["lives"]["rawdata"].ToString());
                 var roomItem = new LiveRoomItem()
                 {
                     RoomID = itemData["owner"]["web_rid"].ToString(),
                     Title = itemData["title"].ToString(),
                     Cover = itemData["cover"]["url_list"][0].ToString(),
                     UserName = itemData["owner"]["nickname"].ToString(),
-                    Online = itemData["stats"]["total_user"].ToInt32(),
+                    Online = itemData["stats"]["total_user"].ToObject<int>(),
                 };
                 items.Add(roomItem);
             }

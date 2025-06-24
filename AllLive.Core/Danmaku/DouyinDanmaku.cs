@@ -1,18 +1,20 @@
-﻿using AllLive.Core.Danmaku.Proto;
-using AllLive.Core.Helper;
-using AllLive.Core.Interface;
-using AllLive.Core.Models;
-using ProtoBuf;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Net.WebSockets;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 using System.Timers;
+using AllLive.Core.Danmaku.Proto;
+using AllLive.Core.Helper;
+using AllLive.Core.Interface;
+using AllLive.Core.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using ProtoBuf;
+using WebSocketSharp;
+using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace AllLive.Core.Danmaku
 {
@@ -25,26 +27,17 @@ namespace AllLive.Core.Danmaku
     }
     public class DouyinDanmaku : ILiveDanmaku
     {
-        private readonly Timer HeartBeatTimer;
-        private readonly ClientWebSocket WsClient;
-        private readonly System.Threading.Thread ReceiveThread;
         public int HeartbeatTime => 10 * 1000;
 
         public event EventHandler<LiveMessage> NewMessageEvent;
         public event EventHandler<string> CloseEvent;
         private string baseUrl = "wss://webcast3-ws-web-lq.douyin.com/webcast/im/push/v2/";
 
+        Timer timer;
+        WebSocket ws;
         DouyinDanmakuArgs danmakuArgs;
         private string ServerUrl { get; set; }
         private string BackupUrl { get; set; }
-
-        public DouyinDanmaku()
-        {
-            WsClient = new ClientWebSocket();
-            ReceiveThread = new System.Threading.Thread(ReceiveMessage);
-            HeartBeatTimer = new Timer(HeartbeatTime);
-            HeartBeatTimer.Elapsed += Timer_Elapsed;
-        }
 
         public async Task Start(object args)
         {
@@ -85,80 +78,79 @@ namespace AllLive.Core.Danmaku
             //{ "signature", "00000000" }
         };
 
+            var sign = await GetSign(danmakuArgs.RoomId, danmakuArgs.UserId);
+            query.Add("signature", sign);
+
+            // 将参数拼接到url
+            var url = $"{baseUrl}?{Utils.BuildQueryString(query)}";
+            ServerUrl = url;
+            BackupUrl = url.Replace("webcast3-ws-web-lq", "webcast5-ws-web-lf");
+            ws = new WebSocket(ServerUrl);
+            // 添加请求头
+            ws.CustomHeaders = new Dictionary<string, string>() {
+                {"Origin","https://live.douyin.com" },
+                {"Cookie", danmakuArgs.Cookie},
+                {"User-Agnet","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0" }
+              };
+            // 必须设置ssl协议为Tls12
+            ws.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12;
+
+            ws.OnOpen += Ws_OnOpen;
+            ws.OnError += Ws_OnError;
+            ws.OnMessage += Ws_OnMessage;
+            ws.OnClose += Ws_OnClose;
+            timer = new Timer(HeartbeatTime);
+            timer.Elapsed += Timer_Elapsed;
+            await Task.Run(() =>
+            {
+                ws.Connect();
+            });
+        }
+        private async void Ws_OnOpen(object sender, EventArgs e)
+        {
+            await Task.Run(() =>
+            {
+                //发送进房信息
+                SendHeartBeatData();
+
+            });
+            timer.Start();
+
+        }
+
+        private async void Ws_OnMessage(object sender, MessageEventArgs e)
+        {
             try
             {
-                var sign = await GetSign(danmakuArgs.RoomId, danmakuArgs.UserId);
-                query.Add("signature", sign);
+                var message = e.RawData;
+                var wssPackage = DeserializeProto<PushFrame>(message);
+                var logId = wssPackage.logId;
+                var decompressed = GzipDecompress(wssPackage.Payload);
+                var payloadPackage = DeserializeProto<Response>(decompressed);
+                if (payloadPackage.needAck ?? false)
+                {
+                    await Task.Run(() =>
+                    {
+                        SendACKData(logId ?? 0, payloadPackage.internalExt);
+                    });
 
-                // 将参数拼接到url
-                var url = $"{baseUrl}?{Utils.BuildQueryString(query)}";
-                ServerUrl = url;
-                BackupUrl = url.Replace("webcast3-ws-web-lq", "webcast5-ws-web-lf");
-                // 添加请求头
-                WsClient.Options.SetRequestHeader("Origin", "https://live.douyin.com");
-                WsClient.Options.SetRequestHeader("Cookie", danmakuArgs.Cookie);
-                WsClient.Options.SetRequestHeader("User-Agnet", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0");
-                // 必须设置ssl协议为Tls12
-                await WsClient.ConnectAsync(new Uri(ServerUrl), default);
-                if (WsClient.State == WebSocketState.Open)
-                {
-                    SendHeartBeatData();
-                    //ReceiveMessage();
-                    ReceiveThread.Start();
-                    HeartBeatTimer.Start();
                 }
-                else
+
+                foreach (var msg in payloadPackage.messagesLists)
                 {
-                    OnClose();
+                    if (msg.Method == "WebcastChatMessage")
+                    {
+                        UnPackWebcastChatMessage(msg.Payload);
+                    }
+                    else if (msg.Method == "WebcastRoomUserSeqMessage")
+                    {
+                        UnPackWebcastRoomUserSeqMessage(msg.Payload);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                OnError(ex.Message);
-            }
-        }
-
-        private async void ReceiveMessage()
-        {
-            var buffer = new byte[8192];
-            while (WsClient.State == WebSocketState.Open)
-            {
-                try
-                {
-                    var result = WsClient.ReceiveAsync(new ArraySegment<byte>(buffer), default).Result;
-                    var wssPackage = DeserializeProto<PushFrame>(buffer, 0, result.Count);
-                    var logId = wssPackage.logId;
-                    var decompressed = GzipDecompress(wssPackage.Payload);
-                    var payloadPackage = DeserializeProto<Response>(decompressed);
-                    if (payloadPackage.needAck ?? false)
-                    {
-                        await Task.Run(() =>
-                        {
-                            SendACKData(logId ?? 0, payloadPackage.internalExt);
-                        });
-                    }
-
-                    foreach (var msg in payloadPackage.messagesLists)
-                    {
-                        if (msg.Method == "WebcastChatMessage")
-                        {
-                            UnPackWebcastChatMessage(msg.Payload);
-                        }
-                        else if (msg.Method == "WebcastRoomUserSeqMessage")
-                        {
-                            UnPackWebcastRoomUserSeqMessage(msg.Payload);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-                }
-            }
-
-            if (WsClient.State != WebSocketState.Open)
-            {
-                OnClose();
+                Debug.WriteLine(ex.Message);
             }
         }
         private void UnPackWebcastChatMessage(byte[] payload)
@@ -201,14 +193,14 @@ namespace AllLive.Core.Danmaku
             }
 
         }
-        private void OnClose()
+        private void Ws_OnClose(object sender, CloseEventArgs e)
         {
-            CloseEvent?.Invoke(this, WsClient.State.ToString());
+            CloseEvent?.Invoke(this, e.Reason);
         }
 
-        private void OnError(string message)
+        private void Ws_OnError(object sender, ErrorEventArgs e)
         {
-            CloseEvent?.Invoke(this, message);
+            CloseEvent?.Invoke(this, e.Message);
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -216,45 +208,40 @@ namespace AllLive.Core.Danmaku
             Heartbeat();
         }
 
-        public void Heartbeat()
+        public async void Heartbeat()
         {
-            SendHeartBeatData();
+            await Task.Run(() =>
+            {
+                SendHeartBeatData();
+            });
         }
 
 
         public async Task Stop()
         {
-            if (WsClient.State == WebSocketState.Connecting)
+            timer.Stop();
+            await Task.Run(() =>
             {
-                WsClient.Abort();
-            }
-            if (WsClient.State == WebSocketState.Open)
-            {
-                await WsClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client closed", default);
-            }
-            HeartBeatTimer.Stop();
+                ws.Close();
+            });
         }
-        private async void SendHeartBeatData()
+        private void SendHeartBeatData()
         {
             var obj = new PushFrame();
             obj.payloadType = "hb";
-            if (WsClient.State == WebSocketState.Open)
-            {
-                await WsClient.SendAsync(new ArraySegment<byte>(SerializeProto(obj)), WebSocketMessageType.Binary, true, default);
-            }
+
+            ws.Send(SerializeProto(obj));
 
         }
-        private async void SendACKData(ulong logId, string internalExt)
+        private void SendACKData(ulong logId, string internalExt)
         {
             var obj = new PushFrame();
 
             obj.payloadType = "ack";
             obj.logId = logId;
             obj.payloadType = internalExt;
-            if (WsClient.State == WebSocketState.Open)
-            {
-                await WsClient.SendAsync(new ArraySegment<byte>(SerializeProto(obj)), WebSocketMessageType.Binary, true, default);
-            }
+
+            ws.Send(SerializeProto(obj));
 
         }
         public static byte[] GzipDecompress(byte[] bytes)
@@ -292,21 +279,10 @@ namespace AllLive.Core.Danmaku
                 return null;
             }
         }
-
         private static T DeserializeProto<T>(byte[] bufferData)
         {
 
             using (MemoryStream ms = new MemoryStream(bufferData))
-            {
-                return Serializer.Deserialize<T>(ms);
-            }
-
-        }
-
-        private static T DeserializeProto<T>(byte[] bufferData, int index, int count)
-        {
-
-            using (MemoryStream ms = new MemoryStream(bufferData, index, count))
             {
                 return Serializer.Deserialize<T>(ms);
             }
@@ -324,9 +300,9 @@ namespace AllLive.Core.Danmaku
         {
             try
             {
-                var body = JsonSerializer.Serialize(new { roomId, uniqueId });
+                var body=JsonConvert.SerializeObject(new { roomId, uniqueId });
                 var result = await HttpUtil.PostJsonString("https://dy.nsapps.cn/signature", body);
-                var json = JsonNode.Parse(result);
+                var json = JObject.Parse(result);
                 return json["data"]["signature"].ToString();
             }
             catch (Exception ex)
