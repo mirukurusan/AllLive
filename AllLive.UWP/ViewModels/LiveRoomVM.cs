@@ -288,7 +288,6 @@ namespace AllLive.UWP.ViewModels
                     Qualities = qualities;
                     if (Qualities != null && Qualities.Count > 0)
                     {
-                        CurrentQuality = Qualities[0];
                         int index = (int)Math.Round((4 - videoQuality) * (Qualities.Count - 1) / 4.0);
                         index = Math.Clamp(index, 0, Qualities.Count - 1);
                         CurrentQuality = Qualities[index];
