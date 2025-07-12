@@ -1,18 +1,19 @@
 ﻿using AllLive.Core.Helper;
 using AllLive.Core.Interface;
 using AllLive.Core.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Web;
+using WebSocketSharp;
 /*
 * 哔哩哔哩弹幕实现
 * 参考文档：https://github.com/lovelyyoshino/Bilibili-Live-API/blob/master/API.WebSocket.md
@@ -24,107 +25,119 @@ namespace AllLive.Core.Danmaku
         public int RoomId { get; set; }
         public long UserId { get; set; } = 0;
         public string Cookie { get; set; }
+        public string Buvid3 { get; set; }
+        public string Buvid4 { get; set; }
+    }
+    public enum SslProtocolsHack
+    {
+        Tls = 192,
+        Tls11 = 768,
+        Tls12 = 3072
     }
     public class BiliBiliDanmaku : ILiveDanmaku
     {
-        private readonly Timer HeartBeatTimer;
-        private readonly ClientWebSocket WsClient;
-
-        private int RoomId = 0;
-
-        public int HeartbeatTime => 60 * 1000;
-
         public event EventHandler<LiveMessage> NewMessageEvent;
         public event EventHandler<string> CloseEvent;
-
+        public int HeartbeatTime => 60 * 1000;
+        private int roomId = 0;
         //private readonly string ServerUrl = "wss://broadcastlv.chat.bilibili.com/sub";
+        Timer timer;
+        WebSocket ws;
         private DanmuInfo danmuInfo;
         private string buvid;
         private BiliDanmakuArgs Args;
 
         public BiliBiliDanmaku()
         {
-            WsClient = new ClientWebSocket();
-            HeartBeatTimer = new Timer(HeartbeatTime);
-            HeartBeatTimer.Elapsed += Timer_Elapsed;
+
+        }
+        private async void Ws_OnOpen(object sender, EventArgs e)
+        {
+            await Task.Run(() =>
+            {
+                //发送进房信息
+                ws.Send(EncodeData(JsonConvert.SerializeObject(new
+                {
+                    roomid = roomId,
+                    uid = Args.UserId,
+                    protover = 2,
+                    key = danmuInfo.token,
+                    platform = "web",
+                    type = 2,
+                    buvid,
+                }), 7));
+
+            });
+            timer.Start();
+
+        }
+        private void Ws_OnMessage(object sender, MessageEventArgs e)
+        {
+            try
+            {
+                ParseData(e.RawData);
+            }
+            catch (Exception)
+            {
+            }
         }
 
-        private async void ReceiveMessage()
+        private void Ws_OnClose(object sender, CloseEventArgs e)
         {
-            var buffer = new byte[4096];
-            while (WsClient.State == WebSocketState.Open)
+            // https://github.com/sta/websocket-sharp/issues/219
+            var sslProtocolHack = (System.Security.Authentication.SslProtocols)(SslProtocolsHack.Tls12 | SslProtocolsHack.Tls11 | SslProtocolsHack.Tls);
+            //TlsHandshakeFailure
+            if (e.Code == 1015 && ws.SslConfiguration.EnabledSslProtocols != sslProtocolHack)
             {
-                try
-                {
-                    await WsClient.ReceiveAsync(new ArraySegment<byte>(buffer), default);
-                    ParseData(buffer);
-                }
-                catch (Exception)
-                {
-                }
+                ws.SslConfiguration.EnabledSslProtocols = sslProtocolHack;
+                ws.Connect();
             }
-            if (WsClient.State != WebSocketState.Open)
+            else
             {
-                OnClose();
+                CloseEvent?.Invoke(this, e.Reason);
             }
         }
 
-        private void OnClose()
+        private void Ws_OnError(object sender, WebSocketSharp.ErrorEventArgs e)
         {
-            CloseEvent?.Invoke(this, WsClient.State.ToString());
+            CloseEvent?.Invoke(this, e.Message);
         }
 
         public async Task Start(object args)
         {
             var _args = args as BiliDanmakuArgs;
             Args = _args;
-            RoomId = Args.RoomId;
-
-            var _buvid = await GetBuvid();
-            buvid = _buvid;
-            var info = await GetDanmuInfo(RoomId);
+            roomId = Args.RoomId;
+            
+            var info = await GetDanmuInfo(roomId);
             if (info == null)
             {
                 SendSystemMessage("获取弹幕信息失败");
                 return;
             }
             danmuInfo = info;
-            var host = info.host_list.First();
-            try
+            var host = info.host_list.Last();
+            ws = new WebSocket($"wss://{host.host}/sub");
+          
+            if (!string.IsNullOrEmpty(Args.Cookie))
             {
-                var serverUri = new Uri($"wss://{host.host}/sub");
-                if (!string.IsNullOrEmpty(Args.Cookie))
-                {
-                    WsClient.Options.Cookies.SetCookies(serverUri, Args.Cookie);
-                }
-                await WsClient.ConnectAsync(serverUri, default);
-                if (WsClient.State == WebSocketState.Open)
-                {
-                    //发送进房信息
-                    var data = EncodeData(JsonSerializer.Serialize(new
-                    {
-                        roomid = RoomId,
-                        uid = Args.UserId,
-                        protover = 2,
-                        key = danmuInfo.token,
-                        platform = "web",
-                        type = 2,
-                        buvid,
-                    }), 7);
-                    await WsClient.SendAsync(data, WebSocketMessageType.Binary, true, default);
-                    HeartBeatTimer.Start();
-                    ReceiveMessage();
-                }
-                else
-                {
-                    OnClose();
-                }
+                ws.CustomHeaders = new Dictionary<string, string>() {
+                    {"Cookie", Args.Cookie},
+                };
             }
-            catch (Exception)
+            ws.Compression = CompressionMethod.Deflate;
+            ws.OnOpen += Ws_OnOpen;
+            ws.OnError += Ws_OnError;
+            ws.OnMessage += Ws_OnMessage;
+            ws.OnClose += Ws_OnClose;
+            timer = new Timer(HeartbeatTime);
+            timer.Elapsed += Timer_Elapsed;
+            await Task.Run(() =>
             {
-                OnClose();
-            }
+                ws.Connect();
+            });
         }
+
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
@@ -133,23 +146,18 @@ namespace AllLive.Core.Danmaku
 
         public async void Heartbeat()
         {
-            if (WsClient.State == WebSocketState.Open)
+            await Task.Run(() =>
             {
-                await WsClient.SendAsync(EncodeData("", 2), WebSocketMessageType.Binary, true, default);
-            }
+                ws.Send(EncodeData("", 2));
+            });
         }
-
         public async Task Stop()
         {
-            HeartBeatTimer.Stop();
-            if (WsClient.State == WebSocketState.Connecting)
+            timer.Stop();
+            await Task.Run(() =>
             {
-                WsClient.Abort();
-            }
-            if (WsClient.State == WebSocketState.Open)
-            {
-                await WsClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client closed", default);
-            }
+                ws.Close();
+            });
         }
 
         private void ParseData(byte[] data)
@@ -168,17 +176,14 @@ namespace AllLive.Core.Danmaku
 
             //内容
             var body = data.Skip(16).ToArray();
-            if (protocolVersion == 1 || operation == 3)
+            if (operation == 3)
             {
-                var online = BitConverter.ToInt32(body.Take(4).Reverse().ToArray(), 0);
-                if (online > 0)
+                var online = BitConverter.ToInt32(body.Reverse().ToArray(), 0);
+                NewMessageEvent?.Invoke(this, new LiveMessage()
                 {
-                    NewMessageEvent?.Invoke(this, new LiveMessage()
-                    {
-                        Data = online,
-                        Type = LiveMessageType.Online,
-                    });
-                }
+                    Data = online,
+                    Type = LiveMessageType.Online,
+                });
             }
             else if (operation == 5)
             {
@@ -201,15 +206,15 @@ namespace AllLive.Core.Danmaku
         {
             try
             {
-                var obj = JsonNode.Parse(jsonMessage);
+                var obj = JObject.Parse(jsonMessage);
                 var cmd = obj["cmd"].ToString();
                 if (cmd.Contains("DANMU_MSG"))
                 {
-                    if (obj["info"] != null && obj["info"].AsArray().Count != 0)
+                    if (obj["info"] != null && obj["info"].ToArray().Length != 0)
                     {
                         var message = obj["info"][1].ToString();
                         var color = obj["info"][0][3].ToInt32();
-                        if (obj["info"][2] != null && obj["info"][2].AsArray().Count != 0)
+                        if (obj["info"][2] != null && obj["info"][2].ToArray().Length != 0)
                         {
                             var username = obj["info"][2][1].ToString();
                             NewMessageEvent?.Invoke(this, new LiveMessage()
@@ -224,7 +229,7 @@ namespace AllLive.Core.Danmaku
                 }
                 else if (cmd.Contains("SUPER_CHAT_MESSAGE"))
                 {
-                    if (obj["data"].GetValueKind() == JsonValueKind.Null)
+                    if (obj["data"].Type == JTokenType.Null)
                     {
                         return;
                     }
@@ -263,7 +268,7 @@ namespace AllLive.Core.Danmaku
         /// <param name="msg">文本内容</param>
         /// <param name="action">2=心跳，7=进房</param>
         /// <returns></returns>
-        private ArraySegment<byte> EncodeData(string msg, int action)
+        private byte[] EncodeData(string msg, int action)
         {
             var data = Encoding.UTF8.GetBytes(msg);
             //头部长度固定16
@@ -291,7 +296,7 @@ namespace AllLive.Core.Danmaku
                 ms.Write(data, 0, data.Length);
                 var _bytes = ms.ToArray();
                 ms.Flush();
-                return new ArraySegment<byte>(_bytes);
+                return _bytes;
             }
         }
 
@@ -351,18 +356,37 @@ namespace AllLive.Core.Danmaku
 
 
         }
-        private async Task<string> GetBuvid()
+        private async Task<Dictionary<string, string>> GetBuvid()
         {
             try
             {
-                if (!string.IsNullOrEmpty(Args.Cookie) && Args.Cookie.Contains("buvid3"))
+                if (!string.IsNullOrEmpty(Args.Cookie))
                 {
-                    var regex = new Regex("buvid3=(.*?);");
-                    var match = regex.Match(Args.Cookie);
-                    if (match.Success)
+                    var buvid3 = "";
+                    var buvid4 = "";
+                    if (Args.Cookie.Contains("buvid3"))
                     {
-                        return match.Groups[1].Value;
+                        var regex = new Regex("buvid3=(.*?);");
+                        var match = regex.Match(Args.Cookie);
+                        if (match.Success)
+                        {
+                            buvid3 = match.Groups[1].Value;
+                        }
                     }
+                    if (Args.Cookie.Contains("buvid4"))
+                    {
+                        var regex = new Regex("buvid4=(.*?);");
+                        var match = regex.Match(Args.Cookie);
+                        if (match.Success)
+                        {
+                            buvid4 = match.Groups[1].Value;
+                        }
+                    }
+                    return new Dictionary<string, string>
+                    {
+                        { "b_3", buvid3 },
+                        { "b_4", buvid4 }
+                    };
                 }
 
                 var result = await HttpUtil.GetString($"https://api.bilibili.com/x/frontend/finger/spi",
@@ -371,27 +395,61 @@ namespace AllLive.Core.Danmaku
                         { "cookie", Args.Cookie }
                     }
                   );
-                var obj = JsonNode.Parse(result);
+                var obj = JObject.Parse(result);
 
-                return obj["data"]["b_3"].ToString();
+                return new Dictionary<string, string>
+                {
+                    { "b_3", obj["data"]["b_3"].ToString() ?? "" },
+                    { "b_4", obj["data"]["b_4"].ToString() ?? "" }
+                };
             }
             catch (Exception)
             {
-                return "";
+                return new Dictionary<string, string>
+                    {
+                        { "b_3", "" },
+                        { "b_4", "" }
+                    };
             }
+        }
+
+        private async Task<Dictionary<string, string>> GetHeader()
+        {
+            if (string.IsNullOrEmpty(Args.Buvid3))
+            {
+                var buvidInfo = await GetBuvid();
+                Args.Buvid3 = buvidInfo["b_3"] ?? "";
+                Args.Buvid4 = buvidInfo["b_4"] ?? "";
+            }
+
+            var headers = new Dictionary<string, string>
+            {
+                { "user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edge/126.0.0.0" },
+                { "referer", "https://live.bilibili.com/" }
+            };
+
+            string cookieHeader = Args.Cookie;
+            if (string.IsNullOrEmpty(cookieHeader) || !cookieHeader.Contains("buvid3"))
+            {
+                cookieHeader = $"buvid3={Args.Buvid3};buvid4={Args.Buvid4};";
+            }
+            headers["cookie"] = cookieHeader;
+            return headers;
         }
 
         private async Task<DanmuInfo> GetDanmuInfo(int roomId)
         {
             try
             {
-                var result = await HttpUtil.GetString($"https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?id={roomId}",
-                    headers: string.IsNullOrEmpty(Args.Cookie) ? null : new Dictionary<string, string>
-                    {
-                        { "cookie", Args.Cookie }
-                    });
-                var obj = JsonNode.Parse(result);
-                var info = obj["data"].Deserialize<DanmuInfo>();
+                var url = $"https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo";
+                var query = $"id={roomId}";
+                query = await GetWbiSign(query);
+                var header = await GetHeader();
+
+                var result = await HttpUtil.GetString($"{url}?{query}",
+                    headers: header);
+                var obj = JObject.Parse(result);
+                var info = obj["data"].ToObject<DanmuInfo>();
                 return info;
             }
             catch (Exception ex)
@@ -410,6 +468,70 @@ namespace AllLive.Core.Danmaku
                 Message = msg
             });
         }
+
+        private string _imgKey;
+        private string _subKey;
+        private int[] mixinKeyEncTab = new int[] {
+            46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49,
+            33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13, 37, 48, 7, 16, 24, 55, 40,
+            61, 26, 17, 0, 1, 60, 51, 30, 4, 22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11,
+            36, 20, 34, 44, 52
+        };
+        private async Task<(string, string)> GetWbiKeys()
+        {
+            if (_imgKey != null && _subKey != null)
+            {
+                return (_imgKey, _subKey);
+            }
+            // 获取最新的 img_key 和 sub_key
+            var response = await HttpUtil.GetString(
+                "https://api.bilibili.com/x/web-interface/nav",
+                 headers: string.IsNullOrEmpty(Args.Cookie) ? null : new Dictionary<string, string>
+                    {
+                        { "cookie", Args.Cookie }
+                    });
+            var obj = JObject.Parse(response);
+
+            var imgUrl = obj["data"]["wbi_img"]["img_url"].ToString();
+            var subUrl = obj["data"]["wbi_img"]["sub_url"].ToString();
+            var imgKey = imgUrl.Substring(imgUrl.LastIndexOf('/') + 1).Split('.')[0];
+            var subKey = subUrl.Substring(subUrl.LastIndexOf('/') + 1).Split('.')[0];
+
+            _imgKey = imgKey;
+            _subKey = subKey;
+
+            return (imgKey, subKey);
+        }
+
+        private string GetMixinKey(string origin)
+        {
+            // 对 imgKey 和 subKey 进行字符顺序打乱编码
+            return mixinKeyEncTab.Aggregate("", (s, i) => s + origin[i]).Substring(0, 32);
+        }
+
+        public async Task<string> GetWbiSign(string url)
+        {
+            var (imgKey, subKey) = await GetWbiKeys();
+
+            // 为请求参数进行 wbi 签名
+            var mixinKey = GetMixinKey(imgKey + subKey);
+            var currentTime = (long)Math.Round(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
+
+            var queryString = HttpUtility.ParseQueryString(url);
+
+            var queryParams = queryString.Cast<string>().ToDictionary(k => k, v => queryString[v]);
+            queryParams["wts"] = currentTime + ""; // 添加 wts 字段
+            queryParams = queryParams.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value); // 按照 key 重排参数
+                                                                                                  // 过滤 value 中的 "!'()*" 字符
+            queryParams = queryParams.ToDictionary(x => x.Key, x => string.Join("", x.Value.ToString().Where(c => "!'()*".Contains(c) == false)));
+
+            var query = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+
+            var wbi_sign = Utils.ToMD5($"{query}{mixinKey}");
+
+            return $"{query}&w_rid={wbi_sign}";
+        }
+
     }
 
 

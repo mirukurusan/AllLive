@@ -1,14 +1,14 @@
-﻿using AllLive.Core.Danmaku;
-using AllLive.Core.Helper;
-using AllLive.Core.Interface;
+﻿using AllLive.Core.Interface;
 using AllLive.Core.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using AllLive.Core.Danmaku;
+using AllLive.Core.Helper;
+using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
+using WebSocketSharp;
+using System.Linq;
 using System.Web;
 
 namespace AllLive.Core
@@ -27,10 +27,19 @@ namespace AllLive.Core
         /// </summary>
         public long UserId { get; set; }
 
-        private readonly string uuid = Guid.NewGuid().ToString();
 
-        private Dictionary<string, string> GetRequestHeader(bool withBuvid3 = true)
+        private string buvid3 = "";
+        private string buvid4 = "";
+        private async Task<Dictionary<string, string>> GetRequestHeader()
         {
+
+            if (string.IsNullOrEmpty(buvid3))
+            {
+                var buvid = await GetBuvid();
+                buvid3 = buvid.Item1;
+                buvid4 = buvid.Item2;
+            }
+
             var headers = new Dictionary<string, string>()
             {
                 {"user-agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0" },
@@ -38,28 +47,27 @@ namespace AllLive.Core
             };
             if (string.IsNullOrEmpty(Cookie))
             {
-                if (withBuvid3)
-                {
-                    headers.Add("cookie", $"buvid3={uuid}");
-                }
+                headers.Add("cookie", $"buvid3={buvid3};buvid4={buvid4};");
             }
             else
             {
-                headers.Add("cookie", Cookie);
+                headers.Add("cookie", Cookie.Contains("buvid3") ? Cookie : $"{Cookie};buvid3={buvid3};buvid4={buvid4};");
+                //return new Dictionary<string, string>() {
+                //    { "cookie",Cookie },
+                //};
             }
-
             return headers;
         }
 
         public async Task<List<LiveCategory>> GetCategores()
         {
             List<LiveCategory> categories = new List<LiveCategory>();
-            var result = await HttpUtil.GetString("https://api.live.bilibili.com/room/v1/Area/getList?need_entrance=1&parent_id=0");
-            var obj = JsonNode.Parse(result);
-            foreach (var item in obj["data"].AsArray())
+            var result = await HttpUtil.GetString("https://api.live.bilibili.com/room/v1/Area/getList?need_entrance=1&parent_id=0", headers: await GetRequestHeader());
+            var obj = JObject.Parse(result);
+            foreach (var item in obj["data"])
             {
                 List<LiveSubCategory> subs = new List<LiveSubCategory>();
-                foreach (var subItem in item["list"].AsArray())
+                foreach (var subItem in item["list"])
                 {
                     subs.Add(new LiveSubCategory()
                     {
@@ -87,17 +95,18 @@ namespace AllLive.Core
 
             };
             var url = $"https://api.live.bilibili.com/xlive/web-interface/v1/second/getList";
-            var query = $"platform=web&parent_area_id={category.ParentID}&area_id={category.ID}&sort_type=&page={page}";
+            var accessId = await GetAssessId();
+            var query = $"platform=web&parent_area_id={category.ParentID}&area_id={category.ID}&sort_type=&page={page}&w_webid={accessId}";
             query = await GetWbiSign(query);
-            var result = await HttpUtil.GetString($"{url}?{query}", headers: GetRequestHeader());
+            var result = await HttpUtil.GetString($"{url}?{query}", headers: await GetRequestHeader());
 
-            var obj = JsonNode.Parse(result);
+            var obj = JObject.Parse(result);
             categoryResult.HasMore = obj["data"]["has_more"].ToInt32() == 1;
-            foreach (var item in obj["data"]["list"].AsArray())
+            foreach (var item in obj["data"]["list"])
             {
                 categoryResult.Rooms.Add(new LiveRoomItem()
                 {
-                    Cover = item["cover"].ToString() + "@400w.jpg",
+                    Cover = item["cover"].ToString() + "@300w.jpg",
                     Online = item["online"].ToInt32(),
                     RoomID = item["roomid"].ToString(),
                     Title = item["title"].ToString(),
@@ -116,14 +125,14 @@ namespace AllLive.Core
             var url = $"https://api.live.bilibili.com/xlive/web-interface/v1/second/getListByArea";
             var query = $"platform=web&sort=online&page_size=30&page={page}";
             query = await GetWbiSign(query);
-            var result = await HttpUtil.GetString($"{url}?{query}", headers: GetRequestHeader());
-            var obj = JsonNode.Parse(result);
-            categoryResult.HasMore = (obj["data"]["list"].AsArray()).Count > 0;
-            foreach (var item in obj["data"]["list"].AsArray())
+            var result = await HttpUtil.GetString($"{url}?{query}", headers: await GetRequestHeader());
+            var obj = JObject.Parse(result);
+            categoryResult.HasMore = ((JArray)obj["data"]["list"]).Count > 0;
+            foreach (var item in obj["data"]["list"])
             {
                 categoryResult.Rooms.Add(new LiveRoomItem()
                 {
-                    Cover = item["cover"].ToString() + "@400w.jpg",
+                    Cover = item["cover"].ToString() + "@300w.jpg",
                     Online = item["online"].ToInt32(),
                     RoomID = item["roomid"].ToString(),
                     Title = item["title"].ToString(),
@@ -137,8 +146,8 @@ namespace AllLive.Core
             var url = "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom";
             var query = $"room_id={roomId}";
             query = await GetWbiSign(query);
-            var result = await HttpUtil.GetString($"{url}?{query}", headers: GetRequestHeader());
-            var obj = JsonNode.Parse(result);
+            var result = await HttpUtil.GetString($"{url}?{query}", headers: await GetRequestHeader());
+            var obj = JObject.Parse(result);
 
             return new LiveRoomDetail()
             {
@@ -167,13 +176,14 @@ namespace AllLive.Core
                 Rooms = new List<LiveRoomItem>(),
 
             };
-            var result = await HttpUtil.GetString($"https://api.bilibili.com/x/web-interface/search/type?context=&search_type=live&cover_type=user_cover&page={page}&order=&keyword={Uri.EscapeDataString(keyword)}&category_id=&__refresh__=true&_extra=&highlight=0&single_column=0", headers: GetRequestHeader(true));
-            var liveRooms = JsonNode.Parse(result)["data"]["result"]["live_room"] ?? new JsonArray();
-            foreach (var item in liveRooms.AsArray())
+            var result = await HttpUtil.GetString($"https://api.bilibili.com/x/web-interface/search/type?context=&search_type=live&cover_type=user_cover&page={page}&order=&keyword={Uri.EscapeDataString(keyword)}&category_id=&__refresh__=true&_extra=&highlight=0&single_column=0", headers: await GetRequestHeader());
+            var obj = JObject.Parse(result);
+
+            foreach (var item in obj["data"]["result"]["live_room"])
             {
                 searchResult.Rooms.Add(new LiveRoomItem()
                 {
-                    Cover = "https:" + item["cover"].ToString() + "@400w.jpg",
+                    Cover = "https:" + item["cover"].ToString() + "@300w.jpg",
                     Online = item["online"].ToInt32(),
                     RoomID = item["roomid"].ToString(),
                     Title = Regex.Replace(item["title"].ToString(), @"<em.*?/em>", ""),
@@ -204,7 +214,7 @@ namespace AllLive.Core
 
             List<LivePlayQuality> qualities = new List<LivePlayQuality>();
             var result = await HttpUtil.GetString($"https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
-                headers: GetRequestHeader(),
+                headers:await GetRequestHeader(),
                 queryParameters: new Dictionary<string, string>() {
                     { "room_id", roomID } ,
                     { "protocol", "0,1" },
@@ -213,18 +223,18 @@ namespace AllLive.Core
                     { "platform", "web"}
                 }
             );
-            var obj = JsonNode.Parse(result);
+            var obj = JObject.Parse(result);
             var qualitiesMap = new Dictionary<int, string>();
-            foreach (var item in obj["data"]["playurl_info"]["playurl"]["g_qn_desc"].AsArray())
+            foreach (var item in obj["data"]["playurl_info"]["playurl"]["g_qn_desc"])
             {
-                qualitiesMap[item["qn"].ToInt32()] =
+                qualitiesMap[item["qn"].ToObject<int>()] =
                     item["desc"].ToString();
             }
-            foreach (var item in obj["data"]["playurl_info"]["playurl"]["stream"][0]["format"][0]["codec"][0]["accept_qn"].AsArray())
+            foreach (var item in obj["data"]["playurl_info"]["playurl"]["stream"][0]["format"][0]["codec"][0]["accept_qn"])
             {
                 var qualityItem = new LivePlayQuality()
                 {
-                    Quality = qualitiesMap[item.ToInt32()] ?? "未知清晰度",
+                    Quality = qualitiesMap[item.ToObject<int>()] ?? "未知清晰度",
                     Data = item,
                 };
                 qualities.Add(qualityItem);
@@ -241,9 +251,9 @@ namespace AllLive.Core
         {
 
             List<LivePlayQuality> qualities = new List<LivePlayQuality>();
-            var result = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/playUrl?cid={roomID}&qn=&platform=web", headers: GetRequestHeader());
-            var obj = JsonNode.Parse(result);
-            foreach (var item in obj["data"]["quality_description"].AsArray())
+            var result = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/playUrl?cid={roomID}&qn=&platform=web", headers: await GetRequestHeader());
+            var obj = JObject.Parse(result);
+            foreach (var item in obj["data"]["quality_description"])
             {
                 qualities.Add(new LivePlayQuality()
                 {
@@ -252,17 +262,6 @@ namespace AllLive.Core
                 });
             }
             return qualities;
-        }
-        private string getQnName(int qn, JsonArray qnDescList)
-        {
-            foreach (var qnItem in qnDescList)
-            {
-                if (qnItem["qn"].ToInt32() == qn)
-                {
-                    return qnItem["desc"].ToString();
-                }
-            }
-            return "默认";
         }
 
         public async Task<List<string>> GetPlayUrls(LiveRoomDetail roomDetail, LivePlayQuality qn)
@@ -281,7 +280,7 @@ namespace AllLive.Core
             List<string> urls = new List<string>();
             List<LivePlayQuality> qualities = new List<LivePlayQuality>();
             var result = await HttpUtil.GetString($"https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
-                headers: GetRequestHeader(),
+                headers: await GetRequestHeader(),
                 queryParameters: new Dictionary<string, string>() {
                     { "room_id", roomID } ,
                     { "protocol", "0,1" },
@@ -291,19 +290,19 @@ namespace AllLive.Core
                     { "qn",qn.ToString()}
                 }
             );
-            var obj = JsonNode.Parse(result);
+            var obj = JObject.Parse(result);
             var streamList = obj["data"]["playurl_info"]["playurl"]["stream"];
-            foreach (var streamItem in streamList.AsArray())
+            foreach (var streamItem in streamList)
             {
                 var formatList = streamItem["format"];
-                foreach (var formatItem in formatList.AsArray())
+                foreach (var formatItem in formatList)
                 {
                     var codecList = formatItem["codec"];
-                    foreach (var codecItem in codecList.AsArray())
+                    foreach (var codecItem in codecList)
                     {
                         var urlList = codecItem["url_info"];
                         var baseUrl = codecItem["base_url"].ToString();
-                        foreach (var urlItem in urlList.AsArray())
+                        foreach (var urlItem in urlList)
                         {
                             urls.Add(
                               $"{urlItem["host"].ToString()}{baseUrl.ToString()}{urlItem["extra"].ToString()}"
@@ -327,9 +326,9 @@ namespace AllLive.Core
         private async Task<List<string>> GetPlayUrlsOld(string roomID, object qn)
         {
             List<string> urls = new List<string>();
-            var result = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/playUrl?cid={roomID}&qn={qn}&platform=web", headers: GetRequestHeader());
-            var obj = JsonNode.Parse(result);
-            foreach (var item in obj["data"]["durl"].AsArray())
+            var result = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/playUrl?cid={roomID}&qn={qn}&platform=web", headers: await GetRequestHeader());
+            var obj = JObject.Parse(result);
+            foreach (var item in obj["data"]["durl"])
             {
                 urls.Add(item["url"].ToString());
             }
@@ -338,21 +337,20 @@ namespace AllLive.Core
 
         public async Task<bool> GetLiveStatus(object roomId)
         {
-            var resp = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={roomId}", headers: GetRequestHeader());
-            var obj = JsonNode.Parse(resp);
-            return obj["data"]["live_status"].ToInt32() == 1;
+            var resp = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={roomId}", headers: await GetRequestHeader());
+            var obj = JObject.Parse(resp);
+            return obj["data"]["live_status"].ToObject<int>() == 1;
         }
 
         public async Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId)
         {
 
-            var resp = await HttpUtil.GetString($"https://api.live.bilibili.com/av/v1/SuperChat/getMessageList?room_id={roomId}", headers: GetRequestHeader());
-            var obj = JsonNode.Parse(resp);
+            var resp = await HttpUtil.GetString($"https://api.live.bilibili.com/av/v1/SuperChat/getMessageList?room_id={roomId}", headers: await GetRequestHeader());
+            var obj = JObject.Parse(resp);
             List<LiveSuperChatMessage> list = new List<LiveSuperChatMessage>();
-            var listNode = obj["data"]["list"];
-            if (listNode?.GetValueKind() == JsonValueKind.Array)
+            if (obj["data"]["list"].Type == JTokenType.Array)
             {
-                foreach (var item in listNode.AsArray())
+                foreach (var item in obj["data"]["list"])
                 {
                     list.Add(new LiveSuperChatMessage()
                     {
@@ -371,7 +369,7 @@ namespace AllLive.Core
             return list;
         }
 
-
+        private string _accessId;
         private string _imgKey;
         private string _subKey;
         private int[] mixinKeyEncTab = new int[] {
@@ -389,8 +387,8 @@ namespace AllLive.Core
             // 获取最新的 img_key 和 sub_key
             var response = await HttpUtil.GetString(
                 "https://api.bilibili.com/x/web-interface/nav",
-                headers: GetRequestHeader());
-            var obj = JsonNode.Parse(response);
+                headers: await GetRequestHeader());
+            var obj = JObject.Parse(response);
 
             var imgUrl = obj["data"]["wbi_img"]["img_url"].ToString();
             var subUrl = obj["data"]["wbi_img"]["sub_url"].ToString();
@@ -430,6 +428,49 @@ namespace AllLive.Core
             var wbi_sign = Utils.ToMD5($"{query}{mixinKey}");
 
             return $"{query}&w_rid={wbi_sign}";
+        }
+
+        private async Task<(string,string)> GetBuvid()
+        {
+            try
+            {
+                var result = await HttpUtil.GetString($"https://api.bilibili.com/x/frontend/finger/spi",
+                    headers: string.IsNullOrEmpty(Cookie) ? null : new Dictionary<string, string>
+                    {
+                        { "cookie", Cookie }
+                    }
+                  );
+                var obj = JObject.Parse(result);
+
+                return (obj["data"]["b_3"].ToString(), obj["data"]["b_4"].ToString());
+            }
+            catch (Exception)
+            {
+                return ("","");
+            }
+        }
+
+        private async Task<string> GetAssessId()
+        {
+            if (!string.IsNullOrEmpty(_accessId))
+            {
+                return _accessId;
+            }
+            
+            var response = await HttpUtil.GetString(
+                "https://live.bilibili.com/lol",
+                headers: await GetRequestHeader());
+            // 通过正则表达式"access_id":"(.*?)"提取
+            var match = Regex.Match(response, "\"access_id\":\"(.*?)\"");
+            if (match.Success)
+            {
+                _accessId = match.Groups[1].Value;
+                return _accessId;
+            }
+            else
+            {
+                throw new Exception("无法获取 access_id");
+            }
         }
     }
 }
