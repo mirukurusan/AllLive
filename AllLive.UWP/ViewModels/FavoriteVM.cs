@@ -47,6 +47,9 @@ namespace AllLive.UWP.ViewModels
 
         public async void LoadData()
         {
+            int maxConcurrencyLevel = SettingHelper.GetValue(SettingHelper.CONCURRENCY_LEVEL, 4);
+            var semaphore = new SemaphoreSlim(maxConcurrencyLevel);
+
             try
             {
                 Loading = true;
@@ -58,11 +61,16 @@ namespace AllLive.UWP.ViewModels
                 {
                     item.Title = item.SiteName;
                     Items.Add(item);
+                }
+                foreach (var item in Items)
+                {
+                    await semaphore.WaitAsync();
                     detailTasks.Add(Task.Run(async () =>
                     {
                         try
                         {
                             var site = MainVM.Sites.Find(x => x.Name == item.SiteName);
+                            if (site == null) return;
                             var detail = await site.LiveSite.GetRoomDetail(item.RoomID);
                             uiContext.Post(state =>
                             {
@@ -84,21 +92,24 @@ namespace AllLive.UWP.ViewModels
                             }, null);
 
                         }
-                        catch
+                        catch (Exception ex)
                         {
                             uiContext.Post((state) =>
                             {
-                                Utils.ShowMessageToast($"{item.UserName}的房间: {item.RoomID}，获取信息异常。");
+                                Utils.ShowMessageToast($"{item.UserName}的房间: {item.RoomID}，获取信息异常。\n{ex.Message}");
+                            }, null);
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                            uiContext.Post(_ =>
+                            {
+                                LoadingProgress += 1.0 / Items.Count;
                             }, null);
                         }
                     }));
                 }
-                while (detailTasks.Count > 0)
-                {
-                    var task = await Task.WhenAny(detailTasks);
-                    detailTasks.Remove(task);
-                    LoadingProgress += 1d / Items.Count;
-                }
+                await Task.WhenAll(detailTasks);
             }
             catch (Exception ex)
             {
@@ -108,7 +119,12 @@ namespace AllLive.UWP.ViewModels
             {
                 if (SettingHelper.GetValue<bool>(SettingHelper.SORT_BY_STATUS, false))
                 {
-                    Items = new ObservableCollection<FavoriteItem>(Items.OrderByDescending(x => x.Status));
+                    var sortedItems = Items.OrderByDescending(x => x.Status).ToList();
+                    Items.Clear();
+                    foreach (var item in sortedItems)
+                    {
+                        Items.Add(item);
+                    }
                 }
                 IsEmpty = Items.Count == 0;
                 LoadingProgress = 1;

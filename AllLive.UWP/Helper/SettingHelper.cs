@@ -46,6 +46,10 @@ namespace AllLive.UWP.Helper
         /// 按直播状态排序关注列表
         /// </summary>
         public const string SORT_BY_STATUS = "SortByStatus";
+        /// <summary>
+        /// 关注历史加载线程数
+        /// </summary>
+        public const string CONCURRENCY_LEVEL = "ConcurrencyLevel";
 
         /// <summary>
         /// 视频解码

@@ -62,6 +62,16 @@ watch_time DATETIME);
             command.Parameters.AddWithValue("@id", item.ID);
             command.ExecuteReader();
         }
+        public static void UpdateHistory(HistoryItem item)
+        {
+            SqliteCommand command = new SqliteCommand();
+            command.Connection = db;
+            command.CommandText = "UPDATE History SET user_name = @user_name, photo = @photo WHERE id = @id";
+            command.Parameters.AddWithValue("@user_name", item.UserName);
+            command.Parameters.AddWithValue("@photo", item.Photo);
+            command.Parameters.AddWithValue("@id", item.ID);
+            command.ExecuteReader();
+        }
         public static long? CheckFavorite(string roomId, string siteName)
         {
             SqliteCommand command = new SqliteCommand();

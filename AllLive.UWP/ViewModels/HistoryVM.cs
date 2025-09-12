@@ -30,50 +30,67 @@ namespace AllLive.UWP.ViewModels
 
         public async void LoadData()
         {
-            Loading = true;
-            LoadingLiveStatus = true;
-            LoadingProgress = 0;
-            var detailTasks = new List<Task>();
-            var uiContext = SynchronizationContext.Current;
-            ThreadPool.GetMaxThreads(out int worker, out int port);
-            ThreadPool.SetMaxThreads(8, 8); // Avoid triggering http 4xx error
+            int maxConcurrencyLevel = SettingHelper.GetValue(SettingHelper.CONCURRENCY_LEVEL, 4);
+            var semaphore = new SemaphoreSlim(maxConcurrencyLevel);
+
             try
             {
+                Loading = true;
+                LoadingLiveStatus = true;
+                LoadingProgress = 0;
+                var detailTasks = new List<Task>();
+                var uiContext = SynchronizationContext.Current;
                 await foreach (var item in DatabaseHelper.GetHistory())
                 {
+                    item.Title = item.SiteName;
                     Items.Add(item);
+                }
+                foreach (var item in Items)
+                {
+                    await semaphore.WaitAsync();
                     detailTasks.Add(Task.Run(async () =>
                     {
                         try
                         {
-                            var Site = MainVM.Sites.Find(x => x.Name == item.SiteName);
-                            item.Title = Site.Name;
-                            var detail = await Site.LiveSite.GetRoomDetail(item.RoomID);
+                            var site = MainVM.Sites.Find(x => x.Name == item.SiteName);
+                            if (site == null) return;
+                            var detail = await site.LiveSite.GetRoomDetail(item.RoomID);
                             uiContext.Post(state =>
                             {
-                                item.Status = detail.Status;
-                                if (!string.IsNullOrEmpty(detail.Title))
+                                if (detail.Status)
                                 {
-                                    item.Title += $" - {detail.Title}";
+                                    item.Status = detail.Status;
+                                    if (!string.IsNullOrEmpty(detail.Title))
+                                    {
+                                        item.Title += $" - {detail.Title}";
+                                    }
+                                    if (!item.UserName.Equals(detail.UserName) || !item.Photo.Equals(detail.UserAvatar))
+                                    {
+                                        item.UserName = detail.UserName;
+                                        item.Photo = detail.UserAvatar;
+                                        DatabaseHelper.UpdateHistory(item);
+                                    }
                                 }
-
                             }, null);
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            uiContext.Post(state =>
+                            uiContext.Post((state) =>
                             {
-                                Utils.ShowMessageToast($"{item.UserName}的房间: {item.RoomID}，获取信息异常。");
+                                Utils.ShowMessageToast($"{item.UserName}的房间: {item.RoomID}，获取信息异常。\n{ex.Message}");
+                            }, null);
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                            uiContext.Post(_ =>
+                            {
+                                LoadingProgress += 1.0 / Items.Count;
                             }, null);
                         }
                     }));
                 }
-                while (detailTasks.Count > 0)
-                {
-                    var task = await Task.WhenAny(detailTasks);
-                    detailTasks.Remove(task);
-                    LoadingProgress += 1d / Items.Count;
-                }
+                await Task.WhenAll(detailTasks);
             }
             catch (Exception ex)
             {
@@ -85,7 +102,6 @@ namespace AllLive.UWP.ViewModels
                 LoadingProgress = 1;
                 Loading = false;
                 LoadingLiveStatus = false;
-                ThreadPool.SetMaxThreads(worker, port);
             }
         }
 

@@ -121,6 +121,15 @@ namespace AllLive.UWP.Views
                     SettingHelper.SetValue(SettingHelper.SORT_BY_STATUS, swSortByStatus.IsOn);
                 });
             });
+            //关注、历史加载线程数
+            concurrencyLevel.Value = SettingHelper.GetValue<int>(SettingHelper.CONCURRENCY_LEVEL, 4);
+            concurrencyLevel.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                concurrencyLevel.ValueChanged += new TypedEventHandler<NumberBox, NumberBoxValueChangedEventArgs>((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.CONCURRENCY_LEVEL, Convert.ToInt32(args.NewValue));
+                });
+            });
 
             //视频解码
             cbDecoder.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_DECODER, 0);
