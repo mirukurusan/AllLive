@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Timers;
 using System.Windows.Input;
+using Windows.Networking.Connectivity;
 using Windows.UI.Core;
 
 namespace AllLive.UWP.ViewModels
@@ -265,6 +266,10 @@ namespace AllLive.UWP.ViewModels
                     }
                     //清晰度设置
                     var videoQuality = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY, Utils.IsXbox ? 1 : 0);
+                    if (IsMeteredConnection())
+                    {
+                        videoQuality = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY_METERED, Utils.IsXbox ? 1 : 0);
+                    }
                     Qualities = qualities;
                     if (Qualities != null && Qualities.Count > 0)
                     {
@@ -294,6 +299,37 @@ namespace AllLive.UWP.ViewModels
             {
                 Loading = false;
             }
+        }
+
+        /// <summary>
+        /// 判断当前活动的互联网连接是否为按流量计费的网络。
+        /// </summary>
+        /// <returns>如果是按流量计费则返回 true，否则返回 false。</returns>
+        public static bool IsMeteredConnection()
+        {
+            // 获取当前活动的互联网连接配置文件
+            ConnectionProfile internetConnectionProfile = NetworkInformation.GetInternetConnectionProfile();
+
+            // 如果没有有效的网络连接，则不认为是按流量计费
+            if (internetConnectionProfile == null)
+            {
+                return false;
+            }
+
+            // 获取连接的成本信息
+            ConnectionCost connectionCost = internetConnectionProfile.GetConnectionCost();
+
+            // 判断成本类型是否为 Variable 或 Fixed
+            // Variable: 按使用量付费，例如手机热点按MB/GB计费
+            // Fixed: 有固定的数据上限，超出后可能会限速或额外收费
+            if (connectionCost.NetworkCostType == NetworkCostType.Variable ||
+                connectionCost.NetworkCostType == NetworkCostType.Fixed)
+            {
+                return true;
+            }
+
+            // Unrestricted (不限制) 或 Unknown (未知) 则认为不是按流量计费
+            return false;
         }
 
         Timer scTimer;

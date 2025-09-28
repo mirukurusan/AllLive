@@ -159,6 +159,15 @@ namespace AllLive.UWP.Views
                     SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY, quality.SelectedIndex);
                 });
             });
+            //数据网络默认清晰度
+            quality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY_METERED, 0);
+            quality.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                quality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY_METERED, meteredQuality.SelectedIndex);
+                });
+            });
 
             //新窗口打开
             swNewWindow.IsOn = SettingHelper.GetValue<bool>(SettingHelper.NEW_WINDOW_LIVEROOM, false);
