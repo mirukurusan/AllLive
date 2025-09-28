@@ -58,6 +58,10 @@ namespace AllLive.UWP.Helper
         /// 默认清晰度
         /// </summary>
         public const string VIDEO_QUALITY = "VideoQuality";
+        /// <summary>
+        /// 数据网络默认清晰度
+        /// </summary>
+        public const string VIDEO_QUALITY_METERED = "VideoQualityMetered";
 
         /// <summary>
         /// 音量

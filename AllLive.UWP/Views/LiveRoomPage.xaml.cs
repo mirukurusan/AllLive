@@ -871,6 +871,15 @@ namespace AllLive.UWP.Views
                     Utils.ShowMessageToast("更改清晰度或刷新后生效");
                 });
             });
+            meteredQuality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY_METERED, Utils.IsXbox ? 1 : 0);
+            quality.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                quality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY_METERED, meteredQuality.SelectedIndex);
+                    Utils.ShowMessageToast("更改清晰度或刷新后生效");
+                });
+            });
 
             //弹幕开关
             var state = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.SHOW, true) ? Visibility.Visible : Visibility.Collapsed;
