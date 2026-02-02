@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Windows.Input;
 using Windows.Storage.Pickers;
 using Windows.Storage;
@@ -49,6 +50,10 @@ namespace AllLive.UWP.ViewModels
 
         public async void LoadData()
         {
+
+            int maxConcurrencyLevel = SettingHelper.GetValue(SettingHelper.CONCURRENCY_LEVEL, 4);
+            var semaphore = new SemaphoreSlim(maxConcurrencyLevel);
+
             try
             {
                 Loading = true;
@@ -59,7 +64,7 @@ namespace AllLive.UWP.ViewModels
                 IsEmpty = Items.Count == 0;
                 if (!IsEmpty)
                 {
-                    LoadLiveStatus();
+                    LoadLiveStatus(semaphore);
                 }
             }
             catch (Exception ex)
@@ -68,16 +73,18 @@ namespace AllLive.UWP.ViewModels
             }
             finally
             {
+                semaphore.Release();
                 Loading = false;
             }
         }
 
-        public void LoadLiveStatus()
+        public async void LoadLiveStatus(SemaphoreSlim semaphore)
         {
             LoaddingLiveStatus = true;
             System.Threading.Interlocked.Exchange(ref loadedCount, 0);
             foreach (var item in Items)
             {
+                await semaphore.WaitAsync();
                 LoadLiveStatus(item);
             }
         }
@@ -140,7 +147,7 @@ namespace AllLive.UWP.ViewModels
 
         public async void Input()
         {
-          
+
             // 打开文件选择器
             FileOpenPicker picker = new FileOpenPicker();
             picker.FileTypeFilter.Add(".json");
@@ -281,6 +288,6 @@ namespace AllLive.UWP.ViewModels
                 }
             }
         }
-        
+
     }
 }

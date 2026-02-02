@@ -98,6 +98,27 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center" />
                     </Grid>
+                    <Grid
+                        x:Name="ConcurrencyLevel"
+                        Margin="0,8,0,0"
+                        Padding="8,12"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock>关注加载线程数</TextBlock>
+                            <TextBlock FontSize="12" Foreground="Gray">关注列表加载线程数</TextBlock>
+                        </StackPanel>
+                        <my:NumberBox
+                            x:Name="concurrencyLevel"
+                            Width="100"
+                            HorizontalAlignment="Right"
+                            Maximum="64"
+                            Minimum="1"
+                            PlaceholderText="线程数"
+                            SpinButtonPlacementMode="Compact" />
+                    </Grid>
 
                     <TextBlock Margin="4,12" FontSize="18">播放</TextBlock>
                     <Grid

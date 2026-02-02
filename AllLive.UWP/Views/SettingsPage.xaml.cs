@@ -42,9 +42,9 @@ namespace AllLive.UWP.Views
                 SettingsXboxMode.Visibility = Visibility.Visible;
                 SettingsNewWindow.Visibility = Visibility.Collapsed;
             }
-            BiliAccount.Instance.OnAccountChanged += BiliAccount_OnAccountChanged; 
+            BiliAccount.Instance.OnAccountChanged += BiliAccount_OnAccountChanged;
             LoadUI();
-            
+
             // 页面卸载时取消事件订阅
             this.Unloaded += SettingsPage_Unloaded;
         }
@@ -128,6 +128,17 @@ namespace AllLive.UWP.Views
                     SettingHelper.SetValue(SettingHelper.MOUSE_BACK, swMouseClosePage.IsOn);
                 });
             });
+
+            //关注加载线程数
+            concurrencyLevel.Value = SettingHelper.GetValue<int>(SettingHelper.CONCURRENCY_LEVEL, 4);
+            concurrencyLevel.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                concurrencyLevel.ValueChanged += new TypedEventHandler<NumberBox, NumberBoxValueChangedEventArgs>((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.CONCURRENCY_LEVEL, Convert.ToInt32(args.NewValue));
+                });
+            });
+
             //视频解码
             cbDecoder.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_DECODER, 0);
             cbDecoder.Loaded += new RoutedEventHandler((sender, e) =>
@@ -210,7 +221,7 @@ namespace AllLive.UWP.Views
                 BtnLoginBili.Visibility = Visibility.Collapsed;
                 BtnLogoutBili.Visibility = Visibility.Visible;
             }
-           
+
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {

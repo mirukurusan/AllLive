@@ -47,6 +47,10 @@ namespace AllLive.UWP.Helper
         /// 鼠标功能键返回、关闭页面
         /// </summary>
         public const string MOUSE_BACK = "MouseBack";
+        /// <summary>
+        /// 关注加载线程数
+        /// </summary>
+        public const string CONCURRENCY_LEVEL = "ConcurrencyLevel";
 
         /// <summary>
         /// 视频解码
