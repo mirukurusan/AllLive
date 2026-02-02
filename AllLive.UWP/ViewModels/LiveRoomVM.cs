@@ -1,4 +1,4 @@
-﻿using AllLive.Core.Interface;
+using AllLive.Core.Interface;
 using AllLive.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -240,6 +240,7 @@ namespace AllLive.UWP.ViewModels
             try
             {
                 Loading = true;
+
                 Site = site;
 
                 RoomId = roomId;
@@ -264,6 +265,7 @@ namespace AllLive.UWP.ViewModels
                 FavoriteID = DatabaseHelper.CheckFavorite(RoomID, Site.Name);
                 IsFavorite = FavoriteID != null;
 
+                // 重新初始化弹幕处理器
                 LiveDanmaku = Site.GetDanmaku();
                 Messages.Add(new LiveMessage()
                 {
@@ -274,7 +276,13 @@ namespace AllLive.UWP.ViewModels
 
                 LiveDanmaku.NewMessage += LiveDanmaku_NewMessage;
                 LiveDanmaku.OnClose += LiveDanmaku_OnClose;
-                _messageProcessTimer.Start();
+                
+                // 启动消息处理定时器（仅当未运行时）
+                if (!_messageProcessTimer.Enabled)
+                {
+                    _messageProcessTimer.Start();
+                }
+                
                 await LiveDanmaku.Start(result.DanmakuData);
                 if (detail.Status)
                 {
@@ -570,7 +578,6 @@ namespace AllLive.UWP.ViewModels
         public async void Stop()
         {
             _messageProcessTimer?.Stop();
-            _messageProcessTimer?.Dispose();
             scTimer?.Stop();
             scTimer?.Dispose();
             scTimer = null;
