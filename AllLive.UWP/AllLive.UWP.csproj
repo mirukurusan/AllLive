@@ -11,7 +11,7 @@
     <AssemblyName>AllLive.UWP</AssemblyName>
     <DefaultLanguage>zh-CN</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.19041.0</TargetPlatformVersion>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.22621.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
@@ -19,16 +19,17 @@
     <WindowsXamlEnableOverview>true</WindowsXamlEnableOverview>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-    <PackageCertificateThumbprint>5F0BEA425CA140436E7E0440F480831C0792452C</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>F1C26A8C30D1B85F7B6D3CF8BAF6124950458A5C</PackageCertificateThumbprint>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-    <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
+    <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
-    <PackageCertificateKeyFile>AllLive.UWP_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>
+    </PackageCertificateKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <ILCSharedAssemblySDKRootX86 Condition="'$(ILCSharedAssemblySDKRootX86)' == '' and Exists('$(NuGetPackageRoot)runtime.win10-x86.microsoft.net.native.sharedlibrary\2.2.8-rel-30601-02\tools\SharedLibrary')">$(NuGetPackageRoot)runtime.win10-x86.microsoft.net.native.sharedlibrary\2.2.8-rel-30601-02\tools\SharedLibrary</ILCSharedAssemblySDKRootX86>
@@ -355,7 +356,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FFmpegInteropX">
-      <Version>2.0.0-pre7</Version>
+      <Version>2.0.117-uwp9</Version>
     </PackageReference>
     <PackageReference Include="FFmpegInteropX.FFmpegUWP">
       <Version>5.1.100</Version>
@@ -367,7 +368,7 @@
       <Version>8.0.6</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.13</Version>
+      <Version>6.2.14</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Toolkit.Uwp.UI">
       <Version>7.1.1</Version>
@@ -379,16 +380,13 @@
       <Version>7.1.1</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.UI.Xaml">
-      <Version>2.8.6</Version>
-    </PackageReference>
-    <PackageReference Include="QuickJS.NET">
-      <Version>0.0.3</Version>
+      <Version>2.8.7</Version>
     </PackageReference>
     <PackageReference Include="NLog">
-      <Version>4.7.12</Version>
+      <Version>5.0.0</Version>
     </PackageReference>
     <PackageReference Include="NLog.Config">
-      <Version>4.7.12</Version>
+      <Version>4.7.15</Version>
     </PackageReference>
     <PackageReference Include="NSDanmaku">
       <Version>2.2.0</Version>
@@ -400,22 +398,22 @@
       <Version>2.9.0</Version>
     </PackageReference>
     <PackageReference Include="ZXing.Net">
-      <Version>0.16.10</Version>
+      <Version>0.16.11</Version>
     </PackageReference>
     <PackageReference Include="runtime.win10-arm.Microsoft.Net.Native.SharedLibrary">
-      <Version>2.2.8-rel-31116-00</Version>
+      <Version>2.2.8-rel-33220-00</Version>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="runtime.win10-arm64.Microsoft.Net.Native.SharedLibrary">
-      <Version>2.2.8-rel-31116-00</Version>
+      <Version>2.2.8-rel-33220-00</Version>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="runtime.win10-x64.Microsoft.Net.Native.SharedLibrary">
-      <Version>2.2.8-rel-31116-00</Version>
+      <Version>2.2.8-rel-33220-00</Version>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="runtime.win10-x86.Microsoft.Net.Native.SharedLibrary">
-      <Version>2.2.8-rel-31116-00</Version>
+      <Version>2.2.8-rel-33220-00</Version>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
@@ -434,7 +432,7 @@
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
