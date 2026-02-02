@@ -1498,7 +1498,7 @@ namespace AllLive.UWP.Views
                 interopMSS = null;
             }
 
-            liveRoomVM?.Stop();
+            liveRoomVM?.Stop(clearMessages: false);
             liveRoomVM.LoadData(pageArgs.Site, liveRoomVM.RoomID);
         }
 

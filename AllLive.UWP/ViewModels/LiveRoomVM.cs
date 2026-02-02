@@ -575,7 +575,7 @@ namespace AllLive.UWP.ViewModels
             }
         }
 
-        public async void Stop()
+        public async void Stop(bool clearMessages = true)
         {
             _messageProcessTimer?.Stop();
             scTimer?.Stop();
@@ -583,7 +583,10 @@ namespace AllLive.UWP.ViewModels
             scTimer = null;
             // 清空消息队列
             while (_messageQueue.TryDequeue(out _)) { }
-            Messages.Clear();
+            if (clearMessages)
+            {
+                Messages.Clear();
+            }
             if (LiveDanmaku != null)
             {
                 LiveDanmaku.NewMessage -= LiveDanmaku_NewMessage;
