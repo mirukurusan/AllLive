@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="AllLive.UWP.Views.LiveRoomPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -401,6 +401,7 @@
                     PointerEntered="Grid_PointerEntered"
                     PointerExited="Grid_PointerExited"
                     PointerMoved="Grid_PointerMoved"
+                    PointerWheelChanged="Grid_PointerWheelChanged"
                     RequestedTheme="Dark">
                     <Grid.ContextFlyout>
                         <Flyout>

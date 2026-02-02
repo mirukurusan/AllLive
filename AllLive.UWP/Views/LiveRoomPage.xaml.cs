@@ -1,4 +1,4 @@
-﻿using AllLive.UWP.Models;
+using AllLive.UWP.Models;
 using AllLive.UWP.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -1250,6 +1250,15 @@ namespace AllLive.UWP.Views
 
             //Utils.ShowMessageToast("音量:" +  mediaElement.MediaPlayer.Volume.ToString("P"), 3000);
         }
+        private async void Grid_PointerWheelChanged(Object sender, PointerRoutedEventArgs args)
+        {
+            SliderVolume.Value += args.GetCurrentPoint(null).Properties.MouseWheelDelta / 2400f;
+            TxtToolTip.Text = "音量 : " + Math.Round(mediaPlayer.Volume * 100) + "%";
+            ToolTip.Visibility = Visibility.Visible;
+            await Task.Delay(2000);
+            ToolTip.Visibility = Visibility.Collapsed;
+        }
+
         private void HandleSlideBrightnessDelta(double delta)
         {
             double dd = Math.Abs(delta) / (this.ActualHeight * 0.8);
