@@ -1,4 +1,4 @@
-﻿using AllLive.UWP.Helper;
+using AllLive.UWP.Helper;
 using AllLive.UWP.Models;
 using System;
 using System.Collections.Generic;
@@ -82,28 +82,58 @@ namespace AllLive.UWP.ViewModels
         {
             LoaddingLiveStatus = true;
             System.Threading.Interlocked.Exchange(ref loadedCount, 0);
+            var tasks = new List<Task>();
             foreach (var item in Items)
             {
-                await semaphore.WaitAsync();
-                LoadLiveStatus(item);
+                tasks.Add(Task.Run(async () =>
+                {
+                    await semaphore.WaitAsync();
+                    try
+                    {
+                        await LoadLiveStatusAsync(item, semaphore);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }));
             }
         }
 
         int loadedCount = 0;
-        public async void LoadLiveStatus(FavoriteItem item)
+        private async Task LoadLiveStatusAsync(FavoriteItem item, SemaphoreSlim semaphore)
         {
             try
             {
+                // 标记开始加载
+                await Windows.ApplicationModel.Core.CoreApplication.MainView.Dispatcher.RunAsync(
+                    Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                {
+                    item.IsLoadingStatus = true;
+                });
+
                 var site = MainVM.Sites.FirstOrDefault(x => x.Name == item.SiteName);
                 if (site != null)
                 {
                     var status = await site.LiveSite.GetLiveStatus(item.RoomID);
-                    item.LiveStatus = status;
+                    await Windows.ApplicationModel.Core.CoreApplication.MainView.Dispatcher.RunAsync(
+                        Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        item.LiveStatus = status;
+                        item.StatusLoaded = true;
+                        item.IsLoadingStatus = false;
+                    });
                 }
             }
             catch (Exception ex)
             {
                 LogHelper.Log($"获取直播状态失败:{item.SiteName}-{item.RoomID}", LogType.ERROR, ex);
+                await Windows.ApplicationModel.Core.CoreApplication.MainView.Dispatcher.RunAsync(
+                    Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                {
+                    item.StatusLoaded = true;
+                    item.IsLoadingStatus = false;
+                });
             }
             finally
             {

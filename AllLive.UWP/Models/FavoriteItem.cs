@@ -1,4 +1,4 @@
-﻿using AllLive.Core.Models;
+using AllLive.Core.Models;
 using AllLive.UWP.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -28,6 +28,31 @@ namespace AllLive.UWP.Models
                 DoPropertyChanged("IsLive");
                 DoPropertyChanged("IsReplay");
                 DoPropertyChanged("IsLiveOrReplay");
+                DoPropertyChanged("IsOffline");
+            }
+        }
+
+        private bool _StatusLoaded = false;
+        public bool StatusLoaded
+        {
+            get { return _StatusLoaded; }
+            set
+            {
+                _StatusLoaded = value;
+                DoPropertyChanged("StatusLoaded");
+                DoPropertyChanged("IsOffline");
+            }
+        }
+
+        private bool _IsLoadingStatus = false;
+        public bool IsLoadingStatus
+        {
+            get { return _IsLoadingStatus; }
+            set
+            {
+                _IsLoadingStatus = value;
+                DoPropertyChanged("IsLoadingStatus");
+                DoPropertyChanged("IsLoading");
             }
         }
 
@@ -45,5 +70,15 @@ namespace AllLive.UWP.Models
         /// 是否回放中
         /// </summary>
         public bool IsReplay => LiveStatus == LiveStatusType.Replay;
+
+        /// <summary>
+        /// 是否正在加载
+        /// </summary>
+        public bool IsLoading => IsLoadingStatus;
+
+        /// <summary>
+        /// 是否未开播
+        /// </summary>
+        public bool IsOffline => StatusLoaded && LiveStatus == LiveStatusType.Offline;
     }
 }
