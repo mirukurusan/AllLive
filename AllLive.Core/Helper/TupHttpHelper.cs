@@ -15,7 +15,7 @@ namespace AllLive.Core.Helper
         private readonly string baseUrl = "";
         private readonly string servantName = "";
         readonly HttpClient httpClient;
-        public TupHttpHelper(string baseUrl, string servantName, string userAgent = null)
+        public TupHttpHelper(string baseUrl, string servantName, string userAgent = null, Dictionary<string, string> headers = null)
         {
             this.baseUrl = baseUrl;
             this.servantName = servantName;
@@ -24,6 +24,13 @@ namespace AllLive.Core.Helper
             if (!string.IsNullOrEmpty(userAgent))
             {
                 httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+            }
+            if (headers != null)
+            {
+                foreach (var kv in headers)
+                {
+                    httpClient.DefaultRequestHeaders.TryAddWithoutValidation(kv.Key, kv.Value);
+                }
             }
         }
 

@@ -60,6 +60,10 @@ namespace AllLive.UWP.Views
         // 标志位：是否已经清理过资源
         private bool isCleanedUp = false;
 
+        // 播放失败重试计数器
+        private int _playRetryCount = 0;
+        private const int MAX_PLAY_RETRY = 3;
+
         public LiveRoomPage()
         {
             this.InitializeComponent();
@@ -241,15 +245,15 @@ namespace AllLive.UWP.Views
         {
             await this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
-                var index = liveRoomVM.Lines.IndexOf(liveRoomVM.CurrentLine);
-                //尝试切换
-                if (index == liveRoomVM.Lines.Count - 1)
+                if (liveRoomVM.Living)
                 {
-                    liveRoomVM.Living = false;
+                    // 直播流URL过期，重新加载播放地址
+                    _playRetryCount = 0;
+                    liveRoomVM.LoadPlayUrl();
                 }
                 else
                 {
-                    liveRoomVM.CurrentLine = liveRoomVM.Lines[index + 1];
+                    liveRoomVM.Living = false;
                 }
             });
         }
@@ -297,6 +301,7 @@ namespace AllLive.UWP.Views
                 //保持屏幕常亮
                 dispRequest.RequestActive();
                 PlayerLoading.Visibility = Visibility.Collapsed;
+                _playRetryCount = 0;
                 SetMediaInfo();
             });
         }
@@ -590,7 +595,7 @@ namespace AllLive.UWP.Views
                     //var last8 = sysTs % 100000000;
                     //var currentTs = last8 > validTs ? last8 : (validTs + sysTs / 100);
                     //config.FFmpegOptions.Add("user_agent", $"HYSDK(Windows, {currentTs})");
-                    config.FFmpegOptions.Add("user_agent", "HYSDK(Windows, 30000002)_APP(pc_exe&6080100&official)_SDK(trans&2.23.0.4969)");
+                    config.FFmpegOptions.Add("user_agent", "HYSDK(Windows, 30000002)_APP(pc_exe&7060000&official)_SDK(trans&2.32.3.5646)");
                 }
                 try
                 {
@@ -625,9 +630,20 @@ namespace AllLive.UWP.Views
             var index = liveRoomVM.Lines.IndexOf(liveRoomVM.CurrentLine);
             if (index == liveRoomVM.Lines.Count - 1)
             {
-                PlayerLoading.Visibility = Visibility.Collapsed;
-                LogHelper.Log("直播加载失败", LogType.ERROR, new Exception("直播加载失败"));
-                await new MessageDialog($"啊，播放失败了，请尝试以下操作\r\n1、更换清晰度或线路\r\n2、请尝试在直播设置中打开/关闭硬解试试", "播放失败").ShowAsync();
+                // 所有线路都失败，尝试重新加载播放地址（获取新的antiCode/token）
+                if (_playRetryCount < MAX_PLAY_RETRY)
+                {
+                    _playRetryCount++;
+                    await Task.Delay(1000);
+                    liveRoomVM.LoadPlayUrl();
+                }
+                else
+                {
+                    _playRetryCount = 0;
+                    PlayerLoading.Visibility = Visibility.Collapsed;
+                    LogHelper.Log("直播加载失败", LogType.ERROR, new Exception("直播加载失败"));
+                    await new MessageDialog($"啊，播放失败了，请尝试以下操作\r\n1、更换清晰度或线路\r\n2、请尝试在直播设置中打开/关闭硬解试试", "播放失败").ShowAsync();
+                }
             }
             else
             {

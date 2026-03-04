@@ -419,15 +419,23 @@ namespace AllLive.UWP.ViewModels
         private void AddFavorite()
         {
             if (Site == null || RoomID == null || RoomID == "0" || RoomID == "") return;
-            DatabaseHelper.AddFavorite(new Models.FavoriteItem()
+            try
             {
-                Photo = Photo,
-                RoomID = RoomID,
-                SiteName = Site.Name,
-                UserName = Name
-            });
-            IsFavorite = true;
-            MessageCenter.UpdateFavorite();
+                DatabaseHelper.AddFavorite(new Models.FavoriteItem()
+                {
+                    Photo = Photo,
+                    RoomID = RoomID,
+                    SiteName = Site.Name,
+                    UserName = Name
+                });
+                FavoriteID = DatabaseHelper.CheckFavorite(RoomID, Site.Name);
+                IsFavorite = true;
+                MessageCenter.UpdateFavorite();
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex, "关注失败");
+            }
         }
         private void RemoveFavorite()
         {
@@ -435,9 +443,17 @@ namespace AllLive.UWP.ViewModels
             {
                 return;
             }
-            DatabaseHelper.DeleteFavorite(FavoriteID.Value);
-            IsFavorite = false;
-            MessageCenter.UpdateFavorite();
+            try
+            {
+                DatabaseHelper.DeleteFavorite(FavoriteID.Value);
+                FavoriteID = null;
+                IsFavorite = false;
+                MessageCenter.UpdateFavorite();
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex, "取消关注失败");
+            }
         }
 
         public async void LoadPlayUrl()

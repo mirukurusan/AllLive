@@ -45,7 +45,7 @@ namespace AllLive.UWP.ViewModels
                 Loading = true;
                 CanLoadMore = false;
                 IsEmpty = false;
-                var result = await site.LiveSite.Search(keyword);
+                var result = await site.LiveSite.Search(keyword, Page);
                 foreach (var item in result.Rooms)
                 {
                     Items.Add(item);

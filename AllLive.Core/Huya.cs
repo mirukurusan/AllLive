@@ -12,6 +12,7 @@ using System.Linq;
 using System.Web;
 using System.Collections.Specialized;
 using AllLive.Core.Models.Tars;
+using System.Security.Cryptography;
 
 namespace AllLive.Core
 {
@@ -21,7 +22,7 @@ namespace AllLive.Core
         public ILiveDanmaku GetDanmaku() => new HuyaDanmaku();
 
         private const string kUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-        private const string HYSDK_UA = "HYSDK(Windows,30000002)_APP(pc_exe&7030003&official)_SDK(trans&2.29.0.5493)";
+        private const string HYSDK_UA = "HYSDK(Windows, 30000002)_APP(pc_exe&7060000&official)_SDK(trans&2.32.3.5646)";
 
         private static readonly Dictionary<string, string> requestHeaders = new Dictionary<string, string>()
         {
@@ -37,7 +38,11 @@ namespace AllLive.Core
             {
                 if (_tupClient == null)
                 {
-                    _tupClient = new TupHttpHelper("http://wup.huya.com", "liveui", HYSDK_UA);
+                    _tupClient = new TupHttpHelper("http://wup.huya.com", "liveui", HYSDK_UA, new Dictionary<string, string>()
+                    {
+                        { "Origin", "https://m.huya.com/" },
+                        { "Referer", "https://m.huya.com/" },
+                    });
                 }
                 return _tupClient;
             }
@@ -174,7 +179,8 @@ namespace AllLive.Core
                         var sFlvUrl = item["sFlvUrl"]?.ToString() ?? "";
                         if (!string.IsNullOrEmpty(sFlvUrl))
                         {
-                            if (topSid == 0) topSid = item["lChannelId"]?.ToInt64() ?? 0;
+                            var channelId = item["lChannelId"]?.ToInt64() ?? 0;
+                            if (topSid == 0) topSid = channelId;
                             if (subSid == 0) subSid = item["lSubChannelId"]?.ToInt64() ?? 0;
 
                             huyaLines.Add(new HuyaLineModel()
@@ -185,7 +191,7 @@ namespace AllLive.Core
                                 HlsAntiCode = item["sHlsAntiCode"]?.ToString() ?? "",
                                 StreamName = item["sStreamName"]?.ToString() ?? "",
                                 CdnType = item["sCdnType"]?.ToString() ?? "",
-                                PresenterUid = topSid,
+                                PresenterUid = channelId,
                             });
                         }
                     }
@@ -304,33 +310,108 @@ namespace AllLive.Core
 
         private async Task<string> GetPlayUrl(HuyaLineModel line, int bitRate)
         {
-            // 先尝试通过 tup 获取新的 antiCode
             try
             {
-                var req = new HYGetCdnTokenReq();
-                req.cdn_type = line.CdnType;
-                req.stream_name = line.StreamName;
-                req.presenter_uid = line.PresenterUid;
-
-                var resp = await tupClient.GetAsync(req, "getCdnTokenInfo", new HYGetCdnTokenResp());
-
-                if (!string.IsNullOrEmpty(resp?.flv_anti_code) && !string.IsNullOrEmpty(resp?.stream_name))
-                {
-                    var baseUrl = line.Line;
-                    if (!baseUrl.StartsWith("http")) baseUrl = "https://" + baseUrl;
-                    var url = $"{baseUrl}/{resp.stream_name}.flv?{resp.flv_anti_code}&codec=264";
-                    if (bitRate > 0) url += $"&ratio={bitRate}";
-                    return url;
-                }
+                var antiCode = await GetCdnTokenInfoEx(line.StreamName);
+                antiCode = BuildAntiCode(line.StreamName, line.PresenterUid, antiCode);
+                var baseUrl = line.Line;
+                if (!baseUrl.StartsWith("http")) baseUrl = "https://" + baseUrl;
+                var url = $"{baseUrl}/{line.StreamName}.flv?{antiCode}&codec=264";
+                if (bitRate > 0) url += $"&ratio={bitRate}";
+                return url;
             }
-            catch { /* fallback to original antiCode */ }
+            catch
+            {
+                // fallback: 使用原始的 antiCode
+                var fallbackUrl = line.Line;
+                if (!fallbackUrl.StartsWith("http")) fallbackUrl = "https://" + fallbackUrl;
+                fallbackUrl = $"{fallbackUrl}/{line.StreamName}.flv?{line.FlvAntiCode}&codec=264";
+                if (bitRate > 0) fallbackUrl += $"&ratio={bitRate}";
+                return fallbackUrl;
+            }
+        }
 
-            // fallback: 使用原始的 antiCode
-            var fallbackUrl = line.Line;
-            if (!fallbackUrl.StartsWith("http")) fallbackUrl = "https://" + fallbackUrl;
-            fallbackUrl = $"{fallbackUrl}/{line.StreamName}.flv?{line.FlvAntiCode}&codec=264";
-            if (bitRate > 0) fallbackUrl += $"&ratio={bitRate}";
-            return fallbackUrl;
+        private async Task<string> GetCdnTokenInfoEx(string stream)
+        {
+            var tid = new HuyaUserId();
+            tid.sHuYaUA = "pc_exe&7060000&official";
+            var tReq = new HYGetCdnTokenExReq();
+            tReq.tId = tid;
+            tReq.sStreamName = stream;
+            var resp = await tupClient.GetAsync(tReq, "getCdnTokenInfoEx", new HYGetCdnTokenExResp());
+            return resp.sFlvToken;
+        }
+
+        private string BuildAntiCode(string stream, long presenterUid, string antiCode)
+        {
+            var query = HttpUtility.ParseQueryString(antiCode);
+            if (string.IsNullOrEmpty(query["fm"]))
+            {
+                return antiCode;
+            }
+
+            var ctype = query["ctype"] ?? "huya_pc_exe";
+            int platformId = 0;
+            int.TryParse(query["t"] ?? "0", out platformId);
+
+            bool isWap = platformId == 103;
+            var clacStartTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            var seqId = presenterUid + clacStartTime;
+            var secretHash = Md5Hash($"{seqId}|{ctype}|{platformId}");
+
+            var convertUid = Rotl64(presenterUid);
+            var calcUid = isWap ? presenterUid : convertUid;
+            var fm = Uri.UnescapeDataString(query["fm"]);
+            var secretPrefix = Encoding.UTF8.GetString(Convert.FromBase64String(fm)).Split('_')[0];
+            var wsTime = query["wsTime"];
+            var secretStr = $"{secretPrefix}_{calcUid}_{stream}_{secretHash}_{wsTime}";
+
+            var wsSecret = Md5Hash(secretStr);
+
+            var rnd = new Random();
+            var ct = (long)((long.Parse(wsTime, System.Globalization.NumberStyles.HexNumber) + rnd.NextDouble()) * 1000);
+            var uuid = ((long)((ct % 1e10 + rnd.NextDouble()) * 1e3 % 0xffffffff)).ToString();
+
+            var sb = new StringBuilder();
+            sb.Append($"wsSecret={wsSecret}");
+            sb.Append($"&wsTime={wsTime}");
+            sb.Append($"&seqid={seqId}");
+            sb.Append($"&ctype={ctype}");
+            sb.Append($"&ver=1");
+            sb.Append($"&fs={query["fs"]}");
+            sb.Append($"&fm={Uri.EscapeDataString(query["fm"])}");
+            sb.Append($"&t={platformId}");
+            if (isWap)
+            {
+                sb.Append($"&uid={presenterUid}");
+                sb.Append($"&uuid={uuid}");
+            }
+            else
+            {
+                sb.Append($"&u={convertUid}");
+            }
+
+            return sb.ToString();
+        }
+
+        private static long Rotl64(long t)
+        {
+            var low = t & 0xFFFFFFFF;
+            var rotatedLow = ((low << 8) | ((low >> 24) & 0xFF)) & 0xFFFFFFFF;
+            var high = t & ~0xFFFFFFFF;
+            return high | rotatedLow;
+        }
+
+        private static string Md5Hash(string input)
+        {
+            using (var md5 = MD5.Create())
+            {
+                var bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+                var sb = new StringBuilder();
+                foreach (var b in bytes) sb.Append(b.ToString("x2"));
+                return sb.ToString();
+            }
         }
 
         public async Task<LiveStatusType> GetLiveStatus(object roomId)
