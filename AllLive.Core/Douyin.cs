@@ -24,7 +24,8 @@ namespace AllLive.Core
         public string Name => "抖音直播";
         public ILiveDanmaku GetDanmaku() => new DouyinDanmaku();
 
-        private const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0";
+        // 使用 QQBrowser User-Agent（参考 DouyinLiveRecorder / dart_simple_live）
+        private const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 Core/1.116.567.400 QQBrowser/19.7.6764.400";
         private const string REFERER = "https://live.douyin.com";
         private const string AUTHORITY = "live.douyin.com";
         
@@ -40,57 +41,14 @@ namespace AllLive.Core
 
         private async Task<Dictionary<string, string>> GetRequestHeaders(bool forceRefresh = false)
         {
+            // 如果已有Cookie且不需要强制刷新，直接返回
             if (!forceRefresh && (headers.ContainsKey("Cookie") || headers.ContainsKey("cookie")))
             {
                 return headers;
             }
             
-            // Force refresh: clear old Cookie to avoid using expired __ac_nonce
-            if (forceRefresh)
-            {
-                headers.Remove("Cookie");
-                headers.Remove("cookie");
-            }
-            
-            try
-            {
-                // Create new headers without Cookie to ensure getting fresh Cookie
-                var requestHeaders = new Dictionary<string, string>
-                {
-                    { "User-Agent", USER_AGENT },
-                    { "Referer", REFERER },
-                    { "Authority", AUTHORITY }
-                };
-                
-                var resp = await HttpUtil.Head("https://live.douyin.com", requestHeaders);
-                var cookieBuilder = new StringBuilder();
-                foreach (var item in resp.Headers.GetValues("Set-Cookie"))
-                {
-                    var cookie = item.Split(';')[0];
-                    if (cookie.Contains("ttwid") || cookie.Contains("__ac_nonce") || cookie.Contains("msToken"))
-                    {
-                        cookieBuilder.Append(cookie).Append(';');
-                    }
-                }
-                if (cookieBuilder.Length > 0)
-                {
-                    headers["Cookie"] = cookieBuilder.ToString().TrimEnd(';');
-                }
-                else
-                {
-                    // 如果无法获取Cookie，使用默认Cookie（参考pure_live项目）
-                    headers["Cookie"] = DEFAULT_COOKIE;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                // 发生异常时使用默认Cookie
-                if (!headers.ContainsKey("Cookie"))
-                {
-                    headers["Cookie"] = DEFAULT_COOKIE;
-                }
-            }
+            // 直接使用默认Cookie（只需要ttwid即可获取所有画质，参考dart_simple_live）
+            headers["Cookie"] = DEFAULT_COOKIE;
             return headers;
         }
 
@@ -505,15 +463,9 @@ namespace AllLive.Core
 
         private async Task<JToken> GetRoomDataHtml(string webRid)
         {
-            var dyCookie = await GetWebCookie(webRid);
+            var requestHeaders = await GetRequestHeaders();
             var resp = await HttpUtil.GetString($"https://live.douyin.com/{webRid}",
-                headers: new Dictionary<string, string>
-                {
-                    { "User-Agent", USER_AGENT },
-                    { "Referer", REFERER },
-                    { "Authority", AUTHORITY },
-                    { "Cookie", dyCookie }
-                }
+                headers: requestHeaders
             );
             Regex regex = new Regex("\\{\\\\\"state\\\\\":\\{\\\\\"appStore.*?\\]\\\\n", RegexOptions.Singleline);
             Match match = regex.Match(resp);
@@ -533,26 +485,23 @@ namespace AllLive.Core
                     {"app_name","douyin_web" },
                     {"live_id","1" },
                     {"device_platform","web" },
-                    {"enter_from","web_live" },
-                    {"web_rid",webRid },
-                    {"room_id_str","" },
-                    {"enter_source","" },
-                    {"Room-Enter-User-Login-Ab","0" },
-                    {"is_need_double_stream","false" },
-                    {"cookie_enabled","true" },
-                    {"screen_width","1980" },
-                    {"screen_height","1080" },
+                    {"language","zh-CN" },
                     {"browser_language","zh-CN" },
                     {"browser_platform","Win32" },
-                    {"browser_name","Edge" },
+                    {"browser_name","Chrome" },
                     {"browser_version","125.0.0.0" },
-                    {"a_bogus","0" }
+                    {"web_rid",webRid },
+                    {"msToken","" }
                 };
             var url = $"https://live.douyin.com/webcast/room/web/enter/?{Utils.BuildQueryString(reqParams)}";
 
+            var requestHeaders = await GetRequestHeaders();
+            // 使用动态 Referer（包含房间号，参考 DouyinLiveRecorder / dart_simple_live）
+            requestHeaders["Referer"] = $"https://live.douyin.com/{webRid}";
+
             var requestUrl = await GetABougs(url);
             var resp = await HttpUtil.GetString(requestUrl,
-                headers: await GetRequestHeaders()
+                headers: requestHeaders
             );
 
 
