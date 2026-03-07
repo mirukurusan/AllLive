@@ -32,6 +32,11 @@ namespace AllLive.Core
         // 默认Cookie，只需要ttwid即可获取所有画质（参考pure_live项目）
         private const string DEFAULT_COOKIE = "ttwid=1%7CB1qls3GdnZhUov9o2NxOMxxYS2ff6OSvEWbv0ytbES4%7C1680522049%7C280d802d6d478e3e78d0c807f7c487e7ffec0ae4e5fdd6a0fe74c3c6af149511";
 
+        /// <summary>
+        /// 用户设置的Cookie（登录后获取，用于搜索等需要认证的API）
+        /// </summary>
+        public string UserCookie { get; set; } = "";
+
         Dictionary<string, string> headers = new Dictionary<string, string>
         {
             { "User-Agent", USER_AGENT },
@@ -47,8 +52,15 @@ namespace AllLive.Core
                 return headers;
             }
             
-            // 直接使用默认Cookie（只需要ttwid即可获取所有画质，参考dart_simple_live）
-            headers["Cookie"] = DEFAULT_COOKIE;
+            // 优先使用用户登录的Cookie，否则使用默认Cookie
+            if (!string.IsNullOrEmpty(UserCookie))
+            {
+                headers["Cookie"] = UserCookie;
+            }
+            else
+            {
+                headers["Cookie"] = DEFAULT_COOKIE;
+            }
             return headers;
         }
 
@@ -613,41 +625,167 @@ namespace AllLive.Core
         }
 
         /// <summary>
-        /// 搜索直播间 - 支持房间号、直播链接、短链接
+        /// 搜索直播间 - 支持关键词搜索、房间号、直播链接、短链接
         /// </summary>
         public async Task<LiveSearchResult> Search(string keyword, int page = 1)
         {
-            // 只处理第一页，因为是单个房间查询
-            if (page > 1)
+            if (string.IsNullOrWhiteSpace(keyword))
             {
                 return new LiveSearchResult() { HasMore = false, Rooms = new List<LiveRoomItem>() };
             }
 
-            var roomId = await ParseRoomId(keyword);
-            if (string.IsNullOrEmpty(roomId))
+            keyword = keyword.Trim();
+
+            // 如果输入是纯数字或链接，走精确房间号解析
+            if (Regex.IsMatch(keyword, @"^\d+$") || keyword.Contains("douyin.com"))
             {
+                if (page > 1)
+                {
+                    return new LiveSearchResult() { HasMore = false, Rooms = new List<LiveRoomItem>() };
+                }
+
+                var roomId = await ParseRoomId(keyword);
+                if (!string.IsNullOrEmpty(roomId))
+                {
+                    try
+                    {
+                        var detail = await GetRoomDetail(roomId);
+                        return new LiveSearchResult()
+                        {
+                            HasMore = false,
+                            Rooms = new List<LiveRoomItem>
+                            {
+                                new LiveRoomItem()
+                                {
+                                    RoomID = detail.RoomID,
+                                    Title = detail.Title,
+                                    Cover = detail.Cover,
+                                    UserName = detail.UserName,
+                                    Online = detail.Online,
+                                }
+                            }
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine($"[Search] 获取房间信息失败: {ex.Message}");
+                    }
+                }
                 return new LiveSearchResult() { HasMore = false, Rooms = new List<LiveRoomItem>() };
             }
 
+            // 关键词搜索 API
+            return await SearchByKeyword(keyword, page);
+        }
+
+        /// <summary>
+        /// 通过关键词搜索直播间
+        /// </summary>
+        private async Task<LiveSearchResult> SearchByKeyword(string keyword, int page)
+        {
             try
             {
-                var detail = await GetRoomDetail(roomId);
-                var items = new List<LiveRoomItem>
-                {
-                    new LiveRoomItem()
-                    {
-                        RoomID = detail.RoomID,
-                        Title = detail.Title,
-                        Cover = detail.Cover,
-                        UserName = detail.UserName,
-                        Online = detail.Online,
-                    }
+                var reqParams = new Dictionary<string, string> {
+                    {"device_platform", "webapp"},
+                    {"aid", "6383"},
+                    {"channel", "channel_pc_web"},
+                    {"search_channel", "aweme_live"},
+                    {"keyword", keyword},
+                    {"search_source", "switch_tab"},
+                    {"query_correct_type", "1"},
+                    {"is_filter_search", "0"},
+                    {"from_group_id", ""},
+                    {"offset", ((page - 1) * 10).ToString()},
+                    {"count", "10"},
+                    {"pc_client_type", "1"},
+                    {"version_code", "170400"},
+                    {"version_name", "17.4.0"},
+                    {"cookie_enabled", "true"},
+                    {"screen_width", "1980"},
+                    {"screen_height", "1080"},
+                    {"browser_language", "zh-CN"},
+                    {"browser_platform", "Win32"},
+                    {"browser_name", "Edge"},
+                    {"browser_version", "125.0.0.0"},
+                    {"browser_online", "true"},
+                    {"engine_name", "Blink"},
+                    {"engine_version", "125.0.0.0"},
+                    {"os_name", "Windows"},
+                    {"os_version", "10"},
+                    {"cpu_core_num", "12"},
+                    {"device_memory", "8"},
+                    {"platform", "PC"},
+                    {"downlink", "10"},
+                    {"effective_type", "4g"},
+                    {"round_trip_time", "100"},
+                    {"msToken", ""},
                 };
-                return new LiveSearchResult() { HasMore = false, Rooms = items };
+                var url = $"https://www.douyin.com/aweme/v1/web/live/search/?{Utils.BuildQueryString(reqParams)}";
+
+                var requestUrl = await GetABougs(url);
+                var searchHeaders = new Dictionary<string, string>
+                {
+                    {"Authority", "www.douyin.com"},
+                    {"Accept", "application/json, text/plain, */*"},
+                    {"Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8"},
+                    {"Referer", $"https://www.douyin.com/search/{Uri.EscapeDataString(keyword)}?type=live"},
+                    {"User-Agent", USER_AGENT},
+                };
+
+                // 搜索API需要用户Cookie
+                if (!string.IsNullOrEmpty(UserCookie))
+                {
+                    searchHeaders["Cookie"] = UserCookie;
+                }
+                else
+                {
+                    searchHeaders["Cookie"] = DEFAULT_COOKIE;
+                }
+
+                var resp = await HttpUtil.GetString(requestUrl, headers: searchHeaders);
+
+                if (string.IsNullOrWhiteSpace(resp) || !resp.TrimStart().StartsWith("{"))
+                {
+                    Trace.WriteLine($"[Search] 搜索返回无效响应");
+                    return new LiveSearchResult() { HasMore = false, Rooms = new List<LiveRoomItem>() };
+                }
+
+                var json = JObject.Parse(resp);
+                var items = new List<LiveRoomItem>();
+                var dataArray = json["data"] as JArray;
+                if (dataArray != null)
+                {
+                    foreach (var item in dataArray)
+                    {
+                        try
+                        {
+                            var rawData = JObject.Parse(item["lives"]["rawdata"].ToString());
+                            var roomItem = new LiveRoomItem()
+                            {
+                                RoomID = rawData["owner"]["web_rid"].ToString(),
+                                Title = rawData["title"].ToString(),
+                                Cover = rawData["cover"]["url_list"][0].ToString(),
+                                UserName = rawData["owner"]["nickname"].ToString(),
+                                Online = rawData["stats"]?["total_user"]?.ToObject<int>() ?? 0,
+                            };
+                            items.Add(roomItem);
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace.WriteLine($"[Search] 解析搜索结果项失败: {ex.Message}");
+                        }
+                    }
+                }
+
+                return new LiveSearchResult()
+                {
+                    HasMore = items.Count >= 10,
+                    Rooms = items
+                };
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"[Search] 获取房间信息失败: {ex.Message}");
+                Trace.WriteLine($"[Search] 关键词搜索失败: {ex.Message}");
                 return new LiveSearchResult() { HasMore = false, Rooms = new List<LiveRoomItem>() };
             }
         }

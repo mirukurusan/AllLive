@@ -222,6 +222,13 @@ namespace AllLive.UWP.Views
                 BtnLogoutBili.Visibility = Visibility.Visible;
             }
 
+            if (DouyinAccount.Instance.Logined)
+            {
+                txtDouyin.Text = "已登录";
+                BtnLoginDouyin.Visibility = Visibility.Collapsed;
+                BtnLogoutDouyin.Visibility = Visibility.Visible;
+            }
+
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -287,6 +294,31 @@ namespace AllLive.UWP.Views
             BtnLoginBili.Visibility = Visibility.Visible;
             BtnLogoutBili.Visibility = Visibility.Collapsed;
 
+        }
+
+        private async void BtnLoginDouyin_Click(object sender, RoutedEventArgs e)
+        {
+            if (DouyinAccount.Instance.Logined)
+            {
+                Utils.ShowMessageToast("已登录");
+                return;
+            }
+            var dialog = new AllLive.UWP.Controls.DouyinLoginDialog();
+            await dialog.ShowAsync();
+            if (dialog.LoginSuccess)
+            {
+                txtDouyin.Text = "已登录";
+                BtnLoginDouyin.Visibility = Visibility.Collapsed;
+                BtnLogoutDouyin.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void BtnLogoutDouyin_Click(object sender, RoutedEventArgs e)
+        {
+            DouyinAccount.Instance.Logout();
+            txtDouyin.Text = "登录后可搜索直播间";
+            BtnLoginDouyin.Visibility = Visibility.Visible;
+            BtnLogoutDouyin.Visibility = Visibility.Collapsed;
         }
     }
 }

@@ -144,6 +144,9 @@
     <Compile Include="Controls\BiliLoginDialog.xaml.cs">
       <DependentUpon>BiliLoginDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\DouyinLoginDialog.xaml.cs">
+      <DependentUpon>DouyinLoginDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\MessageToast.xaml.cs">
       <DependentUpon>MessageToast.xaml</DependentUpon>
     </Compile>
@@ -156,6 +159,7 @@
     <Compile Include="Converters\ImageCovert.cs" />
     <Compile Include="Converters\NumberToStringConvert.cs" />
     <Compile Include="Helper\BiliAccount.cs" />
+    <Compile Include="Helper\DouyinAccount.cs" />
     <Compile Include="Helper\ExceptionHandler.cs" />
     <Compile Include="Helper\DatabaseHelper.cs" />
     <Compile Include="Helper\LogHelper.cs" />
@@ -298,6 +302,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Controls\BiliLoginDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\DouyinLoginDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

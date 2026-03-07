@@ -246,6 +246,39 @@
                             注销登录
                         </Button>
                     </Grid>
+                    <Grid
+                        Margin="0,8,0,0"
+                        Padding="8,12"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock>抖音</TextBlock>
+                                <TextBlock
+                                    x:Name="txtDouyin"
+                                    FontSize="12"
+                                    Foreground="Gray">
+                                    登录后可搜索直播间
+                                </TextBlock>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Button
+                            x:Name="BtnLoginDouyin"
+                            HorizontalAlignment="Right"
+                            Click="BtnLoginDouyin_Click">
+                            立即登录
+                        </Button>
+                        <Button
+                            x:Name="BtnLogoutDouyin"
+                            HorizontalAlignment="Right"
+                            Click="BtnLogoutDouyin_Click"
+                            Visibility="Collapsed">
+                            注销登录
+                        </Button>
+                    </Grid>
                     <TextBlock Margin="4,12" FontSize="18">互动</TextBlock>
                     <Grid
                         Padding="8,12"

@@ -1,0 +1,28 @@
+<ContentDialog
+    x:Class="AllLive.UWP.Controls.DouyinLoginDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="登录抖音"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
+    PrimaryButtonText="完成登录"
+    SecondaryButtonClick="ContentDialog_SecondaryButtonClick"
+    SecondaryButtonText="取消"
+    mc:Ignorable="d">
+
+    <StackPanel>
+        <TextBlock
+            x:Name="txtStatus"
+            Margin="0,0,0,8"
+            FontSize="12"
+            Foreground="Gray"
+            Text="请在下方页面中登录抖音账号，登录成功后点击「完成登录」" />
+        <WebView
+            x:Name="webView"
+            Width="500"
+            Height="600"
+            NavigationStarting="WebView_NavigationStarting"
+            NavigationCompleted="WebView_NavigationCompleted" />
+    </StackPanel>
+</ContentDialog>

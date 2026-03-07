@@ -87,6 +87,7 @@ namespace AllLive.UWP
         {
             base.OnNavigatedTo(e);
             _ = BiliAccount.Instance.InitLoginInfo();
+            DouyinAccount.Instance.InitLoginInfo();
             _ = CheckUpdate();
         }
 

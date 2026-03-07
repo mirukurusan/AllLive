@@ -101,6 +101,10 @@ namespace AllLive.UWP.Helper
         /// </summary>
         public const string XBOX_MODE = "XboxMode";
 
+        /// <summary>
+        /// 抖音Cookie
+        /// </summary>
+        public const string DOUYIN_COOKIE = "DouyinCookie";
         public class LiveDanmaku
         {
             public const string TOP_MARGIN = "LiveTopMargin";
