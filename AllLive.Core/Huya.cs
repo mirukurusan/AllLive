@@ -427,22 +427,20 @@ namespace AllLive.Core
                 };
                 var resultText = await HttpUtil.GetString($"https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid={roomId}&showSecret=1", headers);
                 var result = JObject.Parse(resultText);
-                
+
                 if (result["status"]?.ToInt32() != 200)
                 {
                     System.Diagnostics.Trace.WriteLine($"Huya.GetLiveStatus: API returned status {result["status"]} for room {roomId}");
                     return LiveStatusType.Offline;
                 }
-                
+
                 var liveStatus = result["data"]?["liveStatus"]?.ToString()?.ToUpper();
                 System.Diagnostics.Trace.WriteLine($"Huya.GetLiveStatus: room {roomId} status = {liveStatus}");
-                
+
                 switch (liveStatus)
                 {
                     case "ON":
                         return LiveStatusType.Live;
-                    case "REPLAY":
-                        return LiveStatusType.Replay;
                     default:
                         return LiveStatusType.Offline;
                 }

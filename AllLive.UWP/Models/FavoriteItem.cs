@@ -21,9 +21,9 @@ namespace AllLive.UWP.Models
         public LiveStatusType LiveStatus
         {
             get { return _LiveStatus; }
-            set 
-            { 
-                _LiveStatus = value; 
+            set
+            {
+                _LiveStatus = value;
                 DoPropertyChanged("LiveStatus");
                 DoPropertyChanged("IsLive");
                 DoPropertyChanged("IsReplay");
@@ -57,19 +57,9 @@ namespace AllLive.UWP.Models
         }
 
         /// <summary>
-        /// 是否正在直播（直播或回放）
-        /// </summary>
-        public bool IsLiveOrReplay => LiveStatus == LiveStatusType.Live || LiveStatus == LiveStatusType.Replay;
-
-        /// <summary>
         /// 是否正在直播
         /// </summary>
         public bool IsLive => LiveStatus == LiveStatusType.Live;
-
-        /// <summary>
-        /// 是否回放中
-        /// </summary>
-        public bool IsReplay => LiveStatus == LiveStatusType.Replay;
 
         /// <summary>
         /// 是否正在加载

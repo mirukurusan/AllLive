@@ -350,8 +350,6 @@ namespace AllLive.Core
             {
                 case 1:
                     return LiveStatusType.Live;
-                case 2:
-                    return LiveStatusType.Replay;
                 default:
                     return LiveStatusType.Offline;
             }

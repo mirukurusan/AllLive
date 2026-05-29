@@ -13,9 +13,5 @@ namespace AllLive.Core.Models
         /// 直播中
         /// </summary>
         Live = 1,
-        /// <summary>
-        /// 回放中
-        /// </summary>
-        Replay = 2
     }
 }

@@ -46,7 +46,7 @@ namespace AllLive.Core
                         Name = element["cate2Name"].ToString(),
                     });
                 });
-               
+
                 categories.Add(
                   new LiveCategory()
                   {
@@ -61,7 +61,7 @@ namespace AllLive.Core
             return categories;
         }
 
-      
+
         public async Task<LiveCategoryResult> GetCategoryRooms(LiveSubCategory category, int page = 1)
         {
             LiveCategoryResult categoryResult = new LiveCategoryResult()
@@ -119,7 +119,7 @@ namespace AllLive.Core
                 { "user-agent","Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/114.0.0.0" },
             });
             var crptext = JObject.Parse(jsEncResult)["data"][$"room{roomId}"].ToString();
-           
+
 
             return new LiveRoomDetail()
             {
@@ -157,7 +157,7 @@ namespace AllLive.Core
             html = Regex.Match(html, @"(vdwdae325w_64we[\s\S]*function ub98484234[\s\S]*?)function").Groups[1].Value;
             html = Regex.Replace(html, @"eval.*?;}", "strc;}");
             var vaa= Environment.CurrentDirectory ;
-            
+
 #if WINDOWS_UWP
             return await DouyuSignRuntime.Current.GenerateSignAsync(html, rid);
 #else
@@ -283,11 +283,9 @@ namespace AllLive.Core
             var roomInfo = await GetRoomInfo(roomId.ToString());
             var showStatus = roomInfo["show_status"].ToInt32();
             var videoLoop = roomInfo["videoLoop"].ToInt32();
-            
+
             if (showStatus == 1 && videoLoop != 1)
                 return LiveStatusType.Live;
-            if (videoLoop == 1)
-                return LiveStatusType.Replay;
             return LiveStatusType.Offline;
         }
         public Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId)
