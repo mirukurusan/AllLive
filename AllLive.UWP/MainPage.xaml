@@ -35,7 +35,6 @@
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem
                     Content="推荐"
-                    IsSelected="True"
                     Tag="RecomendPage">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE10F;" />
@@ -46,7 +45,7 @@
                         <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE74C;" />
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
-                <muxc:NavigationViewItem Content="关注" Tag="FavoritePage">
+                <muxc:NavigationViewItem Content="关注" Tag="FavoritePage" IsSelected="True">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xEB51;" />
                     </muxc:NavigationViewItem.Icon>
