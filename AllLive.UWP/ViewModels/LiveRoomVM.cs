@@ -276,13 +276,13 @@ namespace AllLive.UWP.ViewModels
 
                 LiveDanmaku.NewMessage += LiveDanmaku_NewMessage;
                 LiveDanmaku.OnClose += LiveDanmaku_OnClose;
-                
+
                 // 启动消息处理定时器（仅当未运行时）
                 if (!_messageProcessTimer.Enabled)
                 {
                     _messageProcessTimer.Start();
                 }
-                
+
                 await LiveDanmaku.Start(result.DanmakuData);
                 if (detail.Status)
                 {
@@ -582,7 +582,7 @@ namespace AllLive.UWP.ViewModels
                 // 屏蔽词过滤在入队前处理
                 if (settingVM.ShieldWords != null && settingVM.ShieldWords.Count > 0)
                 {
-                    if (settingVM.ShieldWords.FirstOrDefault(x => e.Message.Contains(x)) != null) return;
+                    if (settingVM.ShieldWords.FirstOrDefault(x => e.Message.Contains(x) || e.UserName.Contains(x)) != null) return;
                 }
 
                 // 普通弹幕加入队列批量处理
