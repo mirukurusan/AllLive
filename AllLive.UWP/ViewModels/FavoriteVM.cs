@@ -116,10 +116,22 @@ namespace AllLive.UWP.ViewModels
                 if (site != null)
                 {
                     var status = await site.LiveSite.GetLiveStatus(item.RoomID);
+                    var liveRoomDetail = await site.LiveSite.GetRoomDetail(item.RoomID);
                     await Windows.ApplicationModel.Core.CoreApplication.MainView.Dispatcher.RunAsync(
                         Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         item.LiveStatus = status;
+                        // 更新头像和用户名（从服务器获取最新信息）
+                        if (!string.IsNullOrEmpty(liveRoomDetail.UserAvatar))
+                        {
+                            item.Photo = liveRoomDetail.UserAvatar;
+                        }
+                        if (!string.IsNullOrEmpty(liveRoomDetail.UserName))
+                        {
+                            item.UserName = liveRoomDetail.UserName;
+                        }
+                        // 持久化到数据库
+                        DatabaseHelper.UpdateFavorite(item.ID, item.UserName, item.Photo);
                         item.StatusLoaded = true;
                         item.IsLoadingStatus = false;
                     });

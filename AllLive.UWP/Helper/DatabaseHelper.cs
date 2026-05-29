@@ -26,16 +26,16 @@ namespace AllLive.UWP.Helper
             }.ToString();
             db = new SqliteConnection(connectionString);
             db.Open();
-            
+
             string tableCommand = @"CREATE TABLE IF NOT EXISTS Favorite (
-id INTEGER PRIMARY KEY AUTOINCREMENT, 
+id INTEGER PRIMARY KEY AUTOINCREMENT,
 user_name TEXT,
 site_name TEXT,
 photo TEXT,
 room_id TEXT);
 
 CREATE TABLE IF NOT EXISTS History (
-id INTEGER PRIMARY KEY AUTOINCREMENT, 
+id INTEGER PRIMARY KEY AUTOINCREMENT,
 user_name TEXT,
 site_name TEXT,
 photo TEXT,
@@ -84,6 +84,21 @@ watch_time DATETIME);
             }
             return (long)result;
         }
+
+        public static void UpdateFavorite(long id, string userName, string photo)
+        {
+            System.Diagnostics.Trace.WriteLine($"[DatabaseHelper.UpdateFavorite] 更新收藏: id={id}");
+            using (var command = new SqliteCommand())
+            {
+                command.Connection = db;
+                command.CommandText = "UPDATE Favorite SET user_name=@user_name, photo=@photo WHERE id=@id";
+                command.Parameters.AddWithValue("@user_name", userName ?? "");
+                command.Parameters.AddWithValue("@photo", photo ?? "");
+                command.Parameters.AddWithValue("@id", id);
+                command.ExecuteNonQuery();
+            }
+        }
+
         public static void DeleteFavorite(long id)
         {
             SqliteCommand command = new SqliteCommand();
@@ -135,7 +150,7 @@ watch_time DATETIME);
             command.Connection = db;
             var hisId = CheckHistory(item.RoomID, item.SiteName);
             if (hisId != null)
-            {  
+            {
                 //更新时间和用户信息
                 command.CommandText = "UPDATE History SET watch_time=@time, user_name=@user_name, photo=@photo WHERE room_id=@room_id and site_name=@site_name";
                 command.Parameters.AddWithValue("@site_name", item.SiteName);
@@ -144,10 +159,10 @@ watch_time DATETIME);
                 command.Parameters.AddWithValue("@user_name", item.UserName ?? "");
                 command.Parameters.AddWithValue("@photo", item.Photo ?? "");
                 command.ExecuteNonQuery();
-              
+
                 return;
             }
-          
+
             command.CommandText = "INSERT INTO History VALUES (NULL,@user_name,@site_name, @photo, @room_id,@time);";
             command.Parameters.AddWithValue("@user_name", item.UserName ?? "");
             command.Parameters.AddWithValue("@site_name", item.SiteName);
@@ -183,7 +198,7 @@ watch_time DATETIME);
             command.CommandText = "DELETE FROM History WHERE id=@id";
             command.Parameters.AddWithValue("@id", id);
             command.ExecuteNonQuery();
-          
+
         }
         public static void DeleteHistory()
         {
