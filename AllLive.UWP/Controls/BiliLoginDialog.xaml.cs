@@ -17,7 +17,6 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using System.Timers;
 using AllLive.Core.Danmaku.Proto;
-using NLog.Fluent;
 using System.Xml.Linq;
 
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“内容对话框”项模板
