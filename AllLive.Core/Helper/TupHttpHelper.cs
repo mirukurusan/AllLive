@@ -23,7 +23,7 @@ namespace AllLive.Core.Helper
             httpClient.BaseAddress = new Uri(baseUrl);
             if (!string.IsNullOrEmpty(userAgent))
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", userAgent);
             }
             if (headers != null)
             {

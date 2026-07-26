@@ -22,6 +22,7 @@ namespace AllLive.Core
         public ILiveDanmaku GetDanmaku() => new HuyaDanmaku();
 
         private const string kUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+        private const string kMobileUserAgent = "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36 Edg/117.0.0.0";
         private const string HYSDK_UA = "HYSDK(Windows, 30000002)_APP(pc_exe&7060000&official)_SDK(trans&2.32.3.5646)";
 
         private static readonly Dictionary<string, string> requestHeaders = new Dictionary<string, string>()
@@ -48,6 +49,25 @@ namespace AllLive.Core
             }
         }
 
+        private TupHttpHelper _messageBoardClient;
+        private TupHttpHelper messageBoardClient
+        {
+            get
+            {
+                if (_messageBoardClient == null)
+                {
+                    _messageBoardClient = new TupHttpHelper("http://wup.huya.com", "wupui", HYSDK_UA, new Dictionary<string, string>()
+                    {
+                        { "Origin", "https://m.huya.com/" },
+                        { "Referer", "https://m.huya.com/" },
+                    });
+                }
+                return _messageBoardClient;
+            }
+        }
+
+        private DateTime? _lastHeadlineEmptyLogAt;
+
         public async Task<List<LiveCategory>> GetCategores()
         {
             List<LiveCategory> categories = new List<LiveCategory>() {
@@ -70,15 +90,38 @@ namespace AllLive.Core
             var obj = JObject.Parse(result);
             foreach (var item in obj["data"])
             {
+                var gid = ResolveGid(item["gid"]);
                 subs.Add(new LiveSubCategory()
                 {
-                    Pic = $"https://huyaimg.msstatic.com/cdnimage/game/{item["gid"].ToString()}-MS.jpg",
-                    ID = item["gid"].ToString(),
+                    Pic = $"https://huyaimg.msstatic.com/cdnimage/game/{gid}-MS.jpg",
+                    ID = gid,
                     ParentID = id,
                     Name = item["gameFullName"].ToString(),
                 });
             }
             return subs;
+        }
+
+        /// <summary>
+        /// 解析虎牙 gid 字段，兼容多种数据类型
+        /// </summary>
+        private static string ResolveGid(JToken gidToken)
+        {
+            if (gidToken == null) return "";
+
+            // Map 类型: {"value": "1,2,3"}
+            if (gidToken is JObject gidObj)
+            {
+                var value = gidObj["value"]?.ToString();
+                return value?.Split(',')[0] ?? "";
+            }
+            // 浮点数类型
+            if (gidToken.Type == JTokenType.Float)
+            {
+                return ((int)(double)gidToken).ToString();
+            }
+            // 整数或字符串
+            return gidToken.ToString();
         }
 
         public async Task<LiveCategoryResult> GetCategoryRooms(LiveSubCategory category, int page = 1)
@@ -129,59 +172,143 @@ namespace AllLive.Core
             return categoryResult;
         }
 
-        public async Task<LiveRoomDetail> GetRoomDetail(object roomId)
+        /// <summary>
+        /// 通过抓取虎牙移动端页面获取房间信息 (解析 window.HNF_GLOBAL_INIT)
+        /// </summary>
+        private async Task<JObject> GetRoomInfo(string roomId)
         {
             var headers = new Dictionary<string, string>()
             {
-                { "Accept", "*/*" },
-                { "Origin", "https://www.huya.com" },
-                { "Referer", "https://www.huya.com/" },
-                { "User-Agent", kUserAgent },
+                { "User-Agent", kMobileUserAgent },
             };
-            var resultText = await HttpUtil.GetString($"https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid={roomId}&showSecret=1", headers);
-            var result = JObject.Parse(resultText);
 
-            if (result["status"]?.ToInt32() != 200 || result["data"]?["stream"] == null)
+            var html = await HttpUtil.GetString($"https://m.huya.com/{roomId}", headers);
+
+            // 提取 window.HNF_GLOBAL_INIT 中的 JSON
+            var match = Regex.Match(html, @"window\.HNF_GLOBAL_INIT\s*=\s*\{[\s\S]*?\}[\s\S]*?</script>", RegexOptions.None);
+            if (!match.Success)
+            {
+                System.Diagnostics.Trace.WriteLine($"Huya.GetRoomInfo: HNF_GLOBAL_INIT not found for room {roomId}");
+                return null;
+            }
+
+            var jsonText = match.Value;
+            jsonText = Regex.Replace(jsonText, @"window\.HNF_GLOBAL_INIT\s*=\s*", "");
+            jsonText = Regex.Replace(jsonText, @"</script>", "");
+            // 替换函数定义为空字符串
+            jsonText = Regex.Replace(jsonText, @"function\s*\([^)]*\)\s*\{[\s\S]*?\}", "\"\"");
+
+            JObject jsonObj;
+            try
+            {
+                jsonObj = JObject.Parse(jsonText);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"Huya.GetRoomInfo: JSON parse error for room {roomId}: {ex.Message}");
+                return null;
+            }
+
+            // 提取 topSid / subSid (频道ID)
+            long topSid = 0, subSid = 0;
+            var topMatch = Regex.Match(html, @"lChannelId"":\s*(\d+)");
+            if (topMatch.Success) long.TryParse(topMatch.Groups[1].Value, out topSid);
+
+            var subMatch = Regex.Match(html, @"lSubChannelId"":\s*(\d+)");
+            if (subMatch.Success) long.TryParse(subMatch.Groups[1].Value, out subSid);
+
+            // 回退：在 JSON 中递归搜索
+            if (topSid <= 0) topSid = FirstPositiveIntByKeys(jsonObj, new HashSet<string> { "lchannelid", "channelid" });
+            if (subSid <= 0) subSid = FirstPositiveIntByKeys(jsonObj, new HashSet<string> { "lsubchannelid", "subchannelid" });
+
+            jsonObj["_topSid"] = topSid;
+            jsonObj["_subSid"] = subSid;
+
+            return jsonObj;
+        }
+
+        /// <summary>
+        /// 将值转换为正整数，非正数返回 0
+        /// </summary>
+        private static long AsPositiveInt64(object value)
+        {
+            if (value is long l) return l > 0 ? l : 0;
+            if (value is int i) return i > 0 ? i : 0;
+            var str = value?.ToString()?.Trim();
+            if (string.IsNullOrEmpty(str)) return 0;
+            return long.TryParse(str, out var result) && result > 0 ? result : 0;
+        }
+
+        /// <summary>
+        /// 在 JToken 树中递归搜索匹配 key 的第一个正整数
+        /// </summary>
+        private static long FirstPositiveIntByKeys(JToken source, HashSet<string> keys, int depth = 0)
+        {
+            if (source == null || depth > 8) return 0;
+
+            if (source is JObject obj)
+            {
+                foreach (var prop in obj.Properties())
+                {
+                    var key = prop.Name?.ToLower();
+                    if (key != null && keys.Contains(key))
+                    {
+                        var val = AsPositiveInt64(prop.Value);
+                        if (val > 0) return val;
+                    }
+                }
+                foreach (var prop in obj.Properties())
+                {
+                    var result = FirstPositiveIntByKeys(prop.Value, keys, depth + 1);
+                    if (result > 0) return result;
+                }
+            }
+            else if (source is JArray arr)
+            {
+                foreach (var item in arr)
+                {
+                    var result = FirstPositiveIntByKeys(item, keys, depth + 1);
+                    if (result > 0) return result;
+                }
+            }
+            return 0;
+        }
+
+        public async Task<LiveRoomDetail> GetRoomDetail(object roomId)
+        {
+            var roomInfo = await GetRoomInfo(roomId.ToString());
+            if (roomInfo == null)
             {
                 return new LiveRoomDetail() { RoomID = roomId.ToString(), Status = false };
             }
 
-            var data = result["data"];
-            var liveData = data["liveData"];
-            var profileInfo = data["profileInfo"];
-            var stream = data["stream"];
+            var tLiveInfo = roomInfo["roomInfo"]?["tLiveInfo"];
+            var tProfileInfo = roomInfo["roomInfo"]?["tProfileInfo"];
+            var topSid = roomInfo["_topSid"]?.ToInt64() ?? 0;
+            var subSid = roomInfo["_subSid"]?.ToInt64() ?? 0;
 
-            long topSid = 0, subSid = 0, yySid = 0;
+            long yySid = 0;
             var huyaLines = new List<HuyaLineModel>();
             var huyaBiterates = new List<HuyaBitRateModel>();
 
-            var liveStatus = data["liveStatus"]?.ToString()?.ToUpper();
-            var isLive = liveStatus == "ON"; // 只有 ON 才表示正在直播
+            var liveStatus = roomInfo["roomInfo"]?["eLiveStatus"]?.ToInt32();
+            var isLive = liveStatus == 2; // eLiveStatus == 2 表示正在直播
 
-            if (isLive)
+            if (isLive && tLiveInfo != null)
             {
-                yySid = profileInfo?["yyid"]?.ToInt64() ?? 0;
+                yySid = tLiveInfo["lYyid"]?.ToInt64() ?? 0;
 
-                // 获取有效线路
-                var baseSteamInfoList = stream["baseSteamInfoList"] as JArray;
-                if (baseSteamInfoList != null)
+                // 读取可用线路
+                var streamInfoList = tLiveInfo["tLiveStreamInfo"]?["vStreamInfo"]?["value"] as JArray;
+                if (streamInfoList != null)
                 {
-                    var validLines = baseSteamInfoList.Where(line =>
-                    {
-                        int pc = line["iPCPriorityRate"]?.ToInt32() ?? -1;
-                        int web = line["iWebPriorityRate"]?.ToInt32() ?? -1;
-                        int mobile = line["iMobilePriorityRate"]?.ToInt32() ?? -1;
-                        return pc > 0 || web > 0 || mobile > 0;
-                    }).ToList();
-
-                    foreach (var item in validLines)
+                    foreach (var item in streamInfoList)
                     {
                         var sFlvUrl = item["sFlvUrl"]?.ToString() ?? "";
                         if (!string.IsNullOrEmpty(sFlvUrl))
                         {
-                            var channelId = item["lChannelId"]?.ToInt64() ?? 0;
-                            if (topSid == 0) topSid = channelId;
-                            if (subSid == 0) subSid = item["lSubChannelId"]?.ToInt64() ?? 0;
+                            // presenterUid: 优先使用 topSid，否则 subSid
+                            var presenterUid = topSid > 0 ? topSid : subSid;
 
                             huyaLines.Add(new HuyaLineModel()
                             {
@@ -191,45 +318,45 @@ namespace AllLive.Core
                                 HlsAntiCode = item["sHlsAntiCode"]?.ToString() ?? "",
                                 StreamName = item["sStreamName"]?.ToString() ?? "",
                                 CdnType = item["sCdnType"]?.ToString() ?? "",
-                                PresenterUid = channelId,
+                                PresenterUid = presenterUid,
                             });
                         }
                     }
                 }
 
-                // 码率列表
-                var bitRateInfoStr = liveData?["bitRateInfo"]?.ToString();
-                JArray biterates = !string.IsNullOrEmpty(bitRateInfoStr)
-                    ? JArray.Parse(bitRateInfoStr)
-                    : (stream["flv"]?["rateArray"] as JArray ?? new JArray());
-                foreach (var item in biterates)
+                // 读取清晰度
+                var bitRateList = tLiveInfo["tLiveStreamInfo"]?["vBitRateInfo"]?["value"] as JArray;
+                if (bitRateList != null)
                 {
-                    var name = item["sDisplayName"]?.ToString() ?? "";
-                    if (name.Contains("HDR")) continue;
-                    if (!huyaBiterates.Any(x => x.Name == name))
+                    foreach (var item in bitRateList)
                     {
-                        huyaBiterates.Add(new HuyaBitRateModel()
+                        var name = item["sDisplayName"]?.ToString() ?? "";
+                        if (name.Contains("HDR")) continue;
+                        if (!huyaBiterates.Any(x => x.Name == name))
                         {
-                            BitRate = item["iBitRate"]?.ToInt32() ?? 0,
-                            Name = name,
-                        });
+                            huyaBiterates.Add(new HuyaBitRateModel()
+                            {
+                                BitRate = item["iBitRate"]?.ToInt32() ?? 0,
+                                Name = name,
+                            });
+                        }
                     }
                 }
             }
 
-            var title = liveData?["introduction"]?.ToString() ?? "";
-            if (string.IsNullOrEmpty(title)) title = liveData?["roomName"]?.ToString() ?? "";
+            var title = tLiveInfo?["sIntroduction"]?.ToString() ?? "";
+            if (string.IsNullOrEmpty(title)) title = tLiveInfo?["sRoomName"]?.ToString() ?? "";
 
             return new LiveRoomDetail()
             {
-                Cover = liveData?["screenshot"]?.ToString() ?? "",
-                Online = liveData?["userCount"]?.ToInt32() ?? 0,
-                RoomID = roomId.ToString(),
+                Cover = tLiveInfo?["sScreenshot"]?.ToString() ?? "",
+                Online = tLiveInfo?["lTotalCount"]?.ToInt32() ?? 0,
+                RoomID = tLiveInfo?["lProfileRoom"]?.ToString() ?? roomId.ToString(),
                 Title = title,
-                UserName = profileInfo?["nick"]?.ToString() ?? "",
-                UserAvatar = profileInfo?["avatar180"]?.ToString() ?? "",
-                Introduction = liveData?["introduction"]?.ToString() ?? "",
-                Notice = data["welcomeText"]?.ToString() ?? "",
+                UserName = tProfileInfo?["sNick"]?.ToString() ?? "",
+                UserAvatar = tProfileInfo?["sAvatar180"]?.ToString() ?? "",
+                Introduction = tLiveInfo?["sIntroduction"]?.ToString() ?? "",
+                Notice = roomInfo["welcomeText"]?.ToString() ?? "",
                 Status = isLive,
                 Data = new HuyaUrlDataModel()
                 {
@@ -418,32 +545,16 @@ namespace AllLive.Core
         {
             try
             {
-                var headers = new Dictionary<string, string>()
+                var roomInfo = await GetRoomInfo(roomId.ToString());
+                if (roomInfo == null)
                 {
-                    { "Accept", "*/*" },
-                    { "Origin", "https://www.huya.com" },
-                    { "Referer", "https://www.huya.com/" },
-                    { "User-Agent", kUserAgent },
-                };
-                var resultText = await HttpUtil.GetString($"https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid={roomId}&showSecret=1", headers);
-                var result = JObject.Parse(resultText);
-
-                if (result["status"]?.ToInt32() != 200)
-                {
-                    System.Diagnostics.Trace.WriteLine($"Huya.GetLiveStatus: API returned status {result["status"]} for room {roomId}");
                     return LiveStatusType.Offline;
                 }
 
-                var liveStatus = result["data"]?["liveStatus"]?.ToString()?.ToUpper();
-                System.Diagnostics.Trace.WriteLine($"Huya.GetLiveStatus: room {roomId} status = {liveStatus}");
+                var liveStatus = roomInfo["roomInfo"]?["eLiveStatus"]?.ToInt32();
+                System.Diagnostics.Trace.WriteLine($"Huya.GetLiveStatus: room {roomId} eLiveStatus = {liveStatus}");
 
-                switch (liveStatus)
-                {
-                    case "ON":
-                        return LiveStatusType.Live;
-                    default:
-                        return LiveStatusType.Offline;
-                }
+                return liveStatus == 2 ? LiveStatusType.Live : LiveStatusType.Offline;
             }
             catch (Exception ex)
             {
@@ -452,9 +563,131 @@ namespace AllLive.Core
             }
         }
 
-        public Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId)
+        public async Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId)
         {
-            return Task.FromResult(new List<LiveSuperChatMessage>());
+            try
+            {
+                var roomIdStr = roomId.ToString();
+                var pidCandidates = new HashSet<long>();
+
+                // 尝试从 GetRoomInfo 获取 pid 候选值 (topSid / subSid)
+                try
+                {
+                    var roomInfo = await GetRoomInfo(roomIdStr);
+                    if (roomInfo != null)
+                    {
+                        var topSid = roomInfo["_topSid"]?.ToInt64() ?? 0;
+                        var subSid = roomInfo["_subSid"]?.ToInt64() ?? 0;
+                        if (topSid > 0) pidCandidates.Add(topSid);
+                        if (subSid > 0) pidCandidates.Add(subSid);
+                    }
+                }
+                catch
+                {
+                    // 如果 GetRoomInfo 失败，继续使用 roomId
+                }
+
+                // roomId 本身也可以作为 pid
+                if (long.TryParse(roomIdStr, out var profileRoomId) && profileRoomId > 0)
+                {
+                    pidCandidates.Add(profileRoomId);
+                }
+
+                if (pidCandidates.Count == 0)
+                {
+                    LogHeadlineEmpty(roomIdStr, pidCandidates, "no pid candidate");
+                    return new List<LiveSuperChatMessage>();
+                }
+
+                foreach (var pid in pidCandidates)
+                {
+                    if (pid <= 0) continue;
+                    try
+                    {
+                        var messages = await FetchHeadLineMessages(pid);
+                        if (messages.Count > 0)
+                        {
+                            return messages;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine($"Huya headline fetch failed for pid={pid}: {ex.Message}");
+                    }
+                }
+
+                LogHeadlineEmpty(roomIdStr, pidCandidates, "empty response");
+                return new List<LiveSuperChatMessage>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"Huya.GetSuperChatMessages error for room {roomId}: {ex.Message}");
+                return new List<LiveSuperChatMessage>();
+            }
+        }
+
+        private void LogHeadlineEmpty(string roomId, HashSet<long> pidCandidates, string reason)
+        {
+            var now = DateTime.Now;
+            var last = _lastHeadlineEmptyLogAt;
+            if (last != null && now.Subtract(last.Value).TotalMinutes < 1)
+            {
+                return;
+            }
+            _lastHeadlineEmptyLogAt = now;
+            System.Diagnostics.Trace.WriteLine($"Huya headline {reason}, roomId={roomId}, pidCandidates={string.Join(",", pidCandidates)}");
+        }
+
+        /// <summary>
+        /// 通过 Tars 协议获取虎牙直播间醒目留言
+        /// </summary>
+        private async Task<List<LiveSuperChatMessage>> FetchHeadLineMessages(long pid)
+        {
+            var userId = new HuyaUserId();
+            userId.sHuYaUA = HYSDK_UA;
+            var req = new HYGetGameEventMessageBoardReq();
+            req.lPid = pid;
+            req.tId = userId;
+            req.iMessageBoardScope = 0;
+            req.iPageSize = 10;
+
+            var rsp = await messageBoardClient.GetAsync(req, "getHeadLineMessageBoard", new HYGetGameEventMessageBoardRsp());
+
+            var messages = new List<LiveSuperChatMessage>();
+            var now = DateTime.Now;
+
+            foreach (var item in rsp.tMessageBoardPanel.vGameEventMessageBoardInfo)
+            {
+                var content = item.sContent?.Trim() ?? "";
+                if (string.IsNullOrEmpty(content)) continue;
+
+                var remainingSeconds = item.iCountDown > 0 ? item.iCountDown : item.iTotalSec;
+                if (remainingSeconds <= 0) continue;
+
+                var totalSeconds = item.iTotalSec > 0 ? item.iTotalSec : remainingSeconds;
+                var price = item.iCost > 0
+                    ? item.iCost
+                    : item.iCostPay > 0
+                        ? Math.Max(1, (int)Math.Round(item.iCostPay / 100.0))
+                        : 0;
+
+                var endTime = now.AddSeconds(Math.Max(1, remainingSeconds));
+                var startTime = endTime.AddSeconds(-Math.Max(1, totalSeconds));
+
+                messages.Add(new LiveSuperChatMessage()
+                {
+                    UserName = item.tMessageUser?.sNick?.Trim() ?? "",
+                    Face = item.tMessageUser?.sAvatar ?? "",
+                    Message = content,
+                    Price = price,
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    BackgroundColor = "#FED7AA",
+                    BackgroundBottomColor = "#F97316",
+                });
+            }
+
+            return messages;
         }
     }
 
