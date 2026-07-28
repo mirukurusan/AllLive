@@ -463,6 +463,27 @@
                             Text="" />
                     </Border>
                     <Grid x:Name="control">
+                        <!-- 录制状态指示器 -->
+                        <Border
+                            x:Name="RecordingIndicator"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Margin="16"
+                            Padding="10,6"
+                            Background="#CCCC0000"
+                            CornerRadius="4"
+                            Visibility="Collapsed">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="Red" VerticalAlignment="Center" />
+                                <TextBlock
+                                    x:Name="RecordingTime"
+                                    Margin="8,0,0,0"
+                                    Foreground="White"
+                                    FontSize="13"
+                                    VerticalAlignment="Center"
+                                    Text="00:00:00" />
+                            </StackPanel>
+                        </Border>
 
                         <Grid x:Name="StandardControl">
                             <Grid Height="48" VerticalAlignment="Bottom">
@@ -866,6 +887,15 @@
                         </AppBarButton.Icon>
                     </AppBarButton>
                     <AppBarButton
+                        x:Name="PlayTopBtnRecord"
+                        BorderThickness="0"
+                        Click="PlayTopBtnRecord_Click"
+                        Label="录制">
+                        <AppBarButton.Icon>
+                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE7E8;" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton
                         x:Name="BottomBtnAddFavorite"
                         Command="{x:Bind Path=liveRoomVM.AddFavoriteCommand}"
                         Label="关注"
@@ -1141,6 +1171,17 @@
                                             <ComboBoxItem>中等</ComboBoxItem>
                                             <ComboBoxItem>较高</ComboBoxItem>
                                             <ComboBoxItem>最高</ComboBoxItem>
+                                        </ComboBox.Items>
+                                    </ComboBox>
+                                    <TextBlock Margin="0,12,0,0">录制格式</TextBlock>
+                                    <TextBlock FontSize="12">.ts 格式更安全，录制中断不会损坏文件</TextBlock>
+                                    <ComboBox
+                                        x:Name="cbRecordFormat"
+                                        Width="200"
+                                        Margin="0,8,0,0">
+                                        <ComboBox.Items>
+                                            <ComboBoxItem>.ts（推荐，防损坏）</ComboBoxItem>
+                                            <ComboBoxItem>.mp4（兼容性更好）</ComboBoxItem>
                                         </ComboBox.Items>
                                     </ComboBox>
                                     <TextBlock Margin="0,12,0,0">保留醒目留言</TextBlock>

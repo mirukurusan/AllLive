@@ -1,4 +1,4 @@
-﻿using AllLive.UWP.Helper;
+using AllLive.UWP.Helper;
 using AllLive.UWP.ViewModels;
 using Microsoft.Toolkit.Uwp.Helpers;
 using Microsoft.UI.Xaml.Controls;
@@ -184,6 +184,24 @@ namespace AllLive.UWP.Views
                 swNewWindow.Toggled += new RoutedEventHandler((obj, args) =>
                 {
                     SettingHelper.SetValue(SettingHelper.NEW_WINDOW_LIVEROOM, swNewWindow.IsOn);
+                });
+            });
+            //默认开启直播录制
+            swAutoRecord.IsOn = SettingHelper.GetValue<bool>(SettingHelper.AUTO_START_RECORDING, false);
+            swAutoRecord.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                swAutoRecord.Toggled += new RoutedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.AUTO_START_RECORDING, swAutoRecord.IsOn);
+                });
+            });
+            //录制保存格式
+            cbRecordFormat.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.RECORD_FORMAT, 0);
+            cbRecordFormat.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                cbRecordFormat.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.RECORD_FORMAT, cbRecordFormat.SelectedIndex);
                 });
             });
             //弹幕开关

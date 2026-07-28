@@ -364,10 +364,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FFmpegInteropX">
-      <Version>2.1.0.81200</Version>
+      <Version>2.1.0-local</Version>
     </PackageReference>
-    <PackageReference Include="FFmpegInteropX.FFmpegUWP">
-      <Version>5.1.100</Version>
+    <PackageReference Include="FFmpegInteropX.UWP.FFmpeg">
+      <Version>8.1.2-local</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client">
       <Version>11.0.0-preview.6.26359.118</Version>

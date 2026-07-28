@@ -1,4 +1,4 @@
-﻿using Microsoft.Toolkit.Uwp.Helpers;
+using Microsoft.Toolkit.Uwp.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -156,5 +156,15 @@ namespace AllLive.UWP.Helper
             /// </summary>
             public const string KEEP_SUPER_CHAT = "KeepSuperChat";
         }
+
+        /// <summary>
+        /// 录制保存格式 0=ts, 1=mp4
+        /// </summary>
+        public const string RECORD_FORMAT = "RecordFormat";
+
+        /// <summary>
+        /// 默认开启直播录制
+        /// </summary>
+        public const string AUTO_START_RECORDING = "AutoStartRecording";
     }
 }

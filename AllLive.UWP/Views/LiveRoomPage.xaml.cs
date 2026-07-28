@@ -35,6 +35,7 @@ using FFmpegInteropX;
 using Windows.Media.Playback;
 using System.Text;
 using System.Runtime;
+using System.Runtime.InteropServices;
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
 
 namespace AllLive.UWP.Views
@@ -64,6 +65,36 @@ namespace AllLive.UWP.Views
         private int _playRetryCount = 0;
         private const int MAX_PLAY_RETRY = 3;
 
+        // 录制状态
+        private DispatcherTimer _recordingTimer;
+        private DateTime _recordingStartTime;
+        private bool _isRecording = false;
+        private StorageFile _recordingFile;
+
+        // 自动录制标志
+        private bool _autoRecordTriggered = false;
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+        private static extern int SHGetKnownFolderPath(
+            [MarshalAs(UnmanagedType.LPStruct)] Guid rfid,
+            uint dwFlags,
+            IntPtr hToken,
+            out string ppszPath);
+
+        /// <summary>
+        /// 通过 Win32 API 获取视频库真实路径（支持库重定向，Debug/Release 均有效）
+        /// </summary>
+        private static string GetVideosFolderPath()
+        {
+            var folderIdVideos = new Guid("{18989B1D-99B5-455B-841C-AB7C74E4DDFC}");
+            int hr = SHGetKnownFolderPath(folderIdVideos, 0, IntPtr.Zero, out string path);
+            if (hr == 0 && !string.IsNullOrEmpty(path))
+                return path;
+
+            // Fallback
+            return Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
+        }
+
         public LiveRoomPage()
         {
             this.InitializeComponent();
@@ -90,6 +121,10 @@ namespace AllLive.UWP.Views
             mediaPlayer.MediaOpened += MediaPlayer_MediaOpened;
             mediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
             mediaPlayer.MediaFailed += MediaPlayer_MediaFailed;
+
+            // 录制计时器
+            _recordingTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(1) };
+            _recordingTimer.Tick += RecordingTimer_Tick;
 
             timer_focus.Start();
             controlTimer.Start();
@@ -164,6 +199,10 @@ namespace AllLive.UWP.Views
             if (controlTimer != null)
             {
                 controlTimer.Tick -= ControlTimer_Tick;
+            }
+            if (_recordingTimer != null)
+            {
+                _recordingTimer.Tick -= RecordingTimer_Tick;
             }
 
             // 取消窗口事件订阅
@@ -296,13 +335,23 @@ namespace AllLive.UWP.Views
 
         private async void MediaPlayer_MediaOpened(MediaPlayer sender, object args)
         {
-            await this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            await this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
             {
                 //保持屏幕常亮
                 dispRequest.RequestActive();
                 PlayerLoading.Visibility = Visibility.Collapsed;
                 _playRetryCount = 0;
                 SetMediaInfo();
+
+                // 默认开启直播录制
+                if (!_autoRecordTriggered && !_isRecording)
+                {
+                    _autoRecordTriggered = true;
+                    if (SettingHelper.GetValue<bool>(SettingHelper.AUTO_START_RECORDING, false))
+                    {
+                        await StartRecording();
+                    }
+                }
             });
         }
 
@@ -483,6 +532,13 @@ namespace AllLive.UWP.Views
                 case Windows.System.VirtualKey.Enter:
                     SetFullScreen(PlayBtnFullScreen.Visibility == Visibility.Visible);
                     break;
+                case Windows.System.VirtualKey.R:
+                    if (Window.Current.CoreWindow.GetKeyState(Windows.System.VirtualKey.Control)
+                        == Windows.UI.Core.CoreVirtualKeyStates.Down)
+                    {
+                        await ToggleRecording();
+                    }
+                    break;
                 case Windows.System.VirtualKey.F10:
                     await CaptureVideo();
                     break;
@@ -543,9 +599,22 @@ namespace AllLive.UWP.Views
         }
 
 
-        private void LiveRoomVM_ChangedPlayUrl(object sender, string e)
+        private async void LiveRoomVM_ChangedPlayUrl(object sender, string e)
         {
-            _ = SetPlayer(e);
+            // 如果正在录制，先停止当前录制，等新播放器加载后再重新开始
+            var wasRecording = _isRecording;
+            if (wasRecording)
+            {
+                await StopRecording();
+            }
+
+            await SetPlayer(e);
+
+            // 在新播放器上重新开始录制
+            if (wasRecording)
+            {
+                await StartRecording();
+            }
         }
         private async Task SetPlayer(string url)
         {
@@ -678,6 +747,12 @@ namespace AllLive.UWP.Views
 
             liveRoomVM?.Stop();
 
+            // 停止录制
+            if (_isRecording)
+            {
+                _ = StopRecording();
+            }
+
             SetFullScreen(false);
             MiniWidnows(false);
             //取消屏幕常亮
@@ -805,7 +880,177 @@ namespace AllLive.UWP.Views
             }
         }
 
+        private async void PlayTopBtnRecord_Click(object sender, RoutedEventArgs e)
+        {
+            await ToggleRecording();
+        }
 
+        private async Task ToggleRecording()
+        {
+            if (_isRecording)
+            {
+                await StopRecording();
+            }
+            else
+            {
+                await StartRecording();
+            }
+        }
+
+        private async Task StartRecording()
+        {
+            try
+            {
+                if (interopMSS == null)
+                {
+                    Utils.ShowMessageToast("播放器未就绪");
+                    return;
+                }
+
+                // FFmpeg 原生 I/O 只能可靠写入 LocalFolder，之后通过 WinRT 复制到视频库
+                var folder = ApplicationData.Current.LocalFolder;
+                var subFolder = await folder.CreateFolderAsync(
+                    "AllLive", CreationCollisionOption.OpenIfExists);
+
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var title = liveRoomVM.Name ?? "直播";
+                var safeTitle = SanitizeFileName(title);
+                var formatIndex = SettingHelper.GetValue<int>(SettingHelper.RECORD_FORMAT, 0);
+                var extension = formatIndex == 1 ? ".mp4" : ".ts";
+                var fileName = $"{timestamp}_{safeTitle}{extension}";
+                var file = await subFolder.CreateFileAsync(fileName,
+                    CreationCollisionOption.GenerateUniqueName);
+                _recordingFile = file;
+
+                // 使用 FFmpegMediaSource 旁路录制
+                interopMSS.RecordingProgress += InteropMSS_RecordingProgress;
+                interopMSS.RecordingError += InteropMSS_RecordingError;
+                interopMSS.StartRecording(file.Path);
+
+                // 更新UI状态
+                _isRecording = true;
+                _recordingStartTime = DateTime.Now;
+                _recordingTimer.Start();
+                RecordingIndicator.Visibility = Visibility.Visible;
+                PlayTopBtnRecord.Label = "停止录制";
+                PlayTopBtnRecord.Icon = new FontIcon
+                {
+                    FontFamily = new Windows.UI.Xaml.Media.FontFamily("Segoe Fluent Icons"),
+                    Glyph = ""
+                };
+
+                Utils.ShowMessageToast("开始录制");
+            }
+            catch (Exception ex)
+            {
+                Utils.ShowMessageToast("录制启动失败: " + ex.Message);
+                LogHelper.Log("录制启动失败", LogType.ERROR, ex);
+            }
+        }
+
+        private async Task StopRecording()
+        {
+            StorageFile sourceFile = null;
+            try
+            {
+                if (interopMSS != null)
+                {
+                    interopMSS.RecordingProgress -= InteropMSS_RecordingProgress;
+                    interopMSS.RecordingError -= InteropMSS_RecordingError;
+                    interopMSS.StopRecording();
+                }
+
+                _isRecording = false;
+                _recordingTimer.Stop();
+                RecordingIndicator.Visibility = Visibility.Collapsed;
+                PlayTopBtnRecord.Label = "录制";
+                PlayTopBtnRecord.Icon = new FontIcon
+                {
+                    FontFamily = new Windows.UI.Xaml.Media.FontFamily("Segoe Fluent Icons"),
+                    Glyph = ""
+                };
+
+                // 将录制文件从 LocalFolder 复制到视频库（WinRT API 可正确处理库重定向）
+                sourceFile = _recordingFile;
+                _recordingFile = null;
+                if (sourceFile != null)
+                {
+                    try
+                    {
+                        var videosFolder = KnownFolders.VideosLibrary;
+                        var targetFolder = await videosFolder.CreateFolderAsync(
+                            "直播录制", CreationCollisionOption.OpenIfExists);
+                        await sourceFile.CopyAsync(targetFolder, sourceFile.Name,
+                            NameCollisionOption.GenerateUniqueName);
+                        await sourceFile.DeleteAsync(StorageDeleteOption.PermanentDelete);
+                        Utils.ShowMessageToast("录制已保存至视频库");
+                    }
+                    catch
+                    {
+                        // 复制失败，文件保留在 LocalFolder
+                        Utils.ShowMessageToast("录制已保存至应用本地存储");
+                    }
+                }
+                else
+                {
+                    Utils.ShowMessageToast("录制已停止");
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.ShowMessageToast("停止录制失败: " + ex.Message);
+                LogHelper.Log("停止录制失败", LogType.ERROR, ex);
+            }
+        }
+
+        private string SanitizeFileName(string name)
+        {
+            var invalid = Path.GetInvalidFileNameChars();
+            var result = new StringBuilder();
+            foreach (var c in name)
+            {
+                if (!invalid.Contains(c) && c != '.')
+                    result.Append(c);
+                else
+                    result.Append('_');
+            }
+            var maxLen = 80;
+            if (result.Length > maxLen)
+                return result.ToString(0, maxLen);
+            return result.ToString();
+        }
+
+        private async void InteropMSS_RecordingProgress(
+            FFmpegInteropX.FFmpegMediaSource sender,
+            FFmpegInteropX.FFmpegRemuxProgressEventArgs args)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                var elapsed = TimeSpan.FromSeconds(args.DurationSeconds);
+                RecordingTime.Text = $"{elapsed.Hours:D2}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
+            });
+        }
+
+        private async void InteropMSS_RecordingError(
+            FFmpegInteropX.FFmpegMediaSource sender,
+            FFmpegInteropX.FFmpegRemuxErrorEventArgs args)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                Utils.ShowMessageToast("录制错误: " + args.Message);
+            });
+
+            await StopRecording();
+        }
+
+        private void RecordingTimer_Tick(object sender, object e)
+        {
+            if (_isRecording)
+            {
+                var elapsed = DateTime.Now - _recordingStartTime;
+                RecordingTime.Text = $"{elapsed.Hours:D2}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
+            }
+        }
 
         private void LoadSetting()
         {
@@ -896,6 +1141,16 @@ namespace AllLive.UWP.Views
                     Utils.ShowMessageToast("更改清晰度或刷新后生效");
                 });
             });
+
+            // 录制格式
+            cbRecordFormat.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.RECORD_FORMAT, 0);
+            cbRecordFormat.Loaded += (sender2, e2) =>
+            {
+                cbRecordFormat.SelectionChanged += (obj2, args2) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.RECORD_FORMAT, cbRecordFormat.SelectedIndex);
+                };
+            };
 
             //弹幕开关
             var state = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.SHOW, true) ? Visibility.Visible : Visibility.Collapsed;

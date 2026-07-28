@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="AllLive.UWP.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -205,6 +205,44 @@
                                 <ComboBoxItem>中等</ComboBoxItem>
                                 <ComboBoxItem>较高</ComboBoxItem>
                                 <ComboBoxItem>最高</ComboBoxItem>
+                            </ComboBox.Items>
+                        </ComboBox>
+                    </Grid>
+                    <Grid
+                        Margin="0,8,0,0"
+                        Padding="8,12"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock>自动录制直播</TextBlock>
+                            <TextBlock FontSize="12" Foreground="Gray">打开直播间后自动开始录制</TextBlock>
+                        </StackPanel>
+                        <ToggleSwitch
+                            x:Name="swAutoRecord"
+                            MinWidth="72"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid
+                        Margin="0,8,0,0"
+                        Padding="8,12"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock>录制保存格式</TextBlock>
+                            <TextBlock FontSize="12" Foreground="Gray">TS兼容性好，MP4方便分享</TextBlock>
+                        </StackPanel>
+                        <ComboBox
+                            x:Name="cbRecordFormat"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                            <ComboBox.Items>
+                                <ComboBoxItem>TS</ComboBoxItem>
+                                <ComboBoxItem>MP4</ComboBoxItem>
                             </ComboBox.Items>
                         </ComboBox>
                     </Grid>
