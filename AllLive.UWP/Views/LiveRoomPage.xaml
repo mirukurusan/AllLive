@@ -896,6 +896,15 @@
                         </AppBarButton.Icon>
                     </AppBarButton>
                     <AppBarButton
+                        x:Name="PlayTopBtnOpenRecordFolder"
+                        BorderThickness="0"
+                        Click="PlayTopBtnOpenRecordFolder_Click"
+                        Label="录制文件夹">
+                        <AppBarButton.Icon>
+                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE8B7;" />
+                        </AppBarButton.Icon>
+                    </AppBarButton>
+                    <AppBarButton
                         x:Name="BottomBtnAddFavorite"
                         Command="{x:Bind Path=liveRoomVM.AddFavoriteCommand}"
                         Label="关注"

@@ -885,6 +885,24 @@ namespace AllLive.UWP.Views
             await ToggleRecording();
         }
 
+        private async void PlayTopBtnOpenRecordFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var folder = await ApplicationData.Current.LocalFolder
+                    .GetFolderAsync("AllLive");
+                await Windows.System.Launcher.LaunchFolderAsync(folder);
+            }
+            catch (FileNotFoundException)
+            {
+                Utils.ShowMessageToast("录制文件夹尚不存在");
+            }
+            catch (Exception ex)
+            {
+                Utils.ShowMessageToast("打开录制文件夹失败: " + ex.Message);
+            }
+        }
+
         private async Task ToggleRecording()
         {
             if (_isRecording)
@@ -907,7 +925,6 @@ namespace AllLive.UWP.Views
                     return;
                 }
 
-                // FFmpeg 原生 I/O 只能可靠写入 LocalFolder，之后通过 WinRT 复制到视频库
                 var folder = ApplicationData.Current.LocalFolder;
                 var subFolder = await folder.CreateFolderAsync(
                     "AllLive", CreationCollisionOption.OpenIfExists);
@@ -935,7 +952,7 @@ namespace AllLive.UWP.Views
                 PlayTopBtnRecord.Label = "停止录制";
                 PlayTopBtnRecord.Icon = new FontIcon
                 {
-                    FontFamily = new Windows.UI.Xaml.Media.FontFamily("Segoe Fluent Icons"),
+                    FontFamily = new FontFamily("Segoe Fluent Icons"),
                     Glyph = ""
                 };
 
@@ -950,7 +967,6 @@ namespace AllLive.UWP.Views
 
         private async Task StopRecording()
         {
-            StorageFile sourceFile = null;
             try
             {
                 if (interopMSS != null)
@@ -966,35 +982,11 @@ namespace AllLive.UWP.Views
                 PlayTopBtnRecord.Label = "录制";
                 PlayTopBtnRecord.Icon = new FontIcon
                 {
-                    FontFamily = new Windows.UI.Xaml.Media.FontFamily("Segoe Fluent Icons"),
+                    FontFamily = new FontFamily("Segoe Fluent Icons"),
                     Glyph = ""
                 };
 
-                // 将录制文件从 LocalFolder 复制到视频库（WinRT API 可正确处理库重定向）
-                sourceFile = _recordingFile;
-                _recordingFile = null;
-                if (sourceFile != null)
-                {
-                    try
-                    {
-                        var videosFolder = KnownFolders.VideosLibrary;
-                        var targetFolder = await videosFolder.CreateFolderAsync(
-                            "直播录制", CreationCollisionOption.OpenIfExists);
-                        await sourceFile.CopyAsync(targetFolder, sourceFile.Name,
-                            NameCollisionOption.GenerateUniqueName);
-                        await sourceFile.DeleteAsync(StorageDeleteOption.PermanentDelete);
-                        Utils.ShowMessageToast("录制已保存至视频库");
-                    }
-                    catch
-                    {
-                        // 复制失败，文件保留在 LocalFolder
-                        Utils.ShowMessageToast("录制已保存至应用本地存储");
-                    }
-                }
-                else
-                {
-                    Utils.ShowMessageToast("录制已停止");
-                }
+                Utils.ShowMessageToast("停止录制，文件已保存至 " + _recordingFile.Path);
             }
             catch (Exception ex)
             {
