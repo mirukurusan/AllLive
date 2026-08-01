@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "AllLive.WinUI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "AllLive.WinUI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

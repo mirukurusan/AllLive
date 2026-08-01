@@ -1,0 +1,26 @@
+using Windows.ApplicationModel;
+using Microsoft.UI;
+using AllLive.Core.Helper;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.UI.Xaml.Data;
+
+namespace AllLive.WinUI.Converters
+{
+    public class DanmakuStyleConvert : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            var style = (NSDanmaku.Model.DanmakuBorderStyle)value;
+            return (int)style;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            return value;
+        }
+    }
+}

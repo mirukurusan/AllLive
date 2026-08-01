@@ -1,0 +1,63 @@
+﻿<Page
+    x:Class="AllLive.WinUI.Views.ParsePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" MaxWidth="600" HorizontalAlignment="Left">
+            <TextBlock Text="直播间解析" FontSize="24" FontWeight="Bold" Margin="0,0,0,24"/>
+            
+            <TextBlock Text="支持的格式：" Margin="0,0,0,8"/>
+            <TextBlock Text="• 抖音: https://live.douyin.com/123456 或 房间号" 
+                       Foreground="Gray" FontSize="13" Margin="0,0,0,4"/>
+            <TextBlock Text="• B站: https://live.bilibili.com/123456" 
+                       Foreground="Gray" FontSize="13" Margin="0,0,0,4"/>
+            <TextBlock Text="• 虎牙: https://www.huya.com/xxx" 
+                       Foreground="Gray" FontSize="13" Margin="0,0,0,4"/>
+            <TextBlock Text="• 斗鱼: https://www.douyu.com/123456" 
+                       Foreground="Gray" FontSize="13" Margin="0,0,0,20"/>
+            
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="txtInput" 
+                         PlaceholderText="粘贴链接或输入房间号" 
+                         Grid.Column="0"
+                         Margin="0,0,8,0"/>
+                <Button Content="粘贴" 
+                        Grid.Column="1"
+                        Click="BtnPaste_Click"
+                        Padding="12,6"/>
+            </Grid>
+            
+            <ComboBox x:Name="cmbSite" 
+                      PlaceholderText="选择平台（可选，自动识别）"
+                      HorizontalAlignment="Stretch"
+                      Margin="0,0,0,16">
+                <ComboBoxItem Content="自动识别" Tag="auto"/>
+                <ComboBoxItem Content="抖音" Tag="douyin"/>
+                <ComboBoxItem Content="B站" Tag="bilibili"/>
+                <ComboBoxItem Content="虎牙" Tag="huya"/>
+                <ComboBoxItem Content="斗鱼" Tag="douyu"/>
+            </ComboBox>
+            
+            <Button Content="进入直播间" 
+                    Click="BtnGo_Click"
+                    Background="#FF5722"
+                    Foreground="White"
+                    Padding="24,10"
+                    HorizontalAlignment="Left"
+                    Margin="0,0,0,16"/>
+            
+            <TextBlock x:Name="txtStatus" 
+                       Foreground="Gray" 
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

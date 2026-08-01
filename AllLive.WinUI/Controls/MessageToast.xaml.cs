@@ -1,0 +1,134 @@
+using Windows.ApplicationModel;
+using Microsoft.UI;
+using AllLive.Core.Helper;
+﻿using CommunityToolkit.WinUI.Animations;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.Foundation;
+using Windows.Foundation.Collections;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Navigation;
+
+//https://go.microsoft.com/fwlink/?LinkId=234236 上介绍了“用户控件”项模板
+
+namespace AllLive.WinUI.Controls
+{
+    public sealed partial class MessageToast : UserControl
+    {
+        private Popup m_Popup;
+
+        private string m_TextBlockContent = "";
+        private TimeSpan m_ShowTime;
+        public MessageToast()
+        {
+            this.InitializeComponent();
+            m_Popup = new Popup();
+            var window = App.GetMainWindow();
+            this.Width = window != null ? window.Bounds.Width : 1920;
+            this.Height = window != null ? window.Bounds.Height : 1080;
+            m_Popup.Child = this;
+            this.Loaded += NotifyPopup_Loaded;
+            this.Unloaded += NotifyPopup_Unloaded;
+        }
+
+        public MessageToast(string content, TimeSpan showTime) : this()
+        {
+            if (m_TextBlockContent == null)
+            {
+                m_TextBlockContent = "";
+            }
+            this.m_TextBlockContent = content;
+            this.m_ShowTime = showTime;
+        }
+        public MessageToast(string content, TimeSpan showTime, List<MyUICommand> commands) : this()
+        {
+            if (m_TextBlockContent == null)
+            {
+                m_TextBlockContent = "";
+            }
+            this.m_TextBlockContent = content;
+            this.m_ShowTime = showTime;
+            foreach (var item in commands)
+            {
+                HyperlinkButton button = new HyperlinkButton()
+                {
+                    Margin = new Thickness(8, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Content = new TextBlock() { Text = item.Label }
+                };
+                button.Click += new RoutedEventHandler((sender, e) => {
+                    item.Invoked?.Invoke(this, item);
+                });
+                btns.Children.Add(button);
+            }
+        }
+
+
+        public void Show()
+        {
+            this.m_Popup.IsOpen = true;
+
+        }
+        public async void Close()
+        {
+            await AnimationBuilder.Create().Offset(to: new Vector2(0, (float)border.ActualHeight), duration: TimeSpan.FromMilliseconds(200)).StartAsync(this);
+
+           // await this.Offset(offsetX: 0, offsetY: (float)border.ActualHeight, duration: 200, delay: 0, easingType: EasingType.Default).StartAsync();
+            this.m_Popup.IsOpen = false;
+        }
+        private async void NotifyPopup_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (m_TextBlockContent == null)
+            {
+                m_TextBlockContent = "";
+            }
+            this.tbNotify.Text = m_TextBlockContent;
+            Window.Current.SizeChanged += Current_SizeChanged;
+            await AnimationBuilder.Create().Offset(to: new Vector2(0, -72), duration: TimeSpan.FromMilliseconds(200)).StartAsync(this);
+            //await this.Offset(offsetX: 0, offsetY: -72, duration: 200, delay: 0, easingType: EasingType.Default).StartAsync();
+            await AnimationBuilder.Create().Offset(to: new Vector2(0, (float)border.ActualHeight), duration: TimeSpan.FromMilliseconds(200), delay: TimeSpan.FromMilliseconds(m_ShowTime.TotalMilliseconds)).StartAsync(this);
+            //await this.Offset(offsetX: 0, offsetY: (float)border.ActualHeight, duration: 200, delay: m_ShowTime.TotalMilliseconds, easingType: EasingType.Default).StartAsync();
+            this.m_Popup.IsOpen = false;
+        }
+
+
+        private void Current_SizeChanged(object sender, Microsoft.UI.Xaml.WindowSizeChangedEventArgs e)
+        {
+            this.Width = e.Size.Width;
+            this.Height = e.Size.Height;
+        }
+
+        private void NotifyPopup_Unloaded(object sender, RoutedEventArgs e)
+        {
+            Window.Current.SizeChanged -= Current_SizeChanged;
+        }
+
+
+    }
+    public class MyUICommand
+    {
+        public MyUICommand(string lable)
+        {
+            Label = lable;
+        }
+        public MyUICommand(string lable, EventHandler<MyUICommand> invoked)
+        {
+            Label = lable;
+            Invoked = invoked;
+        }
+        public object Id { get; set; }
+        public EventHandler<MyUICommand> Invoked { get; set; }
+        public string Label { get; set; }
+
+
+    }
+}

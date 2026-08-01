@@ -1,0 +1,39 @@
+<Application
+    x:Class="AllLive.WinUI.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:convert="using:AllLive.WinUI.Converters"
+    xmlns:local="using:AllLive.WinUI">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <ResourceDictionary Source="ms-appx:///ValueDictionary.xaml" />
+                <ResourceDictionary Source="ms-appx:///Icons.xaml" />
+                <ResourceDictionary Source="ms-appx:///Templates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="TopPaneBackground">#FFF7F7F7</Color>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="TopPaneBackground">#FF181818</Color>
+                    <SolidColorBrush x:Key="SystemControlHighlightAccentBrush" Color="#FF0078D7" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <!-- Converters -->
+            <convert:NumberToStringConvert x:Key="numberToStringConvert" />
+            <convert:DisplayConvert x:Key="displayConvert" />
+            <convert:ImageSourceConvert x:Key="imageConvert" />
+            <convert:DoublePrecisionConvert x:Key="doublePrecisionConvert" />
+            <convert:ColorConvert x:Key="colorConvert" />
+            <convert:CountTextConvert x:Key="countTextConvert" />
+            <FontFamily x:Key="SegoeFluent">ms-appx:///Assets/Fonts/SegoeFluentIcons.ttf#Segoe Fluent Icons</FontFamily>
+            <Style x:Key="GridViewItemCornerRadiusStyle" TargetType="GridViewItem">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Margin" Value="0,0,4,4" />
+                <Setter Property="CornerRadius" Value="8" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,206 @@
+using Windows.ApplicationModel;
+using Microsoft.UI;
+using AllLive.Core.Helper;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
+﻿using AllLive.WinUI.Helper;
+using AllLive.WinUI.Views;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.ApplicationModel.Core;
+using Windows.Foundation;
+using Windows.Foundation.Collections;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Navigation;
+
+// https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
+
+namespace AllLive.WinUI
+{
+    /// <summary>
+    /// 可用于自身或导航至 Frame 内部的空白页。
+    /// </summary>
+    public sealed partial class BaseFramePage : Page
+    {
+        public BaseFramePage()
+        {
+            this.InitializeComponent();
+            MessageCenter.NavigatePageEvent += MessageCenter_NavigatePageEvent;
+
+            MessageCenter.ChangeTitleEvent += MessageCenter_ChangeTitleEvent;
+            MessageCenter.HideTitlebarEvent += MessageCenter_HideTitlebarEvent;
+            this.PointerPressed += BaseFramePage_PointerPressed;
+            this.KeyDown += BaseFramePage_KeyDown;
+            BtnBack.Click += BtnBack_Click;
+            MainFrame.Navigated += MainFrame_Navigated;
+
+            // Extend content into title bar
+            var appWindow = App.GetMainAppWindow();
+            if (appWindow != null)
+            {
+                appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+            }
+        }
+
+        // Helper extension to get AppWindow from Window (defined at bottom of file)
+        private void BaseFramePage_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs args)
+        {
+            // 如果当前页面处于LiveRoomPage,不做处理
+            if (MainFrame.Content is LiveRoomPage)
+            {
+                return;
+            }
+
+            // 如果是XBOX的B键
+            if (args.Key == Windows.System.VirtualKey.GamepadB)
+            {
+                if (MainFrame.CanGoBack)
+                {
+                    args.Handled = true;
+                    MainFrame.GoBack();
+                }
+            }
+
+        }
+
+        private void MessageCenter_HideTitlebarEvent(object sender, bool e)
+        {
+            try
+            {
+                if (e)
+                {
+                    HideTitleBar();
+                }
+                else
+                {
+                    ShowTitleBar();
+                }
+            }
+            catch (Exception)
+            {
+
+
+            }
+
+        }
+
+        private void HideTitleBar()
+        {
+            Grid.SetRow(MainFrame, 0);
+            Grid.SetRowSpan(MainFrame, 2);
+            TitleBarGrid.Visibility = Visibility.Collapsed;
+            var appWindow = App.GetMainAppWindow();
+            if (appWindow != null)
+                appWindow.TitleBar.ExtendsContentIntoTitleBar = false;
+        }
+
+        private void ShowTitleBar()
+        {
+            Grid.SetRow(MainFrame, 1);
+            Grid.SetRowSpan(MainFrame, 1);
+            TitleBarGrid.Visibility = Visibility.Visible;
+            TitleBar2.Visibility = Visibility.Collapsed;
+            var appWindow = App.GetMainAppWindow();
+            if (appWindow != null)
+                appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+        }
+
+        private void MessageCenter_ChangeTitleEvent(string title, string logo)
+        {
+            try
+            {
+                Title.Text = title;
+                AppIcon.Source = new BitmapImage(new Uri(logo));
+            }
+            catch (Exception)
+            {
+                //TODO 新窗口调用此方法会出现线程错误，待处理
+                //throw;
+            }
+
+
+        }
+
+        private void MessageCenter_NavigatePageEvent(Type page, object data)
+        {
+            try
+            {
+                MainFrame.Navigate(page, data);
+            }
+            catch (Exception)
+            {
+
+
+            }
+
+        }
+
+        private void BtnBack_Click(object sender, RoutedEventArgs e)
+        {
+            if (MainFrame.CanGoBack)
+            {
+                MainFrame.GoBack();
+            }
+        }
+
+        private void MainFrame_Navigated(object sender, NavigationEventArgs e)
+        {
+
+            Title.Text = "聚合直播";
+            AppIcon.Source = new BitmapImage(new Uri("ms-appx:///Assets/Square44x44Logo.png"));
+            BtnBack.Visibility = MainFrame.CanGoBack ? Visibility.Visible : Visibility.Collapsed;
+            if (false)
+            {
+                if (MainFrame.Content is MainPage)
+                {
+                    HideTitleBar();
+                }
+                else
+                {
+                    ShowTitleBar();
+                }
+
+            }
+           
+        }
+
+        private void BaseFramePage_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            var par = e.GetCurrentPoint(sender as Page).Properties.PointerUpdateKind;
+            if (SettingHelper.GetValue<bool>(SettingHelper.MOUSE_BACK, true) && par == Microsoft.UI.Input.PointerUpdateKind.XButton1Pressed
+                || par == Microsoft.UI.Input.PointerUpdateKind.MiddleButtonPressed)
+            {
+                if (MainFrame.CanGoBack)
+                {
+                    MainFrame.GoBack();
+                    e.Handled = true;
+                }
+
+            }
+        }
+
+        private void BaseFramePage_BackRequested(object sender, Windows.UI.Core.BackRequestedEventArgs e)
+        {
+            if (MainFrame.CanGoBack)
+            {
+                MainFrame.GoBack();
+            }
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            MainFrame.Navigate(typeof(MainPage));
+        }
+
+
+    }
+}
