@@ -29,26 +29,25 @@ namespace AllLive.WinUI.Views
     /// </summary>
     public sealed partial class FavoritePage : Page
     {
+        static FavoriteVM _favoriteVM;
         readonly FavoriteVM favoriteVM;
+
         public FavoritePage()
         {
-            favoriteVM = new FavoriteVM();
-            favoriteVM.Dispatcher = new DispatcherQueueHelper(this.DispatcherQueue);
-
-            MessageCenter.UpdateFavoriteEvent += MessageCenter_UpdateFavoriteEvent;
+            if (_favoriteVM == null)
+            {
+                _favoriteVM = new FavoriteVM();
+                _favoriteVM.Dispatcher = new DispatcherQueueHelper(this.DispatcherQueue);
+            }
+            favoriteVM = _favoriteVM;
             this.InitializeComponent();
-        }
-
-        private void MessageCenter_UpdateFavoriteEvent(object sender, EventArgs e)
-        {
-            favoriteVM.Refresh();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
-            if(favoriteVM.Items.Count==0)
+            if (favoriteVM.Items.Count == 0)
             {
                 favoriteVM.LoadData();
             }
@@ -72,7 +71,7 @@ namespace AllLive.WinUI.Views
                 // 站点不存在，可能是收藏数据中的站点已被移除
                 LogHelper.Log($"[FavoritePage] 无法找到站点 - SiteName: '{item.SiteName}'", LogType.ERROR);
                 LogHelper.Log($"[FavoritePage] 可用站点列表: {string.Join(", ", MainVM.Sites.Select(s => $"'{s.Name}'"))}", LogType.DEBUG);
-                
+
                 // 显示详细的调试信息
                 var availableSites = string.Join(", ", MainVM.Sites.Select(s => s.Name));
                 WinUIUtils.ShowMessageToast($"无法找到站点\n数据库中: '{item.SiteName}'\n可用站点: {availableSites}", 5000);

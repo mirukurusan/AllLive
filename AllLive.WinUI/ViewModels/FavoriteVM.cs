@@ -27,6 +27,7 @@ namespace AllLive.WinUI.ViewModels
             InputCommand = new RelayCommand(Input);
             OutputCommand = new RelayCommand(Output);
             TipCommand = new RelayCommand(Tip);
+            MessageCenter.UpdateFavoriteEvent += (s, e) => Refresh();
         }
 
         public ICommand InputCommand { get; set; }
