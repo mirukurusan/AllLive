@@ -1,7 +1,7 @@
 ﻿using Windows.ApplicationModel;
+using Windows.Storage;
 using Microsoft.UI;
 using AllLive.Core.Helper;
-﻿using AllLive.Core.Helper;
 using AllLive.WinUI.Controls;
 using CommunityToolkit.WinUI.Helpers;
 using Newtonsoft.Json;
@@ -20,8 +20,12 @@ namespace AllLive.WinUI.Helper
 {
     public static class Utils
     {
+        private static string _unpackagedDataPath;
+
         /// <summary>
         /// Get local data folder path — works in both packaged and unpackaged modes.
+        /// In unpackaged (portable) mode, data is stored in the application directory;
+        /// falls back to LocalAppData when that directory isn't writable (e.g. Program Files).
         /// </summary>
         public static string GetLocalFolderPath()
         {
@@ -31,8 +35,43 @@ namespace AllLive.WinUI.Helper
             }
             catch
             {
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AllLive");
+                if (_unpackagedDataPath != null) return _unpackagedDataPath;
+
+                var appDir = AppContext.BaseDirectory;
+                try
+                {
+                    Directory.CreateDirectory(appDir);
+                    var probe = Path.Combine(appDir, ".alllive_write_test");
+                    File.WriteAllText(probe, string.Empty);
+                    File.Delete(probe);
+                    _unpackagedDataPath = appDir;
+                }
+                catch
+                {
+                    _unpackagedDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AllLive");
+                }
+                return _unpackagedDataPath;
             }
+        }
+
+        /// <summary>
+        /// Get the local data folder as a <see cref="StorageFolder"/>, creating it if needed.
+        /// </summary>
+        public static async Task<StorageFolder> GetLocalFolderAsync()
+        {
+            var path = GetLocalFolderPath();
+            Directory.CreateDirectory(path);
+            return await StorageFolder.GetFolderFromPathAsync(path);
+        }
+
+        /// <summary>
+        /// Get the recording folder (LocalFolder\AllLive), creating it if needed.
+        /// Works in both packaged and unpackaged modes.
+        /// </summary>
+        public static async Task<StorageFolder> GetRecordingFolderAsync()
+        {
+            var root = await GetLocalFolderAsync();
+            return await root.CreateFolderAsync("AllLive", CreationCollisionOption.OpenIfExists);
         }
 
         /// <summary>
@@ -136,7 +175,7 @@ namespace AllLive.WinUI.Helper
             }
         }
 
-     
+
         public static async Task FadeOutAsync(this UIElement element, double duration = 250, EasingFunctionBase easingFunction = null)
         {
             if (element.Opacity > 0.0)

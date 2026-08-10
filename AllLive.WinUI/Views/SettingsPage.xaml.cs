@@ -273,7 +273,7 @@ namespace AllLive.WinUI.Views
 
         private async void BtnLog_Click(object sender, RoutedEventArgs e)
         {
-            Windows.Storage.StorageFolder storageFolder = Windows.Storage.ApplicationData.Current.LocalFolder;
+            var storageFolder = await WinUIUtils.GetLocalFolderAsync();
             var logFolder = await storageFolder.CreateFolderAsync("log", Windows.Storage.CreationCollisionOption.OpenIfExists);
             await Launcher.LaunchFolderAsync(logFolder);
         }
