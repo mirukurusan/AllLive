@@ -1,7 +1,8 @@
 using Windows.ApplicationModel;
 using Microsoft.UI;
 using AllLive.Core.Helper;
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
 namespace AllLive.WinUI.Helper
 {
@@ -26,14 +27,35 @@ namespace AllLive.WinUI.Helper
 
         private sealed class LogHelperTraceListener : TraceListener
         {
+            // 防止无限递归：LogHelper.Log -> Debug.WriteLine -> Trace -> 本监听器 -> LogHelper.Log ...
+            [ThreadStatic]
+            private static bool _inLog;
+
             public override void Write(string message)
             {
-                LogHelper.Log(message, LogType.DEBUG);
+                LogToHelper(message);
             }
 
             public override void WriteLine(string message)
             {
-                LogHelper.Log(message, LogType.DEBUG);
+                LogToHelper(message);
+            }
+
+            private void LogToHelper(string message)
+            {
+                if (_inLog)
+                {
+                    return;
+                }
+                _inLog = true;
+                try
+                {
+                    LogHelper.Log(message, LogType.DEBUG);
+                }
+                finally
+                {
+                    _inLog = false;
+                }
             }
         }
     }

@@ -42,7 +42,7 @@ namespace AllLive.WinUI.Helper
                 config.AddRule(LogLevel.Fatal, LogLevel.Fatal, logfile);
                 NLog.LogManager.Configuration = config;
             }
-            Debug.WriteLine("[" + LogType.INFO.ToString() + "]" + message);
+            Debug.WriteLine("[" + type.ToString() + "]" + message);
             switch (type)
             {
                 case LogType.INFO:
