@@ -106,8 +106,8 @@
                         BorderThickness="1"
                         CornerRadius="4">
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock>关注加载线程数</TextBlock>
-                            <TextBlock FontSize="12" Foreground="Gray">关注列表加载线程数</TextBlock>
+                            <TextBlock>直播状态刷新线程数</TextBlock>
+                            <TextBlock FontSize="12" Foreground="Gray">关注列表状态刷新的并发线程数，值越大刷新越快，但过高可能导致请求过于频繁而触发平台反爬限制，建议保持默认</TextBlock>
                         </StackPanel>
                         <my:NumberBox
                             x:Name="concurrencyLevel"
@@ -233,7 +233,7 @@
                         CornerRadius="4">
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock>录制保存格式</TextBlock>
-                            <TextBlock FontSize="12" Foreground="Gray">TS兼容性好，MP4方便分享</TextBlock>
+                            <TextBlock FontSize="12" Foreground="Gray">TS 中断录制后仍可正常播放；MP4 兼容性好，方便分享和剪辑</TextBlock>
                         </StackPanel>
                         <ComboBox
                             x:Name="cbRecordFormat"

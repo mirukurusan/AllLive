@@ -107,7 +107,7 @@ namespace AllLive.WinUI.Views
             });
 
             //关注加载线程数
-            concurrencyLevel.Value = SettingHelper.GetValue<int>(SettingHelper.CONCURRENCY_LEVEL, 4);
+            concurrencyLevel.Value = SettingHelper.GetValue<int>(SettingHelper.CONCURRENCY_LEVEL, 3);
             concurrencyLevel.Loaded += new RoutedEventHandler((sender, e) =>
             {
                 concurrencyLevel.ValueChanged += new TypedEventHandler<NumberBox, NumberBoxValueChangedEventArgs>((obj, args) =>
@@ -145,10 +145,10 @@ namespace AllLive.WinUI.Views
                 });
             });
             //数据网络默认清晰度
-            quality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY_METERED, 0);
-            quality.Loaded += new RoutedEventHandler((sender, e) =>
+            meteredQuality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY_METERED, 0);
+            meteredQuality.Loaded += new RoutedEventHandler((sender, e) =>
             {
-                quality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
+                meteredQuality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
                 {
                     SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY_METERED, meteredQuality.SelectedIndex);
                 });
