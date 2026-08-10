@@ -1544,11 +1544,38 @@ namespace AllLive.WinUI.Views
         }
         private async void Grid_PointerWheelChanged(Object sender, PointerRoutedEventArgs args)
         {
-            SliderVolume.Value += args.GetCurrentPoint(null).Properties.MouseWheelDelta / 2400f;
-            TxtToolTip.Text = "音量 : " + Math.Round(mediaPlayer.Volume * 100) + "%";
+            var grid = (Grid)sender;
+            var pos = args.GetCurrentPoint(grid).Position;
+            var wheelDelta = args.GetCurrentPoint(null).Properties.MouseWheelDelta;
+            if (pos.X < grid.ActualWidth / 2)
+            {
+                // 左半边：调节亮度
+                HandleWheelBrightnessDelta(wheelDelta);
+            }
+            else
+            {
+                // 右半边：调节音量
+                HandleWheelVolumeDelta(wheelDelta);
+            }
             ToolTip.Visibility = Visibility.Visible;
             await Task.Delay(2000);
             ToolTip.Visibility = Visibility.Collapsed;
+        }
+
+        private void HandleWheelVolumeDelta(double wheelDelta)
+        {
+            SliderVolume.Value += wheelDelta / 2400f;
+            TxtToolTip.Text = "音量:" + mediaPlayer.Volume.ToString("P");
+        }
+
+        private void HandleWheelBrightnessDelta(double wheelDelta)
+        {
+            double dd = Math.Abs(wheelDelta) / 2400f;
+            if (wheelDelta > 0)
+                Brightness = Math.Max(Brightness - dd, 0);
+            else
+                Brightness = Math.Min(Brightness + dd, 1);
+            TxtToolTip.Text = "亮度:" + Math.Abs(Brightness - 1).ToString("P");
         }
 
         private void HandleSlideBrightnessDelta(double delta)
@@ -1570,7 +1597,8 @@ namespace AllLive.WinUI.Views
             TxtToolTip.Text = "";
             ToolTip.Visibility = Visibility.Visible;
 
-            if (e.Position.X < this.ActualWidth / 2)
+            var grid = (Grid)sender;
+            if (e.Position.X < grid.ActualWidth / 2)
                 ManipulatingBrightness = true;
             else
                 ManipulatingBrightness = false;
