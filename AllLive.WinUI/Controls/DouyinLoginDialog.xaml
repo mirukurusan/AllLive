@@ -12,16 +12,26 @@
     SecondaryButtonText="取消"
     mc:Ignorable="d">
 
-    <StackPanel>
-        <TextBlock
-            x:Name="txtStatus"
-            Margin="0,0,0,8"
-            FontSize="12"
-            Foreground="Gray"
-            Text="请在下方页面中登录抖音账号，登录成功后点击「完成登录」" />
-        <controls:WebView2
-            x:Name="webView"
-            Width="500"
-            Height="600" />
-    </StackPanel>
+    <ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxHeight">740</x:Double>
+    </ContentDialog.Resources>
+
+    <ScrollViewer
+        VerticalScrollBarVisibility="Auto"
+        VerticalScrollMode="Auto"
+        HorizontalScrollBarVisibility="Auto"
+        HorizontalScrollMode="Auto">
+        <StackPanel>
+            <TextBlock
+                x:Name="txtStatus"
+                Margin="0,0,0,8"
+                FontSize="12"
+                Foreground="Gray"
+                Text="请在下方页面中登录抖音账号，登录成功后点击「完成登录」" />
+            <controls:WebView2
+                x:Name="webView"
+                Width="500"
+                Height="560" />
+        </StackPanel>
+    </ScrollViewer>
 </ContentDialog>
