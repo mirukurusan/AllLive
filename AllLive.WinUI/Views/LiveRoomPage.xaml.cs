@@ -1,46 +1,39 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-using AllLive.WinUI.Models;
-using AllLive.WinUI.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text;
+using System.Threading.Tasks;
 using Windows.Foundation;
-using Windows.Foundation.Collections;
+using Windows.Graphics.Display;
+using Windows.Graphics.Imaging;
+using Windows.Media.Playback;
+using Windows.Storage;
+using Windows.System;
+using Windows.System.Display;
+using Windows.UI;
+using Windows.UI.Core;
+using Windows.UI.ViewManagement;
+using AllLive.Core.Models;
+using AllLive.WinUI.Helper;
+using AllLive.WinUI.Models;
+using AllLive.WinUI.ViewModels;
+using FFmpegInteropX;
+using Microsoft.UI;
+using Microsoft.UI.Input;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using AllLive.Core.Models;
-using AllLive.WinUI.Helper;
-using Microsoft.UI.Xaml.Controls;
-using NSDanmaku.Model;
-using Windows.UI.ViewManagement;
-using Windows.UI.Popups;
-using Windows.System.Display;
-using System.Threading.Tasks;
-using Windows.Storage;
-using Windows.Graphics.Imaging;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.UI.Windowing;
-using Windows.Graphics.Display;
-using Windows.UI;
-using Windows.ApplicationModel.Core;
-using System.Diagnostics;
+using Microsoft.UI.Xaml.Navigation;
 using Newtonsoft.Json;
-using Windows.UI.Core;
-using FFmpegInteropX;
-using Windows.Media.Playback;
-using System.Text;
-using System.Runtime;
-using System.Runtime.InteropServices;
+using NSDanmaku.Model;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
+
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
 
 namespace AllLive.WinUI.Views
@@ -53,7 +46,7 @@ namespace AllLive.WinUI.Views
         readonly LiveRoomVM liveRoomVM;
         readonly SettingVM settingVM;
 
-        FFmpegInteropX.FFmpegMediaSource interopMSS;
+        FFmpegMediaSource interopMSS;
         readonly MediaPlayer mediaPlayer;
 
         DisplayRequest dispRequest;
@@ -453,7 +446,7 @@ namespace AllLive.WinUI.Views
 
         }
 
-        private async void CoreWindow_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs args)
+        private async void CoreWindow_KeyDown(object sender, KeyRoutedEventArgs args)
         {
             var elent = FocusManager.GetFocusedElement();
             if (elent is TextBox || elent is AutoSuggestBox)
@@ -463,13 +456,13 @@ namespace AllLive.WinUI.Views
             }
             if (XBoxSplitView.IsPaneOpen)
             {
-                if (args.Key == Windows.System.VirtualKey.GamepadMenu)
+                if (args.Key == VirtualKey.GamepadMenu)
                 {
                     XBoxSplitView.IsPaneOpen = false;
                     args.Handled = true;
                     return;
                 }
-                if (args.Key == Windows.System.VirtualKey.GamepadB)
+                if (args.Key == VirtualKey.GamepadB)
                 {
                     if (XboxSuperChat.Visibility == Visibility.Visible)
                     {
@@ -495,7 +488,7 @@ namespace AllLive.WinUI.Views
                 //    }
                 //    break;
 
-                case Windows.System.VirtualKey.Up:
+                case VirtualKey.Up:
                     if (mediaPlayer.Volume + 0.1 > 1)
                     {
                         mediaPlayer.Volume = 1;
@@ -512,7 +505,7 @@ namespace AllLive.WinUI.Views
                     ToolTip.Visibility = Visibility.Collapsed;
                     break;
 
-                case Windows.System.VirtualKey.Down:
+                case VirtualKey.Down:
                     if (mediaPlayer.Volume - 0.1 < 0)
                     {
                         mediaPlayer.Volume = 0;
@@ -535,38 +528,38 @@ namespace AllLive.WinUI.Views
                     await Task.Delay(2000);
                     ToolTip.Visibility = Visibility.Collapsed;
                     break;
-                case Windows.System.VirtualKey.Escape:
+                case VirtualKey.Escape:
                     SetFullScreen(false);
 
                     break;
-                case Windows.System.VirtualKey.F8:
-                case Windows.System.VirtualKey.T:
+                case VirtualKey.F8:
+                case VirtualKey.T:
                     //小窗播放
                     MiniWidnows(BottomBtnExitMiniWindows.Visibility == Visibility.Visible);
 
                     break;
-                case Windows.System.VirtualKey.F12:
-                case Windows.System.VirtualKey.W:
+                case VirtualKey.F12:
+                case VirtualKey.W:
                     SetFullWindow(PlayBtnFullWindow.Visibility == Visibility.Visible);
                     break;
-                case Windows.System.VirtualKey.F11:
-                case Windows.System.VirtualKey.F:
-                case Windows.System.VirtualKey.Enter:
+                case VirtualKey.F11:
+                case VirtualKey.F:
+                case VirtualKey.Enter:
                     SetFullScreen(PlayBtnFullScreen.Visibility == Visibility.Visible);
                     break;
-                case Windows.System.VirtualKey.R:
-                    if (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
-                        == Windows.UI.Core.CoreVirtualKeyStates.Down)
+                case VirtualKey.R:
+                    if (InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control)
+                        == CoreVirtualKeyStates.Down)
                     {
                         await ToggleRecording();
                     }
                     break;
-                case Windows.System.VirtualKey.F10:
+                case VirtualKey.F10:
                     await CaptureVideo();
                     break;
-                case Windows.System.VirtualKey.F9:
-                case Windows.System.VirtualKey.D:
-                case Windows.System.VirtualKey.GamepadX:
+                case VirtualKey.F9:
+                case VirtualKey.D:
+                case VirtualKey.GamepadX:
                     //if (DanmuControl.Visibility == Visibility.Visible)
                     //{
                     //    DanmuControl.Visibility = Visibility.Collapsed;
@@ -578,30 +571,30 @@ namespace AllLive.WinUI.Views
                     //}
                     PlaySWDanmu.IsOn = DanmuControl.Visibility != Visibility.Visible;
                     break;
-                case Windows.System.VirtualKey.GamepadA:
+                case VirtualKey.GamepadA:
                     ShowControl(control.Visibility == Visibility.Collapsed);
                     break;
-                case Windows.System.VirtualKey.GamepadMenu:
+                case VirtualKey.GamepadMenu:
                     //打开设置
                     XBoxSettings.Visibility = Visibility.Visible;
                     XboxSuperChat.Visibility = Visibility.Collapsed;
                     XBoxSplitView.IsPaneOpen = true;
                     break;
-                case Windows.System.VirtualKey.GamepadLeftTrigger:
+                case VirtualKey.GamepadLeftTrigger:
                     //刷新直播间
                     BottomBtnRefresh_Click(this, null);
                     break;
-                case Windows.System.VirtualKey.GamepadB:
+                case VirtualKey.GamepadB:
                     //退出直播间
                     this.Frame.GoBack();
                     break;
-                case Windows.System.VirtualKey.GamepadY:
+                case VirtualKey.GamepadY:
                     //查看SC
                     XBoxSettings.Visibility = Visibility.Collapsed;
                     XboxSuperChat.Visibility = Visibility.Visible;
                     XBoxSplitView.IsPaneOpen = true;
                     break;
-                case Windows.System.VirtualKey.GamepadRightTrigger:
+                case VirtualKey.GamepadRightTrigger:
                     //关注/取消关注
                     if (liveRoomVM.IsFavorite)
                     {
@@ -733,7 +726,7 @@ namespace AllLive.WinUI.Views
                     _playRetryCount = 0;
                     PlayerLoading.Visibility = Visibility.Collapsed;
                     LogHelper.Log("直播加载失败", LogType.ERROR, new Exception("直播加载失败"));
-                    await new Microsoft.UI.Xaml.Controls.ContentDialog
+                    await new ContentDialog
                     {
                         Title = "播放失败",
                         Content = $"啊，播放失败了，请尝试以下操作\r\n1、更换清晰度或线路\r\n2、请尝试在直播设置中打开/关闭硬解试试",
@@ -771,7 +764,7 @@ namespace AllLive.WinUI.Views
                 controlTimer.Stop();
             }
 
-            this.ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+            this.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
 
             liveRoomVM?.Stop();
 
@@ -846,7 +839,7 @@ namespace AllLive.WinUI.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            if (e.NavigationMode == Microsoft.UI.Xaml.Navigation.NavigationMode.New)
+            if (e.NavigationMode == NavigationMode.New)
             {
                 pageArgs = e.Parameter as PageArgs;
                 if (false)
@@ -922,7 +915,7 @@ namespace AllLive.WinUI.Views
             try
             {
                 var folder = await WinUIUtils.GetRecordingFolderAsync();
-                await Windows.System.Launcher.LaunchFolderAsync(folder);
+                await Launcher.LaunchFolderAsync(folder);
             }
             catch (FileNotFoundException)
             {
@@ -1042,8 +1035,8 @@ namespace AllLive.WinUI.Views
         }
 
         private async void InteropMSS_RecordingProgress(
-            FFmpegInteropX.FFmpegMediaSource sender,
-            FFmpegInteropX.FFmpegRemuxProgressEventArgs args)
+            FFmpegMediaSource sender,
+            FFmpegRemuxProgressEventArgs args)
         {
             await new DispatcherQueueHelper(this.DispatcherQueue).RunOnUIThreadAsync(() =>
             {
@@ -1053,8 +1046,8 @@ namespace AllLive.WinUI.Views
         }
 
         private async void InteropMSS_RecordingError(
-            FFmpegInteropX.FFmpegMediaSource sender,
-            FFmpegInteropX.FFmpegRemuxErrorEventArgs args)
+            FFmpegMediaSource sender,
+            FFmpegRemuxErrorEventArgs args)
         {
             await new DispatcherQueueHelper(this.DispatcherQueue).RunOnUIThreadAsync(() =>
             {
@@ -1494,14 +1487,14 @@ namespace AllLive.WinUI.Views
         private void Grid_PointerExited(object sender, PointerRoutedEventArgs e)
         {
             pointer_in_player = false;
-            this.ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+            this.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
         }
 
         private void Grid_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
             if (this.ProtectedCursor == null)
             {
-                this.ProtectedCursor = Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Arrow);
+                this.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
             }
 
         }
@@ -1795,7 +1788,7 @@ namespace AllLive.WinUI.Views
             {
                 return;
             }
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(liveRoomVM.detail.Url));
+            await Launcher.LaunchUriAsync(new Uri(liveRoomVM.detail.Url));
         }
 
         private void BottomBtnPlayUrl_Click(object sender, RoutedEventArgs e)

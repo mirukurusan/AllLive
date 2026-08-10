@@ -1,15 +1,9 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-﻿using AllLive.WinUI.Helper;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
+using AllLive.Core.Helper;
+using AllLive.WinUI.Helper;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI.ViewModels
 {
@@ -23,7 +17,7 @@ namespace AllLive.WinUI.ViewModels
     }
     public class BaseViewModel : BaseNotifyPropertyChanged
     {
-        public AllLive.Core.Helper.IDispatcherHelper Dispatcher { get; set; }
+        public IDispatcherHelper Dispatcher { get; set; }
 
         public BaseViewModel()
         {

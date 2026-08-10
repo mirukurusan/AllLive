@@ -1,7 +1,4 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using System;
+using System;
 using System.Diagnostics;
 
 namespace AllLive.WinUI.Helper

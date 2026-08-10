@@ -1,13 +1,5 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
 using AllLive.Core.Models;
 using AllLive.WinUI.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AllLive.WinUI.Models
 {

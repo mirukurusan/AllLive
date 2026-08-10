@@ -1,14 +1,7 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using AllLive.Core.Helper;
-﻿using AllLive.Core.Interface;
-using AllLive.WinUI.Helper;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using AllLive.Core;
+using AllLive.Core.Helper;
+using AllLive.Core.Interface;
 
 namespace AllLive.WinUI.ViewModels
 {
@@ -21,28 +14,28 @@ namespace AllLive.WinUI.ViewModels
                 SiteType=LiveSite.Bilibili,
                 Name="哔哩哔哩直播",
                 Logo="ms-appx:///Assets/Logo/bilibili.png",
-                LiveSite=new AllLive.Core.BiliBili(),
+                LiveSite=new BiliBili(),
             },
             new Site()
             {
                 SiteType=LiveSite.Douyu,
                 Name="斗鱼直播",
                 Logo="ms-appx:///Assets/Logo/douyu.png",
-                LiveSite=new AllLive.Core.Douyu(),
+                LiveSite=new Douyu(),
             },
             new Site()
             {
                 SiteType=LiveSite.Huya,
                 Name="虎牙直播",
                 Logo="ms-appx:///Assets/Logo/huya.png",
-                LiveSite=new AllLive.Core.Huya(),
+                LiveSite=new Huya(),
             },
             new Site()
             {
                 SiteType=LiveSite.Douyin,
                 Name="抖音直播",
                 Logo="ms-appx:///Assets/Logo/douyin.png",
-                LiveSite=new AllLive.Core.Douyin(),
+                LiveSite=new Douyin(),
             },
         };
 

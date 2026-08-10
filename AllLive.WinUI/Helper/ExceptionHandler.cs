@@ -1,12 +1,5 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Controls;
 
 namespace AllLive.WinUI.Helper

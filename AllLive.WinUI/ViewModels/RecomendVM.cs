@@ -1,14 +1,7 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.ObjectModel;
-using AllLive.WinUI.Helper;
+using AllLive.Core.Models;
 
 namespace AllLive.WinUI.ViewModels
 {
@@ -39,9 +32,9 @@ namespace AllLive.WinUI.ViewModels
         public RecomendItemVM(Site site)
         {
             this.site = site;
-            Items = new ObservableCollection<Core.Models.LiveRoomItem>();
+            Items = new ObservableCollection<LiveRoomItem>();
         }
-        public ObservableCollection<AllLive.Core.Models.LiveRoomItem> Items { get; set; }
+        public ObservableCollection<LiveRoomItem> Items { get; set; }
         public async void LoadData()
         {
             try

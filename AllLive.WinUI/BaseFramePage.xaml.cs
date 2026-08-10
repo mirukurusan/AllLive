@@ -1,23 +1,12 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-﻿using AllLive.WinUI.Helper;
-using AllLive.WinUI.Views;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.ApplicationModel.Core;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using Windows.System;
+using Windows.UI.Core;
+using AllLive.WinUI.Helper;
+using AllLive.WinUI.Views;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 
@@ -51,7 +40,7 @@ namespace AllLive.WinUI
         }
 
         // Helper extension to get AppWindow from Window (defined at bottom of file)
-        private void BaseFramePage_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs args)
+        private void BaseFramePage_KeyDown(object sender, KeyRoutedEventArgs args)
         {
             // 如果当前页面处于LiveRoomPage,不做处理
             if (MainFrame.Content is LiveRoomPage)
@@ -60,7 +49,7 @@ namespace AllLive.WinUI
             }
 
             // 如果是XBOX的B键
-            if (args.Key == Windows.System.VirtualKey.GamepadB)
+            if (args.Key == VirtualKey.GamepadB)
             {
                 if (MainFrame.CanGoBack)
                 {
@@ -175,8 +164,8 @@ namespace AllLive.WinUI
         private void BaseFramePage_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
             var par = e.GetCurrentPoint(sender as Page).Properties.PointerUpdateKind;
-            if (SettingHelper.GetValue<bool>(SettingHelper.MOUSE_BACK, true) && par == Microsoft.UI.Input.PointerUpdateKind.XButton1Pressed
-                || par == Microsoft.UI.Input.PointerUpdateKind.MiddleButtonPressed)
+            if (SettingHelper.GetValue<bool>(SettingHelper.MOUSE_BACK, true) && par == PointerUpdateKind.XButton1Pressed
+                || par == PointerUpdateKind.MiddleButtonPressed)
             {
                 if (MainFrame.CanGoBack)
                 {
@@ -187,7 +176,7 @@ namespace AllLive.WinUI
             }
         }
 
-        private void BaseFramePage_BackRequested(object sender, Windows.UI.Core.BackRequestedEventArgs e)
+        private void BaseFramePage_BackRequested(object sender, BackRequestedEventArgs e)
         {
             if (MainFrame.CanGoBack)
             {

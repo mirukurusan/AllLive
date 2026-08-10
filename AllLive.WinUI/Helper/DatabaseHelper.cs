@@ -1,15 +1,10 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
-using Windows.Storage;
+using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using AllLive.WinUI.Models;
+using Microsoft.Data.Sqlite;
 
 namespace AllLive.WinUI.Helper
 {
@@ -91,7 +86,7 @@ watch_time DATETIME);
 
         public static void UpdateFavorite(long id, string userName, string photo)
         {
-            System.Diagnostics.Trace.WriteLine($"[DatabaseHelper.UpdateFavorite] 更新收藏: id={id}");
+            Trace.WriteLine($"[DatabaseHelper.UpdateFavorite] 更新收藏: id={id}");
             using (var command = new SqliteCommand())
             {
                 command.Connection = db;

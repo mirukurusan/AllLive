@@ -1,19 +1,13 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-﻿using AllLive.WinUI.Helper;
-using AllLive.WinUI.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using Windows.Storage.Pickers;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using AllLive.WinUI.Helper;
+using AllLive.WinUI.Models;
 using Newtonsoft.Json;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI.ViewModels
 {

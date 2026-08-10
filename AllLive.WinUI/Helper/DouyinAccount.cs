@@ -1,10 +1,8 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using AllLive.Core;
-using AllLive.WinUI.ViewModels;
 using System;
 using System.Linq;
+using AllLive.Core;
+using AllLive.Core.Helper;
+using AllLive.WinUI.ViewModels;
 
 namespace AllLive.WinUI.Helper
 {

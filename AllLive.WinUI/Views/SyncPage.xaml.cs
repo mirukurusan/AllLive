@@ -1,24 +1,12 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-﻿
+using System;
 using AllLive.WinUI.Helper;
 using AllLive.WinUI.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
+using Microsoft.UI.Xaml.Media.Imaging;
+using ZXing;
+using ZXing.Common;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
 
@@ -80,10 +68,10 @@ namespace AllLive.WinUI.Views
                 Height=260
             };
             // 创建二维码
-            var qrCode = new ZXing.BarcodeWriter<Microsoft.UI.Xaml.Media.Imaging.WriteableBitmap>
+            var qrCode = new BarcodeWriter<WriteableBitmap>
             {
-                Format = ZXing.BarcodeFormat.QR_CODE,
-                Options = new ZXing.Common.EncodingOptions
+                Format = BarcodeFormat.QR_CODE,
+                Options = new EncodingOptions
                 {
                     Width = 260,
                     Height = 260,

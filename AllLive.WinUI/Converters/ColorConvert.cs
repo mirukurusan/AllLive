@@ -1,14 +1,9 @@
-using Windows.ApplicationModel;
+using System;
+using System.Globalization;
+using Windows.UI;
 using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
-using Windows.UI;
 
 namespace AllLive.WinUI.Converters
 {
@@ -32,18 +27,18 @@ namespace AllLive.WinUI.Converters
                 if (obj.Length <= 6)
                 {
                     obj = obj.PadLeft(6, '0');
-                    color.R = byte.Parse(obj.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
-                    color.G = byte.Parse(obj.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
-                    color.B = byte.Parse(obj.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+                    color.R = byte.Parse(obj.Substring(0, 2), NumberStyles.HexNumber);
+                    color.G = byte.Parse(obj.Substring(2, 2), NumberStyles.HexNumber);
+                    color.B = byte.Parse(obj.Substring(4, 2), NumberStyles.HexNumber);
                     color.A = 255;
                 }
                 else
                 {
                     obj = obj.PadLeft(8, '0');
-                    color.R = byte.Parse(obj.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
-                    color.G = byte.Parse(obj.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
-                    color.B = byte.Parse(obj.Substring(6, 2), System.Globalization.NumberStyles.HexNumber);
-                    color.A = byte.Parse(obj.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+                    color.R = byte.Parse(obj.Substring(2, 2), NumberStyles.HexNumber);
+                    color.G = byte.Parse(obj.Substring(4, 2), NumberStyles.HexNumber);
+                    color.B = byte.Parse(obj.Substring(6, 2), NumberStyles.HexNumber);
+                    color.A = byte.Parse(obj.Substring(0, 2), NumberStyles.HexNumber);
                 }
 
             }

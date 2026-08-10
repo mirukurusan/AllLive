@@ -1,21 +1,17 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-using AllLive.WinUI.Helper;
-using AllLive.WinUI.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
-using Windows.Storage.Pickers;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using AllLive.WinUI.Helper;
+using AllLive.WinUI.Models;
+using Microsoft.UI.Xaml.Controls;
 using Newtonsoft.Json;
-using Windows.UI.Popups;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI.ViewModels
 {
@@ -86,7 +82,7 @@ namespace AllLive.WinUI.ViewModels
         public async void LoadLiveStatus(SemaphoreSlim semaphore)
         {
             LoaddingLiveStatus = true;
-            System.Threading.Interlocked.Exchange(ref loadedCount, 0);
+            Interlocked.Exchange(ref loadedCount, 0);
             var tasks = new List<Task>();
             foreach (var item in Items)
             {
@@ -154,7 +150,7 @@ namespace AllLive.WinUI.ViewModels
             }
             finally
             {
-                var currentCount = System.Threading.Interlocked.Increment(ref loadedCount);
+                var currentCount = Interlocked.Increment(ref loadedCount);
                 if (currentCount == Items.Count)
                 {
                     // 切换到UI线程更新集合
@@ -208,7 +204,7 @@ namespace AllLive.WinUI.ViewModels
                 try
                 {
                     var json = await FileIO.ReadTextAsync(file);
-                    var items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<FavoriteJsonItem>>(json);
+                    var items = JsonConvert.DeserializeObject<List<FavoriteJsonItem>>(json);
                     foreach (var item in items)
                     {
 
@@ -274,7 +270,7 @@ namespace AllLive.WinUI.ViewModels
                             AddTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.M")
                         });
                     }
-                    var json = Newtonsoft.Json.JsonConvert.SerializeObject(items, Newtonsoft.Json.Formatting.Indented);
+                    var json = JsonConvert.SerializeObject(items, Formatting.Indented);
                     await FileIO.WriteTextAsync(file, json);
                     WinUIUtils.ShowMessageToast("导出成功");
                 }
@@ -290,7 +286,7 @@ namespace AllLive.WinUI.ViewModels
 
         public async void Tip()
         {
-            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            var dialog = new ContentDialog
             {
                 Title = "导入导出说明",
                 Content = @"该程序兼容Simple Live，您可以导入Simple Live的关注数据，导出的数据也可以在Simple Live中导入。",

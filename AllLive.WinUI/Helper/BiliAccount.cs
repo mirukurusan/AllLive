@@ -1,15 +1,12 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-﻿using AllLive.Core;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-using AllLive.WinUI.ViewModels;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using AllLive.Core;
+using AllLive.Core.Helper;
+using AllLive.WinUI.ViewModels;
+using Newtonsoft.Json.Linq;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI.Helper
 {

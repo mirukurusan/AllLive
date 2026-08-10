@@ -1,24 +1,15 @@
-﻿using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-﻿using AllLive.Core.Interface;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using AllLive.Core.Interface;
 using AllLive.Core.Models;
 using AllLive.WinUI.Controls;
 using AllLive.WinUI.Models;
 using AllLive.WinUI.ViewModels;
 using AllLive.WinUI.Views;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.ApplicationModel.Core;
-using Windows.UI.Core;
-using Windows.UI.Popups;
-using Windows.UI.ViewManagement;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI.Helper
 {
@@ -43,7 +34,7 @@ namespace AllLive.WinUI.Helper
             if (liveSite.Name == "哔哩哔哩直播" && !BiliAccount.Instance.Logined&&!SettingHelper.GetValue(SettingHelper.IGNORE_BILI_LOGIN_TIP,false))
             {
                 // 弹窗询问是否登录
-                var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                var dialog = new ContentDialog
                 {
                     Title = "未登录",
                     Content = "您尚未登录哔哩哔哩账号，部分直播可能无法观看，是否前往登录账号？",
@@ -53,7 +44,7 @@ namespace AllLive.WinUI.Helper
                     XamlRoot = App.GetMainWindow()?.Content?.XamlRoot
                 };
                 var result = await dialog.ShowAsync();
-                if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+                if (result == ContentDialogResult.Primary)
                 {
                     var login = await BiliBiliLogin();
                     if (login)
@@ -64,7 +55,7 @@ namespace AllLive.WinUI.Helper
                         NavigatePage(typeof(LiveRoomPage), arg);
                     }
                 }
-                else if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Secondary)
+                else if (result == ContentDialogResult.Secondary)
                 {
                     NavigatePage(typeof(LiveRoomPage), arg);
                 }
@@ -84,7 +75,7 @@ namespace AllLive.WinUI.Helper
             if(SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false)&& page == typeof(LiveRoomPage))
             {
                 // WinUI 3 multi-window: create a new Window directly
-                var newWindow = new Microsoft.UI.Xaml.Window();
+                var newWindow = new Window();
                 var frame = new Frame();
                 frame.RequestedTheme = (ElementTheme)SettingHelper.GetValue<int>(SettingHelper.THEME, 0);
                 frame.Navigate(typeof(LiveRoomPage), data);

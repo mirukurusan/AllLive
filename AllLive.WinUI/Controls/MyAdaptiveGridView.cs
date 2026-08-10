@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Input;
+using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
-using Windows.Foundation.Collections;
 
 namespace AllLive.WinUI.Controls
 {
@@ -126,13 +126,13 @@ namespace AllLive.WinUI.Controls
 
             if (obj is FrameworkElement frameworkElement)
             {
-                frameworkElement.SetBinding(FrameworkElement.HeightProperty, new Binding
+                frameworkElement.SetBinding(HeightProperty, new Binding
                 {
                     Source = this,
                     Path = new PropertyPath("ItemHeight"),
                     Mode = BindingMode.TwoWay
                 });
-                frameworkElement.SetBinding(FrameworkElement.WidthProperty, new Binding
+                frameworkElement.SetBinding(WidthProperty, new Binding
                 {
                     Source = this,
                     Path = new PropertyPath("ItemWidth"),
@@ -142,8 +142,8 @@ namespace AllLive.WinUI.Controls
 
             if (obj is ContentControl contentControl)
             {
-                contentControl.HorizontalContentAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Stretch;
-                contentControl.VerticalContentAlignment = Microsoft.UI.Xaml.VerticalAlignment.Stretch;
+                contentControl.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+                contentControl.VerticalContentAlignment = VerticalAlignment.Stretch;
             }
 
             if (_needContainerMarginForLayout)
@@ -241,7 +241,7 @@ namespace AllLive.WinUI.Controls
             {
                 foreach (var setter in style.Setters)
                 {
-                    if (setter is Setter s && s.Property == FrameworkElement.MarginProperty && s.Value is Thickness t)
+                    if (setter is Setter s && s.Property == MarginProperty && s.Value is Thickness t)
                     {
                         return t;
                     }

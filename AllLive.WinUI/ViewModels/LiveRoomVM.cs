@@ -1,26 +1,18 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Timers;
+using System.Windows.Input;
+using Windows.Networking.Connectivity;
 using AllLive.Core.Helper;
 using AllLive.Core.Interface;
 using AllLive.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.ObjectModel;
-using Windows.UI.Core;
 using AllLive.WinUI.Helper;
-using System.Windows.Input;
-using Windows.UI.ViewManagement;
-using Microsoft.UI.Xaml;
-using Windows.ApplicationModel.Core;
-using System.ComponentModel;
-using System.Timers;
-using System.Collections.Concurrent;
-using Windows.Networking.Connectivity;
+using AllLive.WinUI.Models;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI.ViewModels
 {
@@ -317,7 +309,7 @@ namespace AllLive.WinUI.ViewModels
                     // var u = await Site.GetPlayUrls(result, q[0]);
                     //ChangedPlayUrl?.Invoke(this, u[0]);
                 }
-                DatabaseHelper.AddHistory(new Models.HistoryItem()
+                DatabaseHelper.AddHistory(new HistoryItem()
                 {
                     Photo = Photo,
                     RoomID = RoomID,
@@ -432,7 +424,7 @@ namespace AllLive.WinUI.ViewModels
             if (Site == null || RoomID == null || RoomID == "0" || RoomID == "") return;
             try
             {
-                DatabaseHelper.AddFavorite(new Models.FavoriteItem()
+                DatabaseHelper.AddFavorite(new FavoriteItem()
                 {
                     Photo = Photo,
                     RoomID = RoomID,

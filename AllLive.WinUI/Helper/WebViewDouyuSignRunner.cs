@@ -1,9 +1,8 @@
-using AllLive.Core.Helper;
-using Microsoft.ClearScript;
-using Microsoft.ClearScript.V8;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using AllLive.Core.Helper;
+using Microsoft.ClearScript.V8;
 
 namespace AllLive.WinUI.Helper
 {
@@ -34,7 +33,7 @@ namespace AllLive.WinUI.Helper
                     return string.Empty;
 
                 var did = "10000000000000000000000000001501";
-                var time = AllLive.Core.Helper.Utils.GetTimestamp();
+                var time = Core.Helper.Utils.GetTimestamp();
 
                 return await Task.Run(() =>
                 {
@@ -51,7 +50,7 @@ namespace AllLive.WinUI.Helper
                                 return string.Empty;
 
                             var v = Regex.Match(jsCode, @"v=(\d+)").Groups[1].Value;
-                            var rb = AllLive.Core.Helper.Utils.ToMD5(rid + did + time + v);
+                            var rb = Core.Helper.Utils.ToMD5(rid + did + time + v);
 
                             // Fix the obfuscated JS to expose sign()
                             var jsCode2 = Regex.Replace(jsCode, @"return rt;}\);?", "return rt;}");

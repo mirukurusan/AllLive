@@ -1,14 +1,7 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using AllLive.Core.Interface;
-using AllLive.Core.Models;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using AllLive.Core.Interface;
+using AllLive.Core.Models;
 
 namespace AllLive.WinUI.ViewModels
 {
@@ -16,10 +9,10 @@ namespace AllLive.WinUI.ViewModels
     {
         public CategoryDetailVM()
         {
-            Items = new ObservableCollection<Core.Models.LiveRoomItem>();
+            Items = new ObservableCollection<LiveRoomItem>();
         }
 
-        public ObservableCollection<AllLive.Core.Models.LiveRoomItem> Items { get; set; }
+        public ObservableCollection<LiveRoomItem> Items { get; set; }
 
         
         private ILiveSite _site;

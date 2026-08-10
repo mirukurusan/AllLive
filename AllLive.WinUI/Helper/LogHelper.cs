@@ -1,15 +1,8 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using NLog;
-using NLog.Config;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+using NLog;
+using NLog.Config;
+using NLog.Targets;
 
 namespace AllLive.WinUI.Helper
 {
@@ -23,13 +16,13 @@ namespace AllLive.WinUI.Helper
     public class LogHelper
     {
         public static LoggingConfiguration config;
-        public static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+        public static Logger logger = LogManager.GetCurrentClassLogger();
         public static void Log(string message, LogType type, Exception ex = null)
         {
             if (config == null)
             {
-                config = new NLog.Config.LoggingConfiguration();
-                var logfile = new NLog.Targets.FileTarget()
+                config = new LoggingConfiguration();
+                var logfile = new FileTarget()
                 {
                     Name = "logfile",
                     CreateDirs = true,
@@ -40,7 +33,7 @@ namespace AllLive.WinUI.Helper
                 config.AddRule(LogLevel.Debug, LogLevel.Debug, logfile);
                 config.AddRule(LogLevel.Error, LogLevel.Error, logfile);
                 config.AddRule(LogLevel.Fatal, LogLevel.Fatal, logfile);
-                NLog.LogManager.Configuration = config;
+                LogManager.Configuration = config;
             }
             Debug.WriteLine("[" + type.ToString() + "]" + message);
             switch (type)

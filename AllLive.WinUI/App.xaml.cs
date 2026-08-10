@@ -1,13 +1,17 @@
+using System;
+using System.Threading.Tasks;
+using Windows.UI;
+using Windows.UI.ViewManagement;
+using AllLive.Core.Helper;
 using AllLive.WinUI.Helper;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using System;
-using Windows.ApplicationModel;
-using Windows.UI;
-using Windows.UI.ViewManagement;
+using NSDanmaku.WinUI.Controls;
+using WinRT.Interop;
+using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI
@@ -22,10 +26,10 @@ namespace AllLive.WinUI
         public App()
         {
             this.InitializeComponent();
-            App.Current.UnhandledException += App_UnhandledException;
+            Current.UnhandledException += App_UnhandledException;
         }
 
-        private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+        private void App_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             e.Handled = true;
             try
@@ -36,7 +40,7 @@ namespace AllLive.WinUI
             catch (Exception) { }
         }
 
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs e)
+        protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
             m_window = new MainWindow();
             m_window.Activate();
@@ -45,14 +49,14 @@ namespace AllLive.WinUI
             _ = InitializeAsync(e);
         }
 
-        private async System.Threading.Tasks.Task InitializeAsync(Microsoft.UI.Xaml.LaunchActivatedEventArgs e)
+        private async Task InitializeAsync(LaunchActivatedEventArgs e)
         {
             try
             {
                 TraceRedirector.EnsureInitialized();
                 await DatabaseHelper.InitializeDatabase();
 
-                NSDanmaku.WinUI.Controls.Danmaku.InitDanmakuDpi();
+                Danmaku.InitDanmakuDpi();
 
                 m_window.DispatcherQueue.TryEnqueue(() =>
                 {
@@ -77,7 +81,7 @@ namespace AllLive.WinUI
         {
             try
             {
-                var window = (App.Current as App)?.m_window;
+                var window = (Current as App)?.m_window;
                 if (window == null) return;
 
                 var appWindow = GetAppWindow(window);
@@ -113,8 +117,8 @@ namespace AllLive.WinUI
 
         private static AppWindow GetAppWindow(Window window)
         {
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+            var hwnd = WindowNative.GetWindowHandle(window);
+            var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
             return AppWindow.GetFromWindowId(windowId);
         }
 
@@ -155,8 +159,8 @@ namespace AllLive.WinUI
             if (window == null) return null;
             try
             {
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                var hwnd = WindowNative.GetWindowHandle(window);
+                var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
                 return AppWindow.GetFromWindowId(windowId);
             }
             catch { return null; }
@@ -171,7 +175,7 @@ namespace AllLive.WinUI
         {
             try
             {
-                AllLive.Core.Helper.DouyinScriptRuntime.Current = new LoggingDouyinScriptRunner(new V8DouyinScriptRunner());
+                DouyinScriptRuntime.Current = new LoggingDouyinScriptRunner(new V8DouyinScriptRunner());
             }
             catch (Exception ex)
             {
@@ -183,7 +187,7 @@ namespace AllLive.WinUI
         {
             try
             {
-                AllLive.Core.Helper.DouyuSignRuntime.Current = new V8DouyuSignRunner();
+                DouyuSignRuntime.Current = new V8DouyuSignRunner();
             }
             catch (Exception ex)
             {
@@ -202,8 +206,8 @@ namespace AllLive.WinUI
         {
             var window = GetMainWindow();
             if (window == null) return null;
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
-            var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+            var hwnd = WindowNative.GetWindowHandle(window);
+            var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
             return AppWindow.GetFromWindowId(windowId);
         }
     }

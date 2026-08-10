@@ -1,32 +1,19 @@
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-using Windows.ApplicationModel;
-using Microsoft.UI;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Windows.Services.Store;
+using Windows.System;
 using AllLive.Core.Helper;
-﻿using AllLive.Core.Interface;
+using AllLive.Core.Models;
 using AllLive.WinUI.Helper;
 using AllLive.WinUI.Models;
 using AllLive.WinUI.ViewModels;
 using AllLive.WinUI.Views;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text.RegularExpressions;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using AllLive.Core.Models;
-using Windows.ApplicationModel.Core;
-using System.Threading.Tasks;
-using Windows.Services.Store;
-using Windows.UI.Popups;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 // https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x804 上介绍了“空白页”项模板
 
@@ -50,14 +37,14 @@ namespace AllLive.WinUI
 
         private void MainPage_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.GamepadMenu)
+            if (e.Key == VirtualKey.GamepadMenu)
             {
                 e.Handled = true;
                 // 切换设置
 
                 navigationView.SelectedItem = navigationView.SettingsItem;
             }
-            else if (e.Key == Windows.System.VirtualKey.GamepadY)
+            else if (e.Key == VirtualKey.GamepadY)
             {
                 e.Handled = true;
                 searchBox.Focus(FocusState.Programmatic);
@@ -73,17 +60,17 @@ namespace AllLive.WinUI
         {
             if (false)
             {
-                navigationView.PaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode.Top;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
                 MessageCenter.HideTitlebar(true);
                 return;
             }
             if (SettingHelper.GetValue<int>(SettingHelper.PANE_DISPLAY_MODE, 0) == 0)
             {
-                navigationView.PaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode.Left;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
             }
             else
             {
-                navigationView.PaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode.Top;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
             }
         }
 
@@ -94,9 +81,9 @@ namespace AllLive.WinUI
             DouyinAccount.Instance.InitLoginInfo();
         }
 
-        private void NavigationView_SelectionChanged(Microsoft.UI.Xaml.Controls.NavigationView sender, Microsoft.UI.Xaml.Controls.NavigationViewSelectionChangedEventArgs args)
+        private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            var item = args.SelectedItem as Microsoft.UI.Xaml.Controls.NavigationViewItem;
+            var item = args.SelectedItem as NavigationViewItem;
             if (item.Tag.ToString() == "设置" || item.Tag.ToString() == "Settings")
             {
                 item.Tag = "SettingsPage";
@@ -155,7 +142,7 @@ namespace AllLive.WinUI
 
                 if (updates.Count > 0)
                 {
-                    var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                    var dialog = new ContentDialog
                     {
                         Title = "发现新版本",
                         Content = "发现新版本，是否前往应用商店更新？",
@@ -164,11 +151,11 @@ namespace AllLive.WinUI
                         XamlRoot = this.XamlRoot
                     };
                     var result = await dialog.ShowAsync();
-                    if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+                    if (result == ContentDialogResult.Primary)
                     {
                         var product = await context.GetStoreProductForCurrentAppAsync();
                         var uri = new Uri($"ms-windows-store://pdp?productid={product.Product.StoreId}");
-                        await Windows.System.Launcher.LaunchUriAsync(uri);
+                        await Launcher.LaunchUriAsync(uri);
                     }
                 }
 

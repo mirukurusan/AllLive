@@ -1,26 +1,17 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using AllLive.Core.Helper;
-using AllLive.WinUI.Helper;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using System.Timers;
+using AllLive.Core.Helper;
+using AllLive.WinUI.Helper;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using System.Timers;
-using AllLive.Core.Danmaku.Proto;
-using System.Xml.Linq;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Newtonsoft.Json.Linq;
+using ZXing;
+using ZXing.Common;
 
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“内容对话框”项模板
 
@@ -83,10 +74,10 @@ namespace AllLive.WinUI.Controls
                     qrcodeUrl = json["data"]["url"].ToString();
 
                     // 创建二维码
-                    var qrCode = new ZXing.BarcodeWriter<Microsoft.UI.Xaml.Media.Imaging.WriteableBitmap>
+                    var qrCode = new BarcodeWriter<WriteableBitmap>
                     {
-                        Format = ZXing.BarcodeFormat.QR_CODE,
-                        Options = new ZXing.Common.EncodingOptions
+                        Format = BarcodeFormat.QR_CODE,
+                        Options = new EncodingOptions
                         {
                             Width = 260,
                             Height = 260,
@@ -181,7 +172,7 @@ namespace AllLive.WinUI.Controls
             timer = new Timer(3 * 1000);
             timer.Elapsed += (sender, e) =>
             {
-                this.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
+                this.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () =>
                 {
                     PollQRStatus();
                 });

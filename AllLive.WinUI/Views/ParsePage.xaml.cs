@@ -1,14 +1,12 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Windows.ApplicationModel.DataTransfer;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
+using AllLive.Core.Helper;
 using AllLive.WinUI.Models;
 using AllLive.WinUI.ViewModels;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 namespace AllLive.WinUI.Views
 {
@@ -53,23 +51,23 @@ namespace AllLive.WinUI.Views
             }
             else
             {
-                AllLive.Core.Helper.LiveSite siteType;
+                LiveSite siteType;
                 switch (selectedTag)
                 {
                     case "douyin":
-                        siteType = AllLive.Core.Helper.LiveSite.Douyin;
+                        siteType = LiveSite.Douyin;
                         break;
                     case "bilibili":
-                        siteType = AllLive.Core.Helper.LiveSite.Bilibili;
+                        siteType = LiveSite.Bilibili;
                         break;
                     case "huya":
-                        siteType = AllLive.Core.Helper.LiveSite.Huya;
+                        siteType = LiveSite.Huya;
                         break;
                     case "douyu":
-                        siteType = AllLive.Core.Helper.LiveSite.Douyu;
+                        siteType = LiveSite.Douyu;
                         break;
                     default:
-                        siteType = AllLive.Core.Helper.LiveSite.Douyin;
+                        siteType = LiveSite.Douyin;
                         break;
                 }
                 site = MainVM.Sites.FirstOrDefault(s => s.SiteType == siteType);
@@ -93,7 +91,7 @@ namespace AllLive.WinUI.Views
             var douyinMatch = Regex.Match(input, @"live\.douyin\.com/(\d+)");
             if (douyinMatch.Success)
             {
-                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == AllLive.Core.Helper.LiveSite.Douyin), 
+                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == LiveSite.Douyin), 
                         douyinMatch.Groups[1].Value);
             }
 
@@ -101,7 +99,7 @@ namespace AllLive.WinUI.Views
             var biliMatch = Regex.Match(input, @"live\.bilibili\.com/(\d+)");
             if (biliMatch.Success)
             {
-                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == AllLive.Core.Helper.LiveSite.Bilibili), 
+                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == LiveSite.Bilibili), 
                         biliMatch.Groups[1].Value);
             }
 
@@ -109,7 +107,7 @@ namespace AllLive.WinUI.Views
             var huyaMatch = Regex.Match(input, @"huya\.com/(\w+)");
             if (huyaMatch.Success)
             {
-                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == AllLive.Core.Helper.LiveSite.Huya), 
+                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == LiveSite.Huya), 
                         huyaMatch.Groups[1].Value);
             }
 
@@ -117,14 +115,14 @@ namespace AllLive.WinUI.Views
             var douyuMatch = Regex.Match(input, @"douyu\.com/(\d+)");
             if (douyuMatch.Success)
             {
-                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == AllLive.Core.Helper.LiveSite.Douyu), 
+                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == LiveSite.Douyu), 
                         douyuMatch.Groups[1].Value);
             }
 
             // 纯数字默认抖音
             if (Regex.IsMatch(input, @"^\d+$"))
             {
-                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == AllLive.Core.Helper.LiveSite.Douyin), input);
+                return (MainVM.Sites.FirstOrDefault(s => s.SiteType == LiveSite.Douyin), input);
             }
 
             return (null, null);

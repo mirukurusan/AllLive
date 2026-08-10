@@ -3,7 +3,6 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:AllLive.WinUI.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:my="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
@@ -401,6 +400,7 @@
                         BorderThickness="1"
                         CornerRadius="4">
                         <TextBlock>屏蔽关键字</TextBlock>
+                        <TextBlock FontSize="12" Foreground="Gray">支持屏蔽用户名和弹幕内容</TextBlock>
                         <AutoSuggestBox
                             x:Name="LiveDanmuSettingTxtWord"
                             Width="280"

@@ -1,27 +1,15 @@
-﻿using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-using Windows.ApplicationModel;
+﻿using System;
+using Windows.Foundation;
+using Windows.Storage;
+using Windows.System;
+using AllLive.WinUI.Controls;
 using AllLive.WinUI.Helper;
 using AllLive.WinUI.ViewModels;
-using CommunityToolkit.WinUI.Helpers;
-using Microsoft.UI.Xaml.Controls;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using Newtonsoft.Json;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
 
@@ -274,7 +262,7 @@ namespace AllLive.WinUI.Views
         private async void BtnLog_Click(object sender, RoutedEventArgs e)
         {
             var storageFolder = await WinUIUtils.GetLocalFolderAsync();
-            var logFolder = await storageFolder.CreateFolderAsync("log", Windows.Storage.CreationCollisionOption.OpenIfExists);
+            var logFolder = await storageFolder.CreateFolderAsync("log", CreationCollisionOption.OpenIfExists);
             await Launcher.LaunchFolderAsync(logFolder);
         }
 
@@ -310,7 +298,7 @@ namespace AllLive.WinUI.Views
                 WinUIUtils.ShowMessageToast("已登录");
                 return;
             }
-            var dialog = new AllLive.WinUI.Controls.DouyinLoginDialog();
+            var dialog = new DouyinLoginDialog();
             await dialog.ShowAsync();
             if (dialog.LoginSuccess)
             {

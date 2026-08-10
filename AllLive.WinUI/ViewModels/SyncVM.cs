@@ -1,27 +1,16 @@
-using Microsoft.UI;
-using AllLive.Core.Helper;
-using WinUIUtils = AllLive.WinUI.Helper.Utils;
-using Windows.ApplicationModel;
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.ObjectModel;
-using Microsoft.AspNetCore.SignalR.Client;
-using AllLive.WinUI.Helper;
-using System.Data.Common;
-using System.Data;
-using CommunityToolkit.WinUI.Helpers;
-using Newtonsoft.Json;
-using AllLive.Core.Danmaku.Proto;
-using Microsoft.UI.Xaml;
-using Windows.UI.Core;
+using System.Threading.Tasks;
 using System.Timers;
-using Windows.UI.Popups;
+using AllLive.Core.Helper;
+using AllLive.WinUI.Helper;
 using AllLive.WinUI.Models;
-using Windows.System;
+using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.UI.Xaml.Controls;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI.ViewModels
 {
@@ -160,7 +149,7 @@ namespace AllLive.WinUI.ViewModels
             {
                 DatabaseHelper.DeleteFavorite();
             }
-            var items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<FavoriteJsonItem>>(content);
+            var items = JsonConvert.DeserializeObject<List<FavoriteJsonItem>>(content);
             foreach (var item in items)
             {
                 if (DatabaseHelper.CheckFavorite(item.RoomId, item.SiteName) == null)
@@ -187,7 +176,7 @@ namespace AllLive.WinUI.ViewModels
             {
                 DatabaseHelper.DeleteHistory();
             }
-            var items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<HistoryJsonItem>>(content);
+            var items = JsonConvert.DeserializeObject<List<HistoryJsonItem>>(content);
             foreach (var item in items)
             {
                 DatabaseHelper.AddHistory(new HistoryItem()
@@ -375,7 +364,7 @@ namespace AllLive.WinUI.ViewModels
                     AddTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.M")
                 });
             }
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(items);
+            var json = JsonConvert.SerializeObject(items);
             var resp = await connection?.InvokeAsync<Resp<int>>("SendFavorite", RoomID, overlay, json);
             if (resp.IsSuccess)
             {
@@ -432,7 +421,7 @@ namespace AllLive.WinUI.ViewModels
                     UpdateTime = item.WatchTime.ToString("yyyy-MM-dd HH:mm:ss.M"),
                 });
             }
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(items);
+            var json = JsonConvert.SerializeObject(items);
             var resp = await connection?.InvokeAsync<Resp<int>>("SendHistory", RoomID, overlay, json);
             if (resp.IsSuccess)
             {
@@ -459,7 +448,7 @@ namespace AllLive.WinUI.ViewModels
                 ShowMessage("暂无屏蔽关键词");
                 return;
             }
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(currentWords);
+            var json = JsonConvert.SerializeObject(currentWords);
             var resp = await connection?.InvokeAsync<Resp<int>>("SendShieldWord", RoomID, overlay, json);
             if (resp.IsSuccess)
             {
@@ -502,7 +491,7 @@ namespace AllLive.WinUI.ViewModels
 
         private async Task<bool> ShowOverlayDialog()
         {
-            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            var dialog = new ContentDialog
             {
                 Title = "覆盖数据",
                 Content = "是否覆盖远端数据？",
@@ -511,7 +500,7 @@ namespace AllLive.WinUI.ViewModels
                 XamlRoot = App.GetMainWindow()?.Content?.XamlRoot
             };
             var result = await dialog.ShowAsync();
-            return result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary;
+            return result == ContentDialogResult.Primary;
         }
 
 

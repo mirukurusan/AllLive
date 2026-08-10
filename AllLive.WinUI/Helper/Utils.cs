@@ -1,20 +1,19 @@
-﻿using Windows.ApplicationModel;
+﻿using System;
+using System.IO;
+using System.Reflection;
+using System.Threading.Tasks;
+using Windows.ApplicationModel;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Foundation;
 using Windows.Storage;
-using Microsoft.UI;
+using Windows.System;
+using Windows.System.Profile;
 using AllLive.Core.Helper;
 using AllLive.WinUI.Controls;
-using CommunityToolkit.WinUI.Helpers;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.UI.Popups;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
+using Newtonsoft.Json;
 
 namespace AllLive.WinUI.Helper
 {
@@ -31,7 +30,7 @@ namespace AllLive.WinUI.Helper
         {
             try
             {
-                return Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+                return ApplicationData.Current.LocalFolder.Path;
             }
             catch
             {
@@ -84,12 +83,12 @@ namespace AllLive.WinUI.Helper
         {
             try
             {
-                var packageVersion = Windows.ApplicationModel.Package.Current.Id.Version;
+                var packageVersion = Package.Current.Id.Version;
                 return new Version(packageVersion.Major, packageVersion.Minor, packageVersion.Build, packageVersion.Revision);
             }
             catch
             {
-                return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0, 0);
+                return Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0, 0);
             }
         }
 
@@ -97,7 +96,7 @@ namespace AllLive.WinUI.Helper
         {
             get
             {
-                return Windows.System.Profile.AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.Xbox";
+                return AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.Xbox";
             }
         }
 
@@ -108,7 +107,7 @@ namespace AllLive.WinUI.Helper
         }
         public async static Task<bool> ShowDialog(string title, string content)
         {
-            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            var dialog = new ContentDialog
             {
                 Title = title,
                 Content = content,
@@ -117,16 +116,16 @@ namespace AllLive.WinUI.Helper
                 XamlRoot = App.GetMainWindow()?.Content?.XamlRoot
             };
             var result = await dialog.ShowAsync();
-            return result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary;
+            return result == ContentDialogResult.Primary;
         }
         public static bool SetClipboard(string content)
         {
             try
             {
-                Windows.ApplicationModel.DataTransfer.DataPackage pack = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                DataPackage pack = new DataPackage();
                 pack.SetText(content);
-                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(pack);
-                Windows.ApplicationModel.DataTransfer.Clipboard.Flush();
+                Clipboard.SetContent(pack);
+                Clipboard.Flush();
                 return true;
             }
             catch (Exception)
@@ -201,15 +200,15 @@ namespace AllLive.WinUI.Helper
                     TextBlock markdownText = new TextBlock()
                     {
                         Text = ver.message,
-                        TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                        TextWrapping = TextWrapping.Wrap,
                         IsTextSelectionEnabled = true,
                     };
                     dialog.Content = markdownText;
                     dialog.PrimaryButtonText = "查看详情";
                     dialog.SecondaryButtonText = "忽略";
-                    dialog.PrimaryButtonClick += new Windows.Foundation.TypedEventHandler<ContentDialog, ContentDialogButtonClickEventArgs>(async (sender, e) =>
+                    dialog.PrimaryButtonClick += new TypedEventHandler<ContentDialog, ContentDialogButtonClickEventArgs>(async (sender, e) =>
                     {
-                        await Windows.System.Launcher.LaunchUriAsync(new Uri(ver.url));
+                        await Launcher.LaunchUriAsync(new Uri(ver.url));
                     });
                     await dialog.ShowAsync();
                 }

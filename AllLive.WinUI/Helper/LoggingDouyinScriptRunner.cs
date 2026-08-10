@@ -1,13 +1,9 @@
-using Windows.ApplicationModel;
-using Microsoft.UI;
-using AllLive.Core.Helper;
-﻿using AllLive.Core.Helper;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using AllLive.Core.Helper;
 
 namespace AllLive.WinUI.Helper
 {
