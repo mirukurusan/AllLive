@@ -8,13 +8,25 @@
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
     <Page.Resources>
-        <Thickness x:Key="NavigationViewContentPresenterMargin">0,0,0,0</Thickness>
+        <ResourceDictionary>
+            <!-- 覆盖默认面板背景，避免暗色模式下抽屉背景仍停留在浅色（WinUI 3 已知问题 #6938/#8249） -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <StaticResource x:Key="NavigationViewDefaultPaneBackground" ResourceKey="LayerFillColorDefaultBrush" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <StaticResource x:Key="NavigationViewDefaultPaneBackground" ResourceKey="LayerFillColorDefaultBrush" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <Thickness x:Key="NavigationViewContentPresenterMargin">0,0,0,0</Thickness>
+        </ResourceDictionary>
     </Page.Resources>
-    <Grid>
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
 
         <muxc:NavigationView
             x:Name="navigationView"
+            Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
             IsBackButtonVisible="Collapsed"
             IsPaneOpen="False"
             IsSettingsVisible="true"
