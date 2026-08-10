@@ -23,7 +23,7 @@
     <WindowsPackageType Condition="'$(Configuration)' != 'Release'">None</WindowsPackageType>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
-    <PackageCertificateThumbprint>CEBE2FF80A2557D1C87207B43D7F605F4E288FBF</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>71C5B41031C0E4B6BD15B74B950C188D18855249</PackageCertificateThumbprint>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>False</GenerateTestArtifacts>

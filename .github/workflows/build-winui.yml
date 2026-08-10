@@ -1,0 +1,99 @@
+name: Build WinUI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: 18.0
+
+      - name: Configure NuGet sources for CI
+        shell: pwsh
+        run: |
+          $config = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+              <add key="FFmpegInteropX" value="packages/local" />
+            </packageSources>
+          </configuration>
+          "@
+          Set-Content -Path "${{ github.workspace }}\Nuget.Config" -Value $config
+
+      - name: Decode and install signing certificate
+        shell: pwsh
+        run: |
+          $cert = [System.Convert]::FromBase64String("${{ secrets.SIGNING_CERTIFICATE }}")
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\AllLive.WinUI\AllLive.WinUI_TemporaryKey.pfx", $cert)
+          $pwd = ConvertTo-SecureString "${{ secrets.CERTIFICATE_PASSWORD }}" -AsPlainText -Force
+          Import-PfxCertificate -FilePath "${{ github.workspace }}\AllLive.WinUI\AllLive.WinUI_TemporaryKey.pfx" -CertStoreLocation Cert:\CurrentUser\My -Password $pwd -ErrorAction Stop
+          Write-Host "签名证书已导入当前用户证书库 (Thumbprint: 71C5B41031C0E4B6BD15B74B950C188D18855249)"
+
+      - name: Update version number
+        shell: pwsh
+        run: |
+          $manifest = "${{ github.workspace }}\AllLive.WinUI\Package.appxmanifest"
+          $xml = [xml](Get-Content $manifest)
+          $version = $xml.Package.Identity.Version -replace '\.\d+$', '.${{ github.run_number }}'
+          $xml.Package.Identity.Version = $version
+          $xml.Save($manifest)
+          Write-Host "Version updated to: $version"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('AllLive.WinUI/AllLive.WinUI.csproj') }}-${{ hashFiles('AllLive.Core/AllLive.Core.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore NuGet packages
+        run: dotnet restore AllLive.WinUI/AllLive.WinUI.csproj
+
+      - name: Build portable package (${{ matrix.arch }})
+        shell: pwsh
+        run: .\build-portable.ps1 -Arch ${{ matrix.arch }}
+
+      - name: Build MSIX (${{ matrix.arch }}, sideload, signed)
+        shell: pwsh
+        run: |
+          msbuild AllLive.WinUI\AllLive.WinUI.csproj /p:Configuration=Release /p:Platform=${{ matrix.arch }} /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly /p:GenerateAppxPackageOnBuild=true /p:AppxPackageDir="${{ github.workspace }}\AllLive.WinUI\AppPackages\" /p:AppxPackageSigningEnabled=true /p:PackageCertificateKeyFile="${{ github.workspace }}\AllLive.WinUI\AllLive.WinUI_TemporaryKey.pfx" /p:PackageCertificatePassword="${{ secrets.CERTIFICATE_PASSWORD }}"
+
+      - name: Upload portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: AllLive-WinUI-Portable-${{ matrix.arch }}
+          path: dist/portable/**/*.zip
+          compression-level: 9
+
+      - name: Upload MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: AllLive-WinUI-MSIX-${{ matrix.arch }}
+          path: |
+            AllLive.WinUI/AppPackages/**/*.msix
+            AllLive.WinUI/AppPackages/**/*.cer
+          compression-level: 9
