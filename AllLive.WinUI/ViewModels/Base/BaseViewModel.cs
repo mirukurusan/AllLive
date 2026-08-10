@@ -68,7 +68,7 @@ namespace AllLive.WinUI.ViewModels
 
         }
 
-        public virtual void HandleError(Exception ex,string message="出现错误，已记录")
+        public virtual void HandleError(Exception ex,string message=null)
         {
             if (LogHelper.IsNetworkError(ex))
             {
@@ -77,7 +77,8 @@ namespace AllLive.WinUI.ViewModels
             else
             {
                 LogHelper.Log(ex.Message, LogType.ERROR, ex);
-                WinUIUtils.ShowMessageToast(message);
+                // 未指定自定义提示时，直接展示异常信息，便于用户定位具体原因
+                WinUIUtils.ShowMessageToast(string.IsNullOrEmpty(message) ? ex.Message : message);
             }
         }
 

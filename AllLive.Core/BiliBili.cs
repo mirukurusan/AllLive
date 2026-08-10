@@ -65,11 +65,31 @@ namespace AllLive.Core
             return _cookie;
         }
 
+        /// <summary>
+        /// 校验B站接口响应：code不为0或缺少data时抛出带具体信息的异常，避免后续空引用崩溃
+        /// </summary>
+        private static JObject EnsureSuccess(JObject obj, string apiName)
+        {
+            int code = obj["code"].ToInt32();
+            if (code != 0 || obj["data"] == null)
+            {
+                string msg = obj["message"]?.ToString() ?? obj["msg"]?.ToString() ?? "";
+                string hint = code == -352
+                    ? "（触发B站风控，可尝试在设置中填写B站Cookie后重试）"
+                    : code == -101 ? "（账号未登录）"
+                    : code == -403 ? "（访问权限不足）"
+                    : "";
+                throw new Exception($"B站接口“{apiName}”失败：code={code}, message={msg}{hint}");
+            }
+            return obj;
+        }
+
         public async Task<List<LiveCategory>> GetCategores()
         {
             List<LiveCategory> categories = new List<LiveCategory>();
             var result = await HttpUtil.GetString("https://api.live.bilibili.com/room/v1/Area/getList?need_entrance=1&parent_id=0", headers: await GetRequestHeader());
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "获取直播分区");
             foreach (var item in obj["data"])
             {
                 List<LiveSubCategory> subs = new List<LiveSubCategory>();
@@ -107,6 +127,7 @@ namespace AllLive.Core
             var result = await HttpUtil.GetString($"{url}?{query}", headers: await GetRequestHeader());
 
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "获取分类直播间");
             categoryResult.HasMore = obj["data"]["has_more"].ToInt32() == 1;
             foreach (var item in obj["data"]["list"])
             {
@@ -133,6 +154,7 @@ namespace AllLive.Core
             query = await GetWbiSign(query);
             var result = await HttpUtil.GetString($"{url}?{query}", headers: await GetRequestHeader());
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "获取推荐直播间");
             categoryResult.HasMore = ((JArray)obj["data"]["list"]).Count > 0;
             foreach (var item in obj["data"]["list"])
             {
@@ -154,6 +176,7 @@ namespace AllLive.Core
             query = await GetWbiSign(query);
             var result = await HttpUtil.GetString($"{url}?{query}", headers: await GetRequestHeader());
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "获取房间详情");
 
             return new LiveRoomDetail()
             {
@@ -184,6 +207,7 @@ namespace AllLive.Core
             };
             var result = await HttpUtil.GetString($"https://api.bilibili.com/x/web-interface/search/type?context=&search_type=live&cover_type=user_cover&page={page}&order=&keyword={Uri.EscapeDataString(keyword)}&category_id=&__refresh__=true&_extra=&highlight=0&single_column=0", headers: await GetRequestHeader());
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "搜索");
 
             foreach (var item in obj["data"]["result"]["live_room"])
             {
@@ -230,6 +254,7 @@ namespace AllLive.Core
                 }
             );
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "获取直播清晰度");
             var qualitiesMap = new Dictionary<int, string>();
             foreach (var item in obj["data"]["playurl_info"]["playurl"]["g_qn_desc"])
             {
@@ -259,6 +284,7 @@ namespace AllLive.Core
             List<LivePlayQuality> qualities = new List<LivePlayQuality>();
             var result = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/playUrl?cid={roomID}&qn=&platform=web", headers: await GetRequestHeader());
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "获取直播清晰度");
             foreach (var item in obj["data"]["quality_description"])
             {
                 qualities.Add(new LivePlayQuality()
@@ -297,6 +323,7 @@ namespace AllLive.Core
                 }
             );
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "获取直播地址");
             var streamList = obj["data"]["playurl_info"]["playurl"]["stream"];
             foreach (var streamItem in streamList)
             {
@@ -334,6 +361,7 @@ namespace AllLive.Core
             List<string> urls = new List<string>();
             var result = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/playUrl?cid={roomID}&qn={qn}&platform=web", headers: await GetRequestHeader());
             var obj = JObject.Parse(result);
+            EnsureSuccess(obj, "获取直播地址");
             foreach (var item in obj["data"]["durl"])
             {
                 urls.Add(item["url"].ToString());
@@ -345,6 +373,7 @@ namespace AllLive.Core
         {
             var resp = await HttpUtil.GetString($"https://api.live.bilibili.com/room/v1/Room/get_info?room_id={roomId}", headers: await GetRequestHeader());
             var obj = JObject.Parse(resp);
+            EnsureSuccess(obj, "获取直播状态");
             var liveStatus = obj["data"]["live_status"].ToObject<int>();
             switch (liveStatus)
             {
@@ -360,6 +389,7 @@ namespace AllLive.Core
 
             var resp = await HttpUtil.GetString($"https://api.live.bilibili.com/av/v1/SuperChat/getMessageList?room_id={roomId}", headers: await GetRequestHeader());
             var obj = JObject.Parse(resp);
+            EnsureSuccess(obj, "获取SC消息");
             List<LiveSuperChatMessage> list = new List<LiveSuperChatMessage>();
             if (obj["data"]["list"].Type == JTokenType.Array)
             {
@@ -402,9 +432,15 @@ namespace AllLive.Core
                 "https://api.bilibili.com/x/web-interface/nav",
                 headers: await GetRequestHeader());
             var obj = JObject.Parse(response);
+            // 该接口未登录(code=-101)时也返回 wbi_img，因此只校验 data 是否存在，不校验 code
+            var wbiImg = obj["data"]?["wbi_img"];
+            if (wbiImg == null)
+            {
+                throw new Exception("获取B站Wbi密钥失败：接口未返回wbi_img");
+            }
 
-            var imgUrl = obj["data"]["wbi_img"]["img_url"].ToString();
-            var subUrl = obj["data"]["wbi_img"]["sub_url"].ToString();
+            var imgUrl = wbiImg["img_url"].ToString();
+            var subUrl = wbiImg["sub_url"].ToString();
             var imgKey = imgUrl.Substring(imgUrl.LastIndexOf('/') + 1).Split('.')[0];
             var subKey = subUrl.Substring(subUrl.LastIndexOf('/') + 1).Split('.')[0];
 
