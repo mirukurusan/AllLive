@@ -75,6 +75,10 @@ namespace AllLive.WinUI.Controls
 
         public void Show()
         {
+            if (m_Popup.XamlRoot == null)
+            {
+                m_Popup.XamlRoot = App.GetMainWindow()?.Content?.XamlRoot;
+            }
             this.m_Popup.IsOpen = true;
 
         }
@@ -92,7 +96,11 @@ namespace AllLive.WinUI.Controls
                 m_TextBlockContent = "";
             }
             this.tbNotify.Text = m_TextBlockContent;
-            Window.Current.SizeChanged += Current_SizeChanged;
+            var window = App.GetMainWindow();
+            if (window != null)
+            {
+                window.SizeChanged += Current_SizeChanged;
+            }
             await AnimationBuilder.Create().Offset(to: new Vector2(0, -72), duration: TimeSpan.FromMilliseconds(200)).StartAsync(this);
             //await this.Offset(offsetX: 0, offsetY: -72, duration: 200, delay: 0, easingType: EasingType.Default).StartAsync();
             await AnimationBuilder.Create().Offset(to: new Vector2(0, (float)border.ActualHeight), duration: TimeSpan.FromMilliseconds(200), delay: TimeSpan.FromMilliseconds(m_ShowTime.TotalMilliseconds)).StartAsync(this);
@@ -109,7 +117,11 @@ namespace AllLive.WinUI.Controls
 
         private void NotifyPopup_Unloaded(object sender, RoutedEventArgs e)
         {
-            Window.Current.SizeChanged -= Current_SizeChanged;
+            var window = App.GetMainWindow();
+            if (window != null)
+            {
+                window.SizeChanged -= Current_SizeChanged;
+            }
         }
 
 

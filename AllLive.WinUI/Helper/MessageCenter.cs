@@ -1,4 +1,4 @@
-using Windows.ApplicationModel;
+﻿using Windows.ApplicationModel;
 using Microsoft.UI;
 using AllLive.Core.Helper;
 using WinUIUtils = AllLive.WinUI.Helper.Utils;
@@ -75,31 +75,7 @@ namespace AllLive.WinUI.Helper
                 }
                 return;
             }
-
-            //if (SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
-            //{
-            //    CoreApplicationView newView = CoreApplication.CreateNewView();
-            //    int newViewId = 0;
-            //    await newView.Dispatcher.RunOnUIThreadAsync(() =>
-            //    {
-            //        Frame frame = new Frame();
-            //        frame.Navigate(typeof(LiveRoomPage), arg);
-            //        Window.Current.Content = frame;
-            //        Window.Current.Activate();
-            //        newViewId = ApplicationView.GetForCurrentView().Id;
-            //        ApplicationView.GetForCurrentView().Consolidated += (sender, args) =>
-            //        {
-            //            frame.Navigate(typeof(BlankPage));
-            //            CoreWindow.GetForCurrentThread().Close();
-            //        };
-            //    });
-            //    bool viewShown = await ApplicationViewSwitcher.TryShowAsStandaloneAsync(newViewId);
-            //}
-            //else
-            //{
-                NavigatePage(typeof(LiveRoomPage), arg);
-                //(Window.Current.Content as Frame).Navigate(typeof(LiveRoomPage), arg);
-           // }
+            NavigatePage(typeof(LiveRoomPage), arg);
 
         }
 

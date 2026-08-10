@@ -904,8 +904,7 @@ namespace AllLive.WinUI.Views
         {
             try
             {
-                var folder = await ApplicationData.Current.LocalFolder
-                    .GetFolderAsync("AllLive");
+                var folder = await WinUIUtils.GetRecordingFolderAsync();
                 await Windows.System.Launcher.LaunchFolderAsync(folder);
             }
             catch (FileNotFoundException)
@@ -940,9 +939,7 @@ namespace AllLive.WinUI.Views
                     return;
                 }
 
-                var folder = ApplicationData.Current.LocalFolder;
-                var subFolder = await folder.CreateFolderAsync(
-                    "AllLive", CreationCollisionOption.OpenIfExists);
+                var subFolder = await WinUIUtils.GetRecordingFolderAsync();
 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 var title = liveRoomVM.Name ?? "直播";

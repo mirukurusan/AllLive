@@ -1,4 +1,4 @@
-using Microsoft.UI;
+﻿using Microsoft.UI;
 using AllLive.Core.Helper;
 using WinUIUtils = AllLive.WinUI.Helper.Utils;
 using Windows.ApplicationModel;
@@ -75,20 +75,25 @@ namespace AllLive.WinUI.Views
                 cbTheme.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
                 {
                     SettingHelper.SetValue(SettingHelper.THEME, cbTheme.SelectedIndex);
-                    Frame rootFrame = Window.Current.Content as Frame;
-                    switch (cbTheme.SelectedIndex)
+                    var window = App.GetMainWindow();
+                    if (window != null)
                     {
-                        case 1:
-                            rootFrame.RequestedTheme = ElementTheme.Light;
-                            break;
-                        case 2:
-                            rootFrame.RequestedTheme = ElementTheme.Dark;
-                            break;
-                        default:
-                            rootFrame.RequestedTheme = ElementTheme.Default;
-                            break;
+                        Frame rootFrame = window.Content as Frame;
+                        switch (cbTheme.SelectedIndex)
+                        {
+                            case 1:
+                                rootFrame.RequestedTheme = ElementTheme.Light;
+                                break;
+                            case 2:
+                                rootFrame.RequestedTheme = ElementTheme.Dark;
+                                break;
+                            default:
+                                rootFrame.RequestedTheme = ElementTheme.Default;
+                                break;
+                        }
+                        App.SetTitleBar();
+
                     }
-                    App.SetTitleBar();
                 });
             });
 

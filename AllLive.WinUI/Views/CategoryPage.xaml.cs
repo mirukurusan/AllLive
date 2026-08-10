@@ -1,4 +1,4 @@
-using Windows.ApplicationModel;
+﻿using Windows.ApplicationModel;
 using Microsoft.UI;
 using AllLive.Core.Helper;
 ﻿using AllLive.Core.Models;
@@ -65,11 +65,6 @@ namespace AllLive.WinUI.Views
                 Site = vm.site.LiveSite,
                 Data = item
             });
-            //(Window.Current.Content as Frame).Navigate(typeof(CategoryDetailPage), new PageArgs()
-            //{
-            //    Site = vm.site.LiveSite,
-            //    Data = item
-            //});
         }
     }
 }
