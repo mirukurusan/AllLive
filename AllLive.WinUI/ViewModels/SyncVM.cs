@@ -268,7 +268,7 @@ namespace AllLive.WinUI.ViewModels
             }
             string app = "聚合直播";
             string platform = "windows";
-            string version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}"; ;
+            string version = WinUIUtils.GetAppVersion().ToString(3);
             var resp = await connection?.InvokeAsync<Resp<string>>("CreateRoom", app, platform, version);
             if (resp.IsSuccess)
             {
@@ -314,7 +314,7 @@ namespace AllLive.WinUI.ViewModels
             }
             string app = "聚合直播";
             string platform = "windows";
-            string version = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}"; ;
+            string version = WinUIUtils.GetAppVersion().ToString(3);
             var resp = await connection?.InvokeAsync<Resp<int>>("JoinRoom", roomId.ToUpper(), app, platform, version);
             if (resp.IsSuccess)
             {

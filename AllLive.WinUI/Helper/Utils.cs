@@ -35,6 +35,25 @@ namespace AllLive.WinUI.Helper
             }
         }
 
+        /// <summary>
+        /// Get app version — works in both packaged and unpackaged modes.
+        /// In unpackaged mode <see cref="Windows.ApplicationModel.Package.Current"/>
+        /// throws InvalidOperationException (no package identity), so fall back
+        /// to the assembly version.
+        /// </summary>
+        public static Version GetAppVersion()
+        {
+            try
+            {
+                var packageVersion = Windows.ApplicationModel.Package.Current.Id.Version;
+                return new Version(packageVersion.Major, packageVersion.Minor, packageVersion.Build, packageVersion.Revision);
+            }
+            catch
+            {
+                return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0, 0);
+            }
+        }
+
         public static bool IsXbox
         {
             get
@@ -133,7 +152,8 @@ namespace AllLive.WinUI.Helper
                 var url = $"https://cdn.jsdelivr.net/gh/xiaoyaocz/AllLive@master/AllLive.UWP/version.json?ts{new Random().Next(0,99999) }";
                 var result = await HttpUtil.GetString(url);
                 var ver = JsonConvert.DeserializeObject<NewVersion>(result);
-                var num = $"{ Windows.ApplicationModel.Package.Current.Id.Version.Major }{ Windows.ApplicationModel.Package.Current.Id.Version.Minor.ToString("00")}{ Windows.ApplicationModel.Package.Current.Id.Version.Build.ToString("00")}";
+                var appVer = GetAppVersion();
+                var num = $"{appVer.Major}{appVer.Minor:00}{appVer.Build:00}";
                 var v = int.Parse(num);
                 if (ver.versionCode > v)
                 {

@@ -235,7 +235,7 @@ namespace AllLive.WinUI.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            version.Text = $"{Windows.ApplicationModel.Package.Current.Id.Version.Major}.{Windows.ApplicationModel.Package.Current.Id.Version.Minor}.{Windows.ApplicationModel.Package.Current.Id.Version.Build}";
+            version.Text = WinUIUtils.GetAppVersion().ToString(3);
         }
         private void RemoveLiveDanmuWord_Click(object sender, RoutedEventArgs e)
         {
