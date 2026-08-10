@@ -366,3 +366,6 @@ FodyWeavers.xsd
 # Reference project (not part of this solution)
 dart_simple_live/
 pure_live/
+
+# Portable build output (build-portable.ps1)
+dist/
