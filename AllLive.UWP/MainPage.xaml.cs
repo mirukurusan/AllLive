@@ -1,28 +1,24 @@
-﻿using AllLive.Core.Interface;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Windows.Services.Store;
+using Windows.System;
+using Windows.UI.Popups;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Navigation;
+using AllLive.Core.Models;
 using AllLive.UWP.Helper;
 using AllLive.UWP.Models;
 using AllLive.UWP.ViewModels;
 using AllLive.UWP.Views;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text.RegularExpressions;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using AllLive.Core.Models;
-using Windows.ApplicationModel.Core;
-using System.Threading.Tasks;
-using Windows.Services.Store;
-using Windows.UI.Popups;
+using LiveSite = AllLive.Core.Helper.LiveSite;
+using NavigationView = Microsoft.UI.Xaml.Controls.NavigationView;
+using NavigationViewItem = Microsoft.UI.Xaml.Controls.NavigationViewItem;
+using NavigationViewPaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode;
+using NavigationViewSelectionChangedEventArgs = Microsoft.UI.Xaml.Controls.NavigationViewSelectionChangedEventArgs;
+using SiteParser = AllLive.Core.Helper.SiteParser;
 
 // https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x804 上介绍了“空白页”项模板
 
@@ -46,14 +42,14 @@ namespace AllLive.UWP
 
         private void MainPage_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.GamepadMenu)
+            if (e.Key == VirtualKey.GamepadMenu)
             {
                 e.Handled = true;
                 // 切换设置
 
                 navigationView.SelectedItem = navigationView.SettingsItem;
             }
-            else if (e.Key == Windows.System.VirtualKey.GamepadY)
+            else if (e.Key == VirtualKey.GamepadY)
             {
                 e.Handled = true;
                 searchBox.Focus(FocusState.Programmatic);
@@ -69,17 +65,17 @@ namespace AllLive.UWP
         {
             if (Utils.IsXbox)
             {
-                navigationView.PaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode.Top;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
                 MessageCenter.HideTitlebar(true);
                 return;
             }
             if (SettingHelper.GetValue<int>(SettingHelper.PANE_DISPLAY_MODE, 0) == 0)
             {
-                navigationView.PaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode.Left;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
             }
             else
             {
-                navigationView.PaneDisplayMode = Microsoft.UI.Xaml.Controls.NavigationViewPaneDisplayMode.Top;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
             }
         }
 
@@ -91,9 +87,9 @@ namespace AllLive.UWP
             _ = CheckUpdate();
         }
 
-        private void NavigationView_SelectionChanged(Microsoft.UI.Xaml.Controls.NavigationView sender, Microsoft.UI.Xaml.Controls.NavigationViewSelectionChangedEventArgs args)
+        private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            var item = args.SelectedItem as Microsoft.UI.Xaml.Controls.NavigationViewItem;
+            var item = args.SelectedItem as NavigationViewItem;
             if (item.Tag.ToString() == "设置" || item.Tag.ToString() == "Settings")
             {
                 item.Tag = "SettingsPage";
@@ -106,7 +102,7 @@ namespace AllLive.UWP
         {
             if (string.IsNullOrEmpty(args.QueryText))
             {
-                Helper.Utils.ShowMessageToast("关键字不能为空");
+                Utils.ShowMessageToast("关键字不能为空");
                 return;
             }
             if (!await ParseUrl(args.QueryText))
@@ -158,7 +154,7 @@ namespace AllLive.UWP
                         var product = await context.GetStoreProductForCurrentAppAsync();
                         // 打开应用商店
                         var uri = new Uri($"ms-windows-store://pdp?productid={product.Product.StoreId}");
-                        await Windows.System.Launcher.LaunchUriAsync(uri);
+                        await Launcher.LaunchUriAsync(uri);
                     }));
                     dialog.Commands.Add(new UICommand("取消"));
                     await dialog.ShowAsync();
@@ -169,7 +165,7 @@ namespace AllLive.UWP
             catch (Exception ex)
             {
                 LogHelper.Log("CheckUpdate", LogType.ERROR, ex);
-                await Helper.Utils.CheckVersion();
+                await Utils.CheckVersion();
             }
 
 

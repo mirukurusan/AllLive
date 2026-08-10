@@ -1,4 +1,5 @@
 using AllLive.Core;
+using AllLive.Core.Helper;
 using AllLive.UWP.ViewModels;
 using System;
 using System.Linq;

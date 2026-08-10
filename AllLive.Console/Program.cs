@@ -1,12 +1,10 @@
-﻿using AllLive.Core;
-using AllLive.Core.Danmaku;
+﻿using System;
+using System.Drawing;
+using System.Threading.Tasks;
+using AllLive.Core;
 using AllLive.Core.Helper;
 using AllLive.Core.Interface;
-using AllLive.UWP.Helper;
-using Newtonsoft.Json;
-using System;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using AllLive.Core.Models;
 
 namespace AllLive.ConsoleApp
 {
@@ -176,15 +174,15 @@ namespace AllLive.ConsoleApp
             Console.WriteLine("------关闭连接-----");
         }
 
-        private static void Danmaku_NewMessage(object sender, Core.Models.LiveMessage e)
+        private static void Danmaku_NewMessage(object sender, LiveMessage e)
         {
-            if (e.Type == Core.Models.LiveMessageType.Chat)
+            if (e.Type == LiveMessageType.Chat)
             {
                 Console.ForegroundColor = ClosestConsoleColor(e.Color.R, e.Color.G, e.Color.B);
                 Console.WriteLine($"[{e.UserName}]：{e.Message}");
                 Console.ResetColor();
             }
-            if (e.Type == Core.Models.LiveMessageType.Online)
+            if (e.Type == LiveMessageType.Online)
             {
                 Console.WriteLine($"------人气值：{e.Data}-----");
             }
@@ -197,7 +195,7 @@ namespace AllLive.ConsoleApp
             foreach (ConsoleColor cc in Enum.GetValues(typeof(ConsoleColor)))
             {
                 var n = Enum.GetName(typeof(ConsoleColor), cc);
-                var c = System.Drawing.Color.FromName(n == "DarkYellow" ? "Orange" : n); // bug fix
+                var c = Color.FromName(n == "DarkYellow" ? "Orange" : n); // bug fix
                 var t = Math.Pow(c.R - rr, 2.0) + Math.Pow(c.G - gg, 2.0) + Math.Pow(c.B - bb, 2.0);
                 if (t == 0.0)
                     return cc;

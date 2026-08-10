@@ -1,15 +1,9 @@
-using AllLive.Core.Interface;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AllLive.Core.Helper;
-using WebSocketSharp;
-using System.Text.RegularExpressions;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
-namespace AllLive.UWP.Helper
+namespace AllLive.Core.Helper
 {
     public enum LiveSite
     {
@@ -21,7 +15,7 @@ namespace AllLive.UWP.Helper
     }
     public class SiteParser
     {
-       
+
         public static async Task<(LiveSite, string)> ParseUrl(string url)
         {
             LiveSite site= LiveSite.Unknown;
@@ -82,7 +76,7 @@ namespace AllLive.UWP.Helper
                 {
                     return headResp.Headers.Location.ToString();
                 }
-              
+
             }
             catch (Exception ex)
             {
