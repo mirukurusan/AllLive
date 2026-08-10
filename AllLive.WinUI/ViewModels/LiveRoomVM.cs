@@ -258,7 +258,11 @@ namespace AllLive.WinUI.ViewModels
                 SetWindowTitle();
 
                 Name = result.UserName;
-                MessageCenter.ChangeTitle(Title + " - " + Name, Site);
+                // 新窗口模式下，直播间标题由新窗口自身的标题栏(x:Bind)显示，不再改动主窗口标题栏
+                if (!SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
+                {
+                    MessageCenter.ChangeTitle(Title + " - " + Name, Site);
+                }
                 if (!string.IsNullOrEmpty(result.UserAvatar))
                 {
                     Photo = result.UserAvatar;
@@ -417,7 +421,8 @@ namespace AllLive.WinUI.ViewModels
         {
             if (SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
             {
-                var appWindow = App.GetMainAppWindow();
+                // 新窗口模式下设置直播窗口自身的标题，避免误改主窗口标题
+                var appWindow = App.GetLiveRoomAppWindow() ?? App.GetMainAppWindow();
                 if (appWindow != null) appWindow.Title = $"{Title} - {SiteName}";
             }
         }

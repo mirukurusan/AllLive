@@ -16,6 +16,9 @@ namespace AllLive.WinUI
     {
         private Window m_window;
 
+        // 新窗口播放模式下的直播窗口（每次打开直播间会覆盖为最新窗口）
+        private static Window m_liveRoomWindow;
+
         public App()
         {
             this.InitializeComponent();
@@ -80,13 +83,23 @@ namespace AllLive.WinUI
                 var appWindow = GetAppWindow(window);
                 if (appWindow == null) return;
 
-                appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
-                appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
-                appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-                appWindow.TitleBar.ButtonForegroundColor = TitltBarButtonColor();
-                appWindow.TitleBar.BackgroundColor = Colors.Transparent;
+                ApplyWindowTitleBar(appWindow);
             }
             catch { }
+        }
+
+        /// <summary>
+        /// 隐藏系统默认标题栏（ExtendsContentIntoTitleBar），并让标题栏按钮透明化。
+        /// 新窗口播放模式下用于去掉 "WinUI Desktop" 默认标题栏。
+        /// </summary>
+        public static void ApplyWindowTitleBar(AppWindow appWindow)
+        {
+            if (appWindow == null) return;
+            appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+            appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
+            appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+            appWindow.TitleBar.ButtonForegroundColor = TitltBarButtonColor();
+            appWindow.TitleBar.BackgroundColor = Colors.Transparent;
         }
 
         private static Color TitltBarButtonColor()
@@ -94,7 +107,8 @@ namespace AllLive.WinUI
             var settingTheme = SettingHelper.GetValue<int>(SettingHelper.THEME, 0);
             if (settingTheme == 1) return Colors.Black;
             if (settingTheme == 2) return Colors.White;
-            return Colors.White; // default
+            // 默认跟随系统主题，避免浅色背景下白色按钮不可见
+            return new UISettings().GetColorValue(UIColorType.Foreground);
         }
 
         private static AppWindow GetAppWindow(Window window)
@@ -102,6 +116,50 @@ namespace AllLive.WinUI
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
             return AppWindow.GetFromWindowId(windowId);
+        }
+
+        /// <summary>
+        /// 根据页面 XamlRoot 获取所在窗口的 AppWindow，用于多窗口场景定位当前窗口。
+        /// </summary>
+        public static AppWindow GetAppWindow(XamlRoot xamlRoot)
+        {
+            try
+            {
+                var env = xamlRoot?.ContentIslandEnvironment;
+                if (env != null)
+                {
+                    return AppWindow.GetFromWindowId(env.AppWindowId);
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        // 新窗口播放模式下，记录当前直播窗口，便于 LiveRoomVM 等设置窗口标题
+        public static void SetLiveRoomWindow(Window window)
+        {
+            m_liveRoomWindow = window;
+        }
+
+        public static void ClearLiveRoomWindow(Window window)
+        {
+            if (ReferenceEquals(m_liveRoomWindow, window))
+            {
+                m_liveRoomWindow = null;
+            }
+        }
+
+        public static AppWindow GetLiveRoomAppWindow()
+        {
+            var window = m_liveRoomWindow;
+            if (window == null) return null;
+            try
+            {
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                return AppWindow.GetFromWindowId(windowId);
+            }
+            catch { return null; }
         }
 
         private void OnNavigationFailed(object sender, NavigationFailedEventArgs e)

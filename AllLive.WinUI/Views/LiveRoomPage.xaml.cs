@@ -150,8 +150,8 @@ namespace AllLive.WinUI.Views
             {
                 // Phase 4: LiveRoomPage_Consolidated replaced by Window.Closed += LiveRoomPage_Consolidated;
                 TitleBar.Visibility = Visibility.Visible;
-                // 自定义标题栏
-                var appWindow = App.GetMainAppWindow();
+                // 自定义标题栏（新窗口的默认标题栏已在 MessageCenter.NavigatePage 隐藏）
+                var appWindow = GetCurrentAppWindow();
                 if (appWindow != null)
                 {
                     appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
@@ -161,14 +161,17 @@ namespace AllLive.WinUI.Views
 
         }
 
-        private void LiveRoomPage_Consolidated(ApplicationView sender, ApplicationViewConsolidatedEventArgs args)
+        /// <summary>
+        /// 新窗口关闭时由 MessageCenter.NavigatePage 的 Window.Closed 调用：
+        /// 取消事件订阅并停止播放，避免窗口关闭后直播仍在播放。
+        /// </summary>
+        public void OnWindowClosed()
         {
             // 取消所有事件订阅
             CleanupEventSubscriptions();
 
+            // 停止播放
             StopPlay();
-            // 关闭窗口
-            // Window close handled by Window.Closed;
         }
 
         private void CleanupEventSubscriptions()
@@ -232,6 +235,16 @@ namespace AllLive.WinUI.Views
         }
 
 
+        /// <summary>
+        /// 获取当前页面所在窗口的 AppWindow。
+        /// 新窗口模式下为直播窗口自身；否则回退为主窗口。
+        /// </summary>
+        private AppWindow GetCurrentAppWindow()
+        {
+            var appWindow = App.GetAppWindow(this.XamlRoot);
+            return appWindow ?? App.GetMainAppWindow();
+        }
+
         private void SetTitleBarColor()
         {
             var settingTheme = SettingHelper.GetValue<int>(SettingHelper.THEME, 0);
@@ -242,7 +255,7 @@ namespace AllLive.WinUI.Views
                 color = settingTheme == 1 ? Colors.Black : Colors.White;
 
             }
-            var appWindow = App.GetMainAppWindow();
+            var appWindow = GetCurrentAppWindow();
             if (appWindow != null)
             {
                 appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
@@ -260,14 +273,14 @@ namespace AllLive.WinUI.Views
                     Grid.SetRow(GridContent, 0);
                     Grid.SetRowSpan(GridContent, 2);
                     TitleBarGrid.Visibility = Visibility.Collapsed;
-                    App.GetMainAppWindow().TitleBar.ExtendsContentIntoTitleBar = false;
+                    GetCurrentAppWindow().TitleBar.ExtendsContentIntoTitleBar = false;
                 }
                 else
                 {
                     Grid.SetRow(GridContent, 1);
                     Grid.SetRowSpan(GridContent, 1);
                     TitleBarGrid.Visibility = Visibility.Visible;
-                    App.GetMainAppWindow().TitleBar.ExtendsContentIntoTitleBar = true;
+                    GetCurrentAppWindow().TitleBar.ExtendsContentIntoTitleBar = true;
                 }
             }
             else
@@ -852,7 +865,11 @@ namespace AllLive.WinUI.Views
                 liveRoomVM.SiteName = siteInfo.Name;
 
                 var data = pageArgs.Data as LiveRoomItem;
-                MessageCenter.ChangeTitle("", pageArgs.Site);
+                // 新窗口模式下，不通过 ChangeTitle 改动主窗口标题栏
+                if (!SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
+                {
+                    MessageCenter.ChangeTitle("", pageArgs.Site);
+                }
 
                 liveRoomVM.LoadData(pageArgs.Site, data.RoomID);
 
@@ -1637,7 +1654,7 @@ namespace AllLive.WinUI.Views
 
                 BottomInfo.Height = new GridLength(0, GridUnitType.Pixel);
                 // Fullscreen using AppWindow
-                var appWindow = App.GetMainAppWindow();
+                var appWindow = GetCurrentAppWindow();
                 if (appWindow != null && appWindow.Presenter.Kind != AppWindowPresenterKind.FullScreen)
                 {
                     appWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
@@ -1653,7 +1670,7 @@ namespace AllLive.WinUI.Views
                 ColumnRight.MinWidth = 100;
                 BottomInfo.Height = GridLength.Auto;
                 // Exit fullscreen
-                var appWindow2 = App.GetMainAppWindow();
+                var appWindow2 = GetCurrentAppWindow();
                 if (appWindow2 != null && appWindow2.Presenter.Kind == AppWindowPresenterKind.FullScreen)
                 {
                     appWindow2.SetPresenter(AppWindowPresenterKind.Default);
@@ -1679,7 +1696,7 @@ namespace AllLive.WinUI.Views
                 MiniControl.Visibility = Visibility.Visible;
 
                 // CompactOverlay via AppWindow
-                var appWindow = App.GetMainAppWindow();
+                var appWindow = GetCurrentAppWindow();
                 if (appWindow != null)
                 {
                     appWindow.SetPresenter(AppWindowPresenterKind.CompactOverlay);
@@ -1701,7 +1718,7 @@ namespace AllLive.WinUI.Views
                 }
 
                 MiniControl.Visibility = Visibility.Collapsed;
-                var appWindow2 = App.GetMainAppWindow();
+                var appWindow2 = GetCurrentAppWindow();
                 if (appWindow2 != null)
                     appWindow2.SetPresenter(AppWindowPresenterKind.Default);
                 DanmuControl.DanmakuSizeZoom = SettingHelper.GetValue<double>(SettingHelper.LiveDanmaku.FONT_ZOOM, 1);

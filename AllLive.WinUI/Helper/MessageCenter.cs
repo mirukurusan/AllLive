@@ -90,6 +90,19 @@ namespace AllLive.WinUI.Helper
                 frame.Navigate(typeof(LiveRoomPage), data);
                 newWindow.Content = frame;
                 newWindow.Activate();
+
+                // 记录直播窗口，并隐藏系统默认标题栏（WinUI Desktop），只保留页面内自定义标题栏
+                App.SetLiveRoomWindow(newWindow);
+                App.ApplyWindowTitleBar(App.GetLiveRoomAppWindow());
+                newWindow.Closed += (s, e) =>
+                {
+                    App.ClearLiveRoomWindow(newWindow);
+                    // 窗口关闭时停止直播播放，避免关闭后仍在播放
+                    if (frame.Content is LiveRoomPage liveRoomPage)
+                    {
+                        liveRoomPage.OnWindowClosed();
+                    }
+                };
             }
             else
             {
