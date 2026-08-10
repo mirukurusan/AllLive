@@ -80,7 +80,6 @@
                             <PersonPicture
                                 Width="56"
                                 Height="48"
-                                Background="Blue"
                                 BorderThickness="0"
                                 ProfilePicture="{x:Bind Path=Photo}" />
                             <StackPanel
