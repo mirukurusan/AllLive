@@ -44,7 +44,7 @@ namespace AllLive.WinUI.Helper
                     var probe = Path.Combine(appDir, ".alllive_write_test");
                     File.WriteAllText(probe, string.Empty);
                     File.Delete(probe);
-                    _unpackagedDataPath = appDir;
+                    _unpackagedDataPath = Path.Combine(appDir, "data");
                 }
                 catch
                 {
@@ -65,13 +65,13 @@ namespace AllLive.WinUI.Helper
         }
 
         /// <summary>
-        /// Get the recording folder (LocalFolder\AllLive), creating it if needed.
+        /// Get the recording folder (LocalFolder\Recordings), creating it if needed.
         /// Works in both packaged and unpackaged modes.
         /// </summary>
         public static async Task<StorageFolder> GetRecordingFolderAsync()
         {
             var root = await GetLocalFolderAsync();
-            return await root.CreateFolderAsync("AllLive", CreationCollisionOption.OpenIfExists);
+            return await root.CreateFolderAsync("Recordings", CreationCollisionOption.OpenIfExists);
         }
 
         /// <summary>
