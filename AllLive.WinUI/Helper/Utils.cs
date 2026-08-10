@@ -196,6 +196,7 @@ namespace AllLive.WinUI.Helper
                 if (ver.versionCode > v)
                 {
                     var dialog = new ContentDialog();
+                    dialog.XamlRoot = App.GetMainWindow()?.Content?.XamlRoot;
                     dialog.Title = $"发现新版本 Ver {ver.version}";
                     TextBlock markdownText = new TextBlock()
                     {

@@ -1838,7 +1838,8 @@ namespace AllLive.WinUI.Views
                 },
                 IsPrimaryButtonEnabled = true,
                 IsSecondaryButtonEnabled = false,
-                PrimaryButtonText = "确定"
+                PrimaryButtonText = "确定",
+                XamlRoot = this.XamlRoot
             };
             _ = dialog.ShowAsync();
         }

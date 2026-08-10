@@ -298,7 +298,10 @@ namespace AllLive.WinUI.Views
                 WinUIUtils.ShowMessageToast("已登录");
                 return;
             }
-            var dialog = new DouyinLoginDialog();
+            var dialog = new DouyinLoginDialog()
+            {
+                XamlRoot = this.XamlRoot
+            };
             await dialog.ShowAsync();
             if (dialog.LoginSuccess)
             {

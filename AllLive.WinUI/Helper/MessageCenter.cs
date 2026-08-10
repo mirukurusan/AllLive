@@ -133,7 +133,10 @@ namespace AllLive.WinUI.Helper
         }
         public static async Task<bool> BiliBiliLogin()
         {
-            BiliLoginDialog biliLoginDialog = new BiliLoginDialog();
+            BiliLoginDialog biliLoginDialog = new BiliLoginDialog()
+            {
+                XamlRoot = App.GetMainWindow()?.Content?.XamlRoot
+            };
             await biliLoginDialog.ShowAsync();
             return BiliAccount.Instance.Logined;
 

@@ -34,6 +34,7 @@ namespace AllLive.WinUI.Views
         private async void btnJoinRoom_Click(object sender, RoutedEventArgs e)
         {
             ContentDialog dialog= new ContentDialog();
+            dialog.XamlRoot = this.XamlRoot;
             dialog.Title = "加入房间";
             TextBox textBox = new TextBox();
             textBox.PlaceholderText = "请输入房间号";
@@ -60,7 +61,8 @@ namespace AllLive.WinUI.Views
             {
                 Title = "二维码",
                 IsSecondaryButtonEnabled=false,
-                PrimaryButtonText = "关闭"
+                PrimaryButtonText = "关闭",
+                XamlRoot = this.XamlRoot
             };
           
             Image image = new Image() { 
