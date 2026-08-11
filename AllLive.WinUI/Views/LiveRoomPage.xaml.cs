@@ -102,6 +102,15 @@ namespace AllLive.WinUI.Views
             liveRoomVM.Dispatcher = new DispatcherQueueHelper(this.DispatcherQueue);
             dispRequest = new DisplayRequest();
 
+            Loaded += (s, e) =>
+            {
+                UpdateDanmakuDpi();
+                if (XamlRoot != null)
+                {
+                    XamlRoot.Changed += (_, _) => UpdateDanmakuDpi();
+                }
+            };
+
             this.KeyDown += CoreWindow_KeyDown;
 
             liveRoomVM.ChangedPlayUrl += LiveRoomVM_ChangedPlayUrl;
@@ -1066,6 +1075,15 @@ namespace AllLive.WinUI.Views
             }
         }
 
+        /// <summary>
+        /// 修正DPI
+        /// </summary>
+        private void UpdateDanmakuDpi()
+        {
+            var scale = DanmuControl.XamlRoot?.RasterizationScale ?? 1.0;
+            NSDanmaku.WinUI.Controls.Danmaku.LogicalDpi = (float)(scale * 96.0);
+        }
+
         private void LoadSetting()
         {
             //右侧宽度
@@ -1261,7 +1279,15 @@ namespace AllLive.WinUI.Views
                 SettingHelper.SetValue<bool>(SettingHelper.LiveDanmaku.BOLD, DanmuSettingBold.IsOn);
             });
             //弹幕样式
-            var danmuStyle = SettingHelper.GetValue<int>(SettingHelper.LiveDanmaku.BORDER_STYLE, 2);
+            //NSDanmaku 的"描边"(2) 样式会把文字渲染成 Win2D 位图，在高 DPI / 位移动画下字体模糊；
+            //"重叠"(0) 使用实时 TextBlock，由 DirectWrite 原生渲染，字体清晰。因此默认样式改为"重叠"，
+            //并把旧设置里保存的"描边"(2) 迁移为"重叠"(0)。
+            var danmuStyle = SettingHelper.GetValue<int>(SettingHelper.LiveDanmaku.BORDER_STYLE, 0);
+            if (danmuStyle == 2)
+            {
+                danmuStyle = 0;
+                SettingHelper.SetValue<int>(SettingHelper.LiveDanmaku.BORDER_STYLE, danmuStyle);
+            }
             if (danmuStyle > 2)
             {
                 danmuStyle = 2;
