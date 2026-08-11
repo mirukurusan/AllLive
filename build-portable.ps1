@@ -3,7 +3,7 @@
 #
 #  产物为单个文件夹，拷贝到任何 Win10/11 机器双击 exe 即用，
 #  无需安装 MSIX、无需预装 Windows App SDK 运行时、无需 .NET。
-#  压缩包命名带版本号: AllLive-portable-<版本>-<架构>.zip（版本读取自 Package.appxmanifest）
+#  压缩包命名带版本号: AllLive.WinUI_portable_<版本>_<架构>.zip（版本读取自 Package.appxmanifest）
 #
 #  用法（在仓库根目录运行）:
 #    .\build-portable.ps1                 # 构建 x64 并打 zip
@@ -13,8 +13,8 @@
 # ============================================================
 
 param(
-    [ValidateSet("x64", "x86", "ARM64", "all")]
-    [string]$Arch = "x64",
+    [ValidateSet("x64", "ARM64", "all")]
+    [string]$Arch = "all",
     [switch]$SkipZip
 )
 
@@ -23,7 +23,7 @@ Set-Location $PSScriptRoot
 
 $Project = "AllLive.WinUI\AllLive.WinUI.csproj"
 $OutRoot = "dist\portable"
-$archs   = if ($Arch -eq "all") { @("x64", "x86", "ARM64") } else { @($Arch) }
+$archs   = if ($Arch -eq "all") { @("x64", "ARM64") } else { @($Arch) }
 
 # 从 Package.appxmanifest 读取版本号，用于压缩包命名
 [xml]$manifest = Get-Content "AllLive.WinUI\Package.appxmanifest"
@@ -49,7 +49,7 @@ if ($SkipZip) {
 else {
     foreach ($a in $archs) {
         $srcDir  = Join-Path $OutRoot $a
-        $zipPath = Join-Path $OutRoot "AllLive-portable-$version-$a.zip"
+        $zipPath = Join-Path $OutRoot "AllLive.WinUI_${version}_portable_$($a.ToLower()).zip"
         Write-Host "=== 压缩: $zipPath ===" -ForegroundColor Cyan
         if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
         Compress-Archive -Path (Join-Path $srcDir "*") -DestinationPath $zipPath -Force
