@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices.WindowsRuntime;
 using AllLive.WinUI.Helper;
 using AllLive.WinUI.ViewModels;
 using Microsoft.UI.Xaml;
@@ -6,6 +7,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using ZXing;
 using ZXing.Common;
+using ZXing.Rendering;
 using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“空白页”项模板
@@ -64,13 +66,13 @@ namespace AllLive.WinUI.Views
                 PrimaryButtonText = "关闭",
                 XamlRoot = this.XamlRoot
             };
-          
-            Image image = new Image() { 
+
+            Image image = new Image() {
                 Width=260,
                 Height=260
             };
             // 创建二维码
-            var qrCode = new BarcodeWriter<WriteableBitmap>
+            var qrCode = new BarcodeWriter<PixelData>
             {
                 Format = BarcodeFormat.QR_CODE,
                 Options = new EncodingOptions
@@ -78,9 +80,16 @@ namespace AllLive.WinUI.Views
                     Width = 260,
                     Height = 260,
                     Margin = 4,
-                }
+                },
+                Renderer = new PixelDataRenderer()
             };
-            var qrCodeImage = qrCode.Write(syncVM.RoomID);
+            var pixelData = qrCode.Write(syncVM.RoomID);
+            var qrCodeImage = new WriteableBitmap(pixelData.Width, pixelData.Height);
+            using (var stream = qrCodeImage.PixelBuffer.AsStream())
+            {
+                stream.Write(pixelData.Pixels, 0, pixelData.Pixels.Length);
+            }
+            qrCodeImage.Invalidate();
             image.Source = qrCodeImage;
             dialog.Content = image;
             dialog.PrimaryButtonClick += (s, a) =>

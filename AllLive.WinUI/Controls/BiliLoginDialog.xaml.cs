@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Timers;
 using AllLive.Core.Helper;
 using AllLive.WinUI.Helper;
@@ -12,6 +13,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using Newtonsoft.Json.Linq;
 using ZXing;
 using ZXing.Common;
+using ZXing.Rendering;
 
 // https://go.microsoft.com/fwlink/?LinkId=234238 上介绍了“内容对话框”项模板
 
@@ -74,7 +76,7 @@ namespace AllLive.WinUI.Controls
                     qrcodeUrl = json["data"]["url"].ToString();
 
                     // 创建二维码
-                    var qrCode = new BarcodeWriter<WriteableBitmap>
+                    var qrCode = new BarcodeWriter<PixelData>
                     {
                         Format = BarcodeFormat.QR_CODE,
                         Options = new EncodingOptions
@@ -82,9 +84,16 @@ namespace AllLive.WinUI.Controls
                             Width = 260,
                             Height = 260,
                             Margin = 4,
-                        }
+                        },
+                        Renderer = new PixelDataRenderer()
                     };
-                    var qrCodeImage = qrCode.Write(qrcodeUrl);
+                    var pixelData = qrCode.Write(qrcodeUrl);
+                    var qrCodeImage = new WriteableBitmap(pixelData.Width, pixelData.Height);
+                    using (var stream = qrCodeImage.PixelBuffer.AsStream())
+                    {
+                        stream.Write(pixelData.Pixels, 0, pixelData.Pixels.Length);
+                    }
+                    qrCodeImage.Invalidate();
                     imgQR.Source = qrCodeImage;
                     StartPoll();
                 }
