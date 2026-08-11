@@ -98,6 +98,24 @@
                             VerticalAlignment="Center" />
                     </Grid>
                     <Grid
+                        x:Name="SettingsAutoLoadLiveStatus"
+                        Margin="0,8,0,0"
+                        Padding="8,12"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock>自动加载直播状态</TextBlock>
+                            <TextBlock FontSize="12" Foreground="Gray">首次进入关注页时自动加载主播的直播状态，关闭后需手动点击刷新</TextBlock>
+                        </StackPanel>
+                        <ToggleSwitch
+                            x:Name="swAutoLoadLiveStatus"
+                            MinWidth="72"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid
                         x:Name="ConcurrencyLevel"
                         Margin="0,8,0,0"
                         Padding="8,12"

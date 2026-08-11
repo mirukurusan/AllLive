@@ -49,7 +49,7 @@ namespace AllLive.WinUI.ViewModels
 
 
 
-        public async void LoadData()
+        public async void LoadData(bool loadLiveStatus = true)
         {
 
             int maxConcurrencyLevel = SettingHelper.GetValue(SettingHelper.CONCURRENCY_LEVEL, 4);
@@ -63,7 +63,7 @@ namespace AllLive.WinUI.ViewModels
                     Items.Add(item);
                 }
                 IsEmpty = Items.Count == 0;
-                if (!IsEmpty)
+                if (!IsEmpty && loadLiveStatus)
                 {
                     LoadLiveStatus(semaphore);
                 }

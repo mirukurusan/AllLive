@@ -111,6 +111,11 @@ namespace AllLive.WinUI.Helper
         public const string CONCURRENCY_LEVEL = "ConcurrencyLevel";
 
         /// <summary>
+        /// 首次进入关注页自动加载直播状态
+        /// </summary>
+        public const string AUTO_LOAD_LIVE_STATUS = "AutoLoadLiveStatus";
+
+        /// <summary>
         /// 视频解码
         /// </summary>
         public const string VIDEO_DECODER = "VideoDecoder";

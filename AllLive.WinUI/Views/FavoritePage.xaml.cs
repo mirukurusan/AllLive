@@ -37,7 +37,7 @@ namespace AllLive.WinUI.Views
 
             if (favoriteVM.Items.Count == 0)
             {
-                favoriteVM.LoadData();
+                favoriteVM.LoadData(SettingHelper.GetValue<bool>(SettingHelper.AUTO_LOAD_LIVE_STATUS, false));
             }
 
         }

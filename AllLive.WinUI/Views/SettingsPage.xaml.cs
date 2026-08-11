@@ -116,6 +116,16 @@ namespace AllLive.WinUI.Views
                 });
             });
 
+            //首次进入关注页自动加载直播状态
+            swAutoLoadLiveStatus.IsOn = SettingHelper.GetValue<bool>(SettingHelper.AUTO_LOAD_LIVE_STATUS, false);
+            swAutoLoadLiveStatus.Loaded += new RoutedEventHandler((sender, e) =>
+            {
+                swAutoLoadLiveStatus.Toggled += new RoutedEventHandler((obj, args) =>
+                {
+                    SettingHelper.SetValue(SettingHelper.AUTO_LOAD_LIVE_STATUS, swAutoLoadLiveStatus.IsOn);
+                });
+            });
+
             //视频解码
             cbDecoder.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_DECODER, 0);
             cbDecoder.Loaded += new RoutedEventHandler((sender, e) =>
