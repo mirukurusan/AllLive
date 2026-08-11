@@ -4,7 +4,7 @@ using NSDanmaku.Model;
 
 namespace AllLive.WinUI.Converters
 {
-    public class DanmakuStyleConvert : IValueConverter
+    public partial class DanmakuStyleConvert : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

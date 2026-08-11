@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace AllLive.WinUI.Converters
 {
-    public class ImageSourceConvert : IValueConverter
+    public partial class ImageSourceConvert : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

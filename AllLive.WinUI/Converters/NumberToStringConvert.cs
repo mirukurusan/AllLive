@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Data;
 
 namespace AllLive.WinUI.Converters
 {
-    public class NumberToStringConvert : IValueConverter
+    public partial class NumberToStringConvert : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

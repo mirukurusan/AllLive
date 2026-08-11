@@ -9,7 +9,7 @@ namespace AllLive.WinUI.Controls
 {
     // 自适应网格：由 CommunityToolkit.Uwp.UI.Controls.AdaptiveGridView (v7.1) 移植而来，
     // 用于在 CommunityToolkit 8.x 移除 AdaptiveGridView 之后恢复自适应尺寸计算。
-    public class MyAdaptiveGridView : GridView
+    public partial class MyAdaptiveGridView : GridView
     {
         private bool _needContainerMarginForLayout;
 

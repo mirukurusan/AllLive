@@ -58,12 +58,6 @@ namespace AllLive.WinUI
 
         private void SetPaneMode()
         {
-            if (false)
-            {
-                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
-                MessageCenter.HideTitlebar(true);
-                return;
-            }
             if (SettingHelper.GetValue<int>(SettingHelper.PANE_DISPLAY_MODE, 0) == 0)
             {
                 navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;

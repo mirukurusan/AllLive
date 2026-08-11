@@ -146,19 +146,7 @@ namespace AllLive.WinUI
             Title.Text = "聚合直播";
             AppIcon.Source = new BitmapImage(new Uri("ms-appx:///Assets/Square44x44Logo.png"));
             BtnBack.Visibility = MainFrame.CanGoBack ? Visibility.Visible : Visibility.Collapsed;
-            if (false)
-            {
-                if (MainFrame.Content is MainPage)
-                {
-                    HideTitleBar();
-                }
-                else
-                {
-                    ShowTitleBar();
-                }
 
-            }
-           
         }
 
         private void BaseFramePage_PointerPressed(object sender, PointerRoutedEventArgs e)

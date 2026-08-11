@@ -44,6 +44,7 @@ namespace AllLive.WinUI.ViewModels
             _messageProcessTimer.Elapsed += ProcessMessageQueue;
             _messageProcessTimer.AutoReset = true;
         }
+
         public ICommand AddFavoriteCommand { get; set; }
         public ICommand RemoveFavoriteCommand { get; set; }
         public int MessageCleanCount { get; set; } = 200;
@@ -61,9 +62,12 @@ namespace AllLive.WinUI.ViewModels
         public bool KeepSC
         {
             get { return _keepSC; }
-            set { _keepSC = value; DoPropertyChanged("KeepSC"); }
+            set
+            {
+                _keepSC = value;
+                DoPropertyChanged("KeepSC");
+            }
         }
-
 
 
         ILiveSite Site;
@@ -74,21 +78,35 @@ namespace AllLive.WinUI.ViewModels
         public string SiteLogo
         {
             get { return _siteLogo; }
-            set { _siteLogo = value; DoPropertyChanged("SiteLogo"); }
+            set
+            {
+                _siteLogo = value;
+                DoPropertyChanged("SiteLogo");
+            }
         }
 
         private string _siteName;
+
         public string SiteName
         {
             get { return _siteName; }
-            set { _siteName = value; DoPropertyChanged("SiteName"); }
+            set
+            {
+                _siteName = value;
+                DoPropertyChanged("SiteName");
+            }
         }
 
         private bool _isFavorite = false;
+
         public bool IsFavorite
         {
             get { return _isFavorite; }
-            set { _isFavorite = value; DoPropertyChanged("IsFavorite"); }
+            set
+            {
+                _isFavorite = value;
+                DoPropertyChanged("IsFavorite");
+            }
         }
 
         private long? FavoriteID { get; set; }
@@ -97,56 +115,93 @@ namespace AllLive.WinUI.ViewModels
         public LiveRoomDetail detail { get; set; }
 
         private long _Online = 0;
+
         public long Online
         {
             get { return _Online; }
-            set { _Online = value; DoPropertyChanged("Online"); }
+            set
+            {
+                _Online = value;
+                DoPropertyChanged("Online");
+            }
         }
+
         private string _RoomID;
 
         public string RoomID
         {
             get { return _RoomID; }
-            set { _RoomID = value; DoPropertyChanged("RoomID"); }
+            set
+            {
+                _RoomID = value;
+                DoPropertyChanged("RoomID");
+            }
         }
 
 
         private string _photo = "ms-appx:///Assets/Placeholder/Placeholder1x1.png";
+
         public string Photo
         {
             get { return _photo; }
-            set { _photo = value; DoPropertyChanged("Photo"); }
+            set
+            {
+                _photo = value;
+                DoPropertyChanged("Photo");
+            }
         }
 
         private string _name;
+
         public string Name
         {
             get { return _name; }
-            set { _name = value; DoPropertyChanged("Name"); }
+            set
+            {
+                _name = value;
+                DoPropertyChanged("Name");
+            }
         }
+
         private string _title;
+
         public string Title
         {
             get { return _title; }
-            set { _title = value; DoPropertyChanged("Title"); }
+            set
+            {
+                _title = value;
+                DoPropertyChanged("Title");
+            }
         }
+
         private bool _living = true;
 
         public bool Living
         {
             get { return _living; }
-            set { _living = value; DoPropertyChanged("Living"); }
+            set
+            {
+                _living = value;
+                DoPropertyChanged("Living");
+            }
         }
 
 
         private List<LivePlayQuality> qualities;
+
         public List<LivePlayQuality> Qualities
         {
             get { return qualities; }
-            set { qualities = value; DoPropertyChanged("Qualities"); }
+            set
+            {
+                qualities = value;
+                DoPropertyChanged("Qualities");
+            }
         }
 
         private LivePlayQuality currentQuality;
+
         public LivePlayQuality CurrentQuality
         {
             get { return currentQuality; }
@@ -156,22 +211,28 @@ namespace AllLive.WinUI.ViewModels
                 {
                     return;
                 }
+
                 currentQuality = value;
                 DoPropertyChanged("CurrentQuality");
                 LoadPlayUrl();
             }
-
         }
 
         private List<PlayurlLine> lines;
+
         public List<PlayurlLine> Lines
         {
             get { return lines; }
-            set { lines = value; DoPropertyChanged("Lines"); }
+            set
+            {
+                lines = value;
+                DoPropertyChanged("Lines");
+            }
         }
 
 
         private PlayurlLine currentLine;
+
         public PlayurlLine CurrentLine
         {
             get { return currentLine; }
@@ -181,11 +242,11 @@ namespace AllLive.WinUI.ViewModels
                 {
                     return;
                 }
+
                 currentLine = value;
                 DoPropertyChanged("CurrentLine");
                 ChangedPlayUrl?.Invoke(this, value.Url);
             }
-
         }
 
         public ObservableCollection<LiveMessage> Messages { get; set; }
@@ -193,48 +254,51 @@ namespace AllLive.WinUI.ViewModels
 
         public List<SettingsItem<double>> DanmakuOpacityItems { get; } = new List<SettingsItem<double>>()
         {
-            new SettingsItem<double>(){ Name="100%",Value=1},
-            new SettingsItem<double>(){ Name="90%",Value=0.9},
-            new SettingsItem<double>(){ Name="80%",Value=0.8},
-            new SettingsItem<double>(){ Name="70%",Value=0.7},
-            new SettingsItem<double>(){ Name="60%",Value=0.6},
-            new SettingsItem<double>(){ Name="50%",Value=0.5},
-            new SettingsItem<double>(){ Name="40%",Value=0.4},
-            new SettingsItem<double>(){ Name="30%",Value=0.3},
-            new SettingsItem<double>(){ Name="20%",Value=0.2},
-            new SettingsItem<double>(){ Name="10%",Value=0.1},
+            new SettingsItem<double>() { Name = "100%", Value = 1 },
+            new SettingsItem<double>() { Name = "90%", Value = 0.9 },
+            new SettingsItem<double>() { Name = "80%", Value = 0.8 },
+            new SettingsItem<double>() { Name = "70%", Value = 0.7 },
+            new SettingsItem<double>() { Name = "60%", Value = 0.6 },
+            new SettingsItem<double>() { Name = "50%", Value = 0.5 },
+            new SettingsItem<double>() { Name = "40%", Value = 0.4 },
+            new SettingsItem<double>() { Name = "30%", Value = 0.3 },
+            new SettingsItem<double>() { Name = "20%", Value = 0.2 },
+            new SettingsItem<double>() { Name = "10%", Value = 0.1 },
         };
+
         public List<SettingsItem<double>> DanmakuDiaplayAreaItems { get; } = new List<SettingsItem<double>>()
         {
-            new SettingsItem<double>(){ Name="100%",Value=1},
-            new SettingsItem<double>(){ Name="75%",Value=0.75},
-            new SettingsItem<double>(){ Name="50%",Value=0.5},
-            new SettingsItem<double>(){ Name="25%",Value=0.25},
+            new SettingsItem<double>() { Name = "100%", Value = 1 },
+            new SettingsItem<double>() { Name = "75%", Value = 0.75 },
+            new SettingsItem<double>() { Name = "50%", Value = 0.5 },
+            new SettingsItem<double>() { Name = "25%", Value = 0.25 },
         };
+
         public List<SettingsItem<int>> DanmakuSpeedItems { get; } = new List<SettingsItem<int>>()
         {
-            new SettingsItem<int>(){ Name="极快",Value=2},
-            new SettingsItem<int>(){ Name="很快",Value=4},
-            new SettingsItem<int>(){ Name="较快",Value=6},
-            new SettingsItem<int>(){ Name="快",Value=8},
-            new SettingsItem<int>(){ Name="正常",Value=10},
-            new SettingsItem<int>(){ Name="慢",Value=12},
-            new SettingsItem<int>(){ Name="较慢",Value=14},
-            new SettingsItem<int>(){ Name="很慢",Value=16},
-            new SettingsItem<int>(){ Name="极慢",Value=18},
+            new SettingsItem<int>() { Name = "极快", Value = 2 },
+            new SettingsItem<int>() { Name = "很快", Value = 4 },
+            new SettingsItem<int>() { Name = "较快", Value = 6 },
+            new SettingsItem<int>() { Name = "快", Value = 8 },
+            new SettingsItem<int>() { Name = "正常", Value = 10 },
+            new SettingsItem<int>() { Name = "慢", Value = 12 },
+            new SettingsItem<int>() { Name = "较慢", Value = 14 },
+            new SettingsItem<int>() { Name = "很慢", Value = 16 },
+            new SettingsItem<int>() { Name = "极慢", Value = 18 },
         };
+
         public List<SettingsItem<double>> DnamakuFontZoomItems { get; } = new List<SettingsItem<double>>()
         {
-            new SettingsItem<double>(){ Name="极小",Value=0.2},
-            new SettingsItem<double>(){ Name="很小",Value=0.6},
-            new SettingsItem<double>(){ Name="较小",Value=0.8},
-            new SettingsItem<double>(){ Name="小",Value=0.9},
-            new SettingsItem<double>(){ Name="正常",Value=1.0},
-            new SettingsItem<double>(){ Name="大",Value=1.1},
-            new SettingsItem<double>(){ Name="较大",Value=1.2},
-            new SettingsItem<double>(){ Name="很大",Value=1.4},
-            new SettingsItem<double>(){ Name="极大",Value=1.8},
-            new SettingsItem<double>(){ Name="特大",Value=2.0},
+            new SettingsItem<double>() { Name = "极小", Value = 0.2 },
+            new SettingsItem<double>() { Name = "很小", Value = 0.6 },
+            new SettingsItem<double>() { Name = "较小", Value = 0.8 },
+            new SettingsItem<double>() { Name = "小", Value = 0.9 },
+            new SettingsItem<double>() { Name = "正常", Value = 1.0 },
+            new SettingsItem<double>() { Name = "大", Value = 1.1 },
+            new SettingsItem<double>() { Name = "较大", Value = 1.2 },
+            new SettingsItem<double>() { Name = "很大", Value = 1.4 },
+            new SettingsItem<double>() { Name = "极大", Value = 1.8 },
+            new SettingsItem<double>() { Name = "特大", Value = 2.0 },
         };
 
 
@@ -261,10 +325,12 @@ namespace AllLive.WinUI.ViewModels
                 {
                     MessageCenter.ChangeTitle(Title + " - " + Name, Site);
                 }
+
                 if (!string.IsNullOrEmpty(result.UserAvatar))
                 {
                     Photo = result.UserAvatar;
                 }
+
                 Living = result.Status;
                 //加载SC
                 LoadSuperChat();
@@ -299,12 +365,14 @@ namespace AllLive.WinUI.ViewModels
                         //HDR无法播放
                         qualities = qualities.Where(x => !x.Quality.Contains("HDR")).ToList();
                     }
+
                     //清晰度设置
                     var videoQuality = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY, 0);
                     if (IsMeteredConnection())
                     {
                         videoQuality = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY_METERED, 0);
                     }
+
                     Qualities = qualities;
                     if (Qualities != null && Qualities.Count > 0)
                     {
@@ -315,6 +383,7 @@ namespace AllLive.WinUI.ViewModels
                     // var u = await Site.GetPlayUrls(result, q[0]);
                     //ChangedPlayUrl?.Invoke(this, u[0]);
                 }
+
                 DatabaseHelper.AddHistory(new HistoryItem()
                 {
                     Photo = Photo,
@@ -322,7 +391,6 @@ namespace AllLive.WinUI.ViewModels
                     SiteName = Site.Name,
                     UserName = Name
                 });
-
             }
             catch (Exception ex)
             {
@@ -366,18 +434,19 @@ namespace AllLive.WinUI.ViewModels
         }
 
         Timer scTimer;
+
         public void SetSCTimer()
         {
             KeepSC = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.KEEP_SUPER_CHAT, true);
             if (KeepSC)
             {
                 _ = Dispatcher.RunOnUIThreadAsync(() =>
-                 {
-                     foreach (var item in SuperChatMessages)
-                     {
-                         item.ShowCountdown = false;
-                     }
-                 });
+                {
+                    foreach (var item in SuperChatMessages)
+                    {
+                        item.ShowCountdown = false;
+                    }
+                });
                 scTimer?.Stop();
                 scTimer?.Dispose();
                 scTimer = null;
@@ -409,7 +478,6 @@ namespace AllLive.WinUI.ViewModels
                             }
                         }
                     });
-
                 };
                 scTimer.Start();
             }
@@ -446,12 +514,14 @@ namespace AllLive.WinUI.ViewModels
                 HandleError(ex, "关注失败");
             }
         }
+
         private void RemoveFavorite()
         {
             if (FavoriteID == null)
             {
                 return;
             }
+
             try
             {
                 DatabaseHelper.DeleteFavorite(FavoriteID.Value);
@@ -475,6 +545,7 @@ namespace AllLive.WinUI.ViewModels
                     WinUIUtils.ShowMessageToast("加载播放地址失败", xamlRoot: XamlRoot);
                     return;
                 }
+
                 List<PlayurlLine> ls = new List<PlayurlLine>();
                 for (int i = 0; i < data.Count; i++)
                 {
@@ -492,10 +563,6 @@ namespace AllLive.WinUI.ViewModels
             {
                 WinUIUtils.ShowMessageToast("加载播放地址失败", xamlRoot: XamlRoot);
             }
-
-
-
-
         }
 
         public async void LoadSuperChat()
@@ -516,11 +583,10 @@ namespace AllLive.WinUI.ViewModels
                 LogHelper.Log("加载SC失败", LogType.ERROR, ex);
                 WinUIUtils.ShowMessageToast("加载SC失败", xamlRoot: XamlRoot);
             }
-
         }
+
         private async void LiveDanmaku_OnClose(object sender, string e)
         {
-
             await Dispatcher.RunOnUIThreadAsync(() =>
             {
                 Messages.Add(new LiveMessage()
@@ -531,7 +597,8 @@ namespace AllLive.WinUI.ViewModels
                 });
             });
         }
-        public IDispatcherHelper Dispatcher { get; set; }
+
+        public new IDispatcherHelper Dispatcher { get; set; }
 
         private void ProcessMessageQueue(object sender, ElapsedEventArgs e)
         {
@@ -570,10 +637,7 @@ namespace AllLive.WinUI.ViewModels
             // Online 和 SuperChat 立即处理
             if (e.Type == LiveMessageType.Online)
             {
-                _ = Dispatcher.RunOnUIThreadAsync(() =>
-                {
-                    Online = Convert.ToInt64(e.Data);
-                });
+                _ = Dispatcher.RunOnUIThreadAsync(() => { Online = Convert.ToInt64(e.Data); });
                 return;
             }
 
@@ -581,7 +645,8 @@ namespace AllLive.WinUI.ViewModels
             {
                 _ = Dispatcher.RunOnUIThreadAsync(() =>
                 {
-                    SuperChatMessages.Insert(0, new SuperChatItem(e.Data as LiveSuperChatMessage, KeepSC ? false : true));
+                    SuperChatMessages.Insert(0,
+                        new SuperChatItem(e.Data as LiveSuperChatMessage, KeepSC ? false : true));
                 });
                 return;
             }
@@ -591,7 +656,8 @@ namespace AllLive.WinUI.ViewModels
                 // 屏蔽词过滤在入队前处理
                 if (settingVM.ShieldWords != null && settingVM.ShieldWords.Count > 0)
                 {
-                    if (settingVM.ShieldWords.FirstOrDefault(x => e.Message.Contains(x) || e.UserName.Contains(x)) != null) return;
+                    if (settingVM.ShieldWords.FirstOrDefault(x => e.Message.Contains(x) || e.UserName.Contains(x)) !=
+                        null) return;
                 }
 
                 // 普通弹幕加入队列批量处理
@@ -607,11 +673,15 @@ namespace AllLive.WinUI.ViewModels
             scTimer?.Dispose();
             scTimer = null;
             // 清空消息队列
-            while (_messageQueue.TryDequeue(out _)) { }
+            while (_messageQueue.TryDequeue(out _))
+            {
+            }
+
             if (clearMessages)
             {
                 Messages.Clear();
             }
+
             if (LiveDanmaku != null)
             {
                 LiveDanmaku.NewMessage -= LiveDanmaku_NewMessage;
@@ -619,7 +689,6 @@ namespace AllLive.WinUI.ViewModels
                 await LiveDanmaku.Stop();
                 LiveDanmaku = null;
             }
-
         }
     }
 
@@ -628,9 +697,9 @@ namespace AllLive.WinUI.ViewModels
         public string Name { get; set; }
         public string Url { get; set; }
     }
+
     public class SettingsItem<T>
     {
-
         public string Name { get; set; }
         public T Value { get; set; }
     }
@@ -650,24 +719,29 @@ namespace AllLive.WinUI.ViewModels
             CountdownTime = Convert.ToInt32(EndTime.Subtract(DateTime.Now).TotalSeconds);
             ShowCountdown = showCountdown;
         }
+
         public event PropertyChangedEventHandler PropertyChanged;
+
         private void DoPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
+
         private int _countdownTime = 0;
+
         public int CountdownTime
         {
             get { return _countdownTime; }
-            set { _countdownTime = value; DoPropertyChanged("CountdownTime"); }
+            set
+            {
+                _countdownTime = value;
+                DoPropertyChanged("CountdownTime");
+            }
         }
 
         public string StartTimeStr
         {
-            get
-            {
-                return StartTime.ToString("HH:mm:ss");
-            }
+            get { return StartTime.ToString("HH:mm:ss"); }
         }
 
         private bool showCountdown = false;
@@ -675,9 +749,11 @@ namespace AllLive.WinUI.ViewModels
         public bool ShowCountdown
         {
             get { return showCountdown; }
-            set { showCountdown = value; DoPropertyChanged("ShowCountdown"); }
+            set
+            {
+                showCountdown = value;
+                DoPropertyChanged("ShowCountdown");
+            }
         }
-
-
     }
 }

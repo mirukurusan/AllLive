@@ -17,46 +17,75 @@ namespace AllLive.WinUI.ViewModels
     public class SyncVM : BaseViewModel
     {
         const string URL = "https://sync1.nsapps.cn/sync";
-        public SyncVM() { }
+
+        public SyncVM()
+        {
+        }
 
         private bool _RoomConnected = false;
+
         public bool RoomConnected
         {
             get { return _RoomConnected; }
-            set { _RoomConnected = value; DoPropertyChanged("RoomConnected"); }
+            set
+            {
+                _RoomConnected = value;
+                DoPropertyChanged("RoomConnected");
+            }
         }
 
         private string _RoomID = "--";
+
         public string RoomID
         {
             get { return _RoomID; }
-            set { _RoomID = value; DoPropertyChanged("RoomID"); }
+            set
+            {
+                _RoomID = value;
+                DoPropertyChanged("RoomID");
+            }
         }
 
         private bool _IsCreator = false;
+
         public bool IsCreator
         {
             get { return _IsCreator; }
-            set { _IsCreator = value; DoPropertyChanged("IsCreator"); }
+            set
+            {
+                _IsCreator = value;
+                DoPropertyChanged("IsCreator");
+            }
         }
 
         public ObservableCollection<RoomUser> RoomUsers { get; set; } = new ObservableCollection<RoomUser>();
 
         private bool _SignalRConnecting = false;
+
         public bool SignalRConnecting
         {
             get { return _SignalRConnecting; }
-            set { _SignalRConnecting = value; DoPropertyChanged("SignalRConnecting"); }
+            set
+            {
+                _SignalRConnecting = value;
+                DoPropertyChanged("SignalRConnecting");
+            }
         }
 
         private int _Countdown = 600;
+
         public int Countdown
         {
             get { return _Countdown; }
-            set { _Countdown = value; DoPropertyChanged("Countdown"); }
+            set
+            {
+                _Countdown = value;
+                DoPropertyChanged("Countdown");
+            }
         }
 
         HubConnection connection;
+
         public async void ConnectSignalR(string roomId)
         {
             try
@@ -66,10 +95,11 @@ namespace AllLive.WinUI.ViewModels
                     WinUIUtils.ShowMessageToast("正在连接中");
                     return;
                 }
+
                 SignalRConnecting = true;
                 connection = new HubConnectionBuilder()
-                   .WithUrl(URL)
-                   .Build();
+                    .WithUrl(URL)
+                    .Build();
                 connection.Closed += async (error) =>
                 {
                     RoomConnected = false;
@@ -103,22 +133,14 @@ namespace AllLive.WinUI.ViewModels
 
         public void ListenSignalR()
         {
-            connection.On<bool, string>("onFavoriteReceived", (overlay, content) =>
-            {
-                ReceiveFavorite(overlay, content);
-            });
-            connection.On<bool, string>("onHistoryReceived", (overlay, content) =>
-            {
-                ReceiveHistory(overlay, content);
-            });
-            connection.On<bool, string>("onShieldWordReceived", (overlay, content) =>
-            {
-                ReceiveShieldWord(overlay, content);
-            });
-            connection.On<bool, string>("onBiliAccountReceived", (overlay, content) =>
-            {
-                ReceiveBiliBili(overlay, content);
-            });
+            connection.On<bool, string>("onFavoriteReceived",
+                (overlay, content) => { ReceiveFavorite(overlay, content); });
+            connection.On<bool, string>("onHistoryReceived",
+                (overlay, content) => { ReceiveHistory(overlay, content); });
+            connection.On<bool, string>("onShieldWordReceived",
+                (overlay, content) => { ReceiveShieldWord(overlay, content); });
+            connection.On<bool, string>("onBiliAccountReceived",
+                (overlay, content) => { ReceiveBiliBili(overlay, content); });
             connection.On<string>("onRoomDestroyed", (roomName) =>
             {
                 ShowMessage("房间已销毁");
@@ -136,11 +158,11 @@ namespace AllLive.WinUI.ViewModels
                         {
                             u.IsCurrentUser = true;
                         }
+
                         RoomUsers.Add(u);
                     }
                 });
             });
-
         }
 
         private void ReceiveFavorite(bool overlay, string content)
@@ -149,6 +171,7 @@ namespace AllLive.WinUI.ViewModels
             {
                 DatabaseHelper.DeleteFavorite();
             }
+
             var items = JsonConvert.DeserializeObject<List<FavoriteJsonItem>>(content);
             foreach (var item in items)
             {
@@ -163,11 +186,9 @@ namespace AllLive.WinUI.ViewModels
                     });
                 }
             }
+
             ShowMessage("已同步关注列表");
-            _ = Dispatcher.RunOnUIThreadAsync(() =>
-             {
-                 MessageCenter.UpdateFavorite();
-             });
+            _ = Dispatcher.RunOnUIThreadAsync(() => { MessageCenter.UpdateFavorite(); });
         }
 
         private void ReceiveHistory(bool overlay, string content)
@@ -176,6 +197,7 @@ namespace AllLive.WinUI.ViewModels
             {
                 DatabaseHelper.DeleteHistory();
             }
+
             var items = JsonConvert.DeserializeObject<List<HistoryJsonItem>>(content);
             foreach (var item in items)
             {
@@ -188,16 +210,20 @@ namespace AllLive.WinUI.ViewModels
                     Photo = item.Face,
                 });
             }
+
             ShowMessage("已同步历史记录");
         }
 
         private void ReceiveShieldWord(bool overlay, string content)
         {
-            var currentWords = JsonConvert.DeserializeObject<List<string>>(SettingHelper.GetValue<string>(SettingHelper.LiveDanmaku.SHIELD_WORD, "[]"));
-            if(overlay)
+            var currentWords =
+                JsonConvert.DeserializeObject<List<string>>(
+                    SettingHelper.GetValue<string>(SettingHelper.LiveDanmaku.SHIELD_WORD, "[]"));
+            if (overlay)
             {
                 currentWords.Clear();
             }
+
             var words = JsonConvert.DeserializeObject<List<string>>(content);
             foreach (var word in words)
             {
@@ -206,31 +232,26 @@ namespace AllLive.WinUI.ViewModels
                     currentWords.Add(word);
                 }
             }
+
             SettingHelper.SetValue(SettingHelper.LiveDanmaku.SHIELD_WORD, JsonConvert.SerializeObject(currentWords));
             ShowMessage("已同步屏蔽词");
-
         }
 
-        private  void ReceiveBiliBili(bool overlay, string content)
+        private void ReceiveBiliBili(bool overlay, string content)
         {
             var obj = JObject.Parse(content);
             var cookie = obj["cookie"];
             SettingHelper.SetValue(SettingHelper.BILI_COOKIE, cookie);
-            _=Dispatcher.RunOnUIThreadAsync(async () =>
-            {
-                await BiliAccount.Instance.LoadUserInfo();
-            });
-          
+            _ = Dispatcher.RunOnUIThreadAsync(async () => { await BiliAccount.Instance.LoadUserInfo(); });
+
             ShowMessage("已同步哔哩哔哩账号");
         }
 
-        public IDispatcherHelper Dispatcher { get; set; }
+        public new IDispatcherHelper Dispatcher { get; set; }
+
         public void ShowMessage(string message)
         {
-            _ = Dispatcher.RunOnUIThreadAsync(() =>
-            {
-                WinUIUtils.ShowMessageToast(message);
-            });
+            _ = Dispatcher.RunOnUIThreadAsync(() => { WinUIUtils.ShowMessageToast(message); });
         }
 
         public void DisconnectSignalR()
@@ -255,6 +276,7 @@ namespace AllLive.WinUI.ViewModels
                 WinUIUtils.ShowMessageToast("连接已断开");
                 return;
             }
+
             string app = "聚合直播";
             string platform = "windows";
             string version = WinUIUtils.GetAppVersion().ToString(3);
@@ -271,6 +293,7 @@ namespace AllLive.WinUI.ViewModels
                 DisconnectSignalR();
             }
         }
+
         Timer timer;
 
         private void StartTimer()
@@ -281,10 +304,7 @@ namespace AllLive.WinUI.ViewModels
             timer = new Timer(1000);
             timer.Elapsed += (s, e) =>
             {
-                _ = Dispatcher.RunOnUIThreadAsync(() =>
-                {
-                    Countdown--;
-                });
+                _ = Dispatcher.RunOnUIThreadAsync(() => { Countdown--; });
                 if (Countdown <= 1)
                 {
                     DisconnectSignalR();
@@ -301,6 +321,7 @@ namespace AllLive.WinUI.ViewModels
                 WinUIUtils.ShowMessageToast("连接已断开");
                 return;
             }
+
             string app = "聚合直播";
             string platform = "windows";
             string version = WinUIUtils.GetAppVersion().ToString(3);
@@ -364,6 +385,7 @@ namespace AllLive.WinUI.ViewModels
                     AddTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.M")
                 });
             }
+
             var json = JsonConvert.SerializeObject(items);
             var resp = await connection?.InvokeAsync<Resp<int>>("SendFavorite", RoomID, overlay, json);
             if (resp.IsSuccess)
@@ -391,6 +413,7 @@ namespace AllLive.WinUI.ViewModels
                 ShowMessage("暂无历史记录");
                 return;
             }
+
             var items = new List<HistoryJsonItem>();
             foreach (var item in historyList)
             {
@@ -421,6 +444,7 @@ namespace AllLive.WinUI.ViewModels
                     UpdateTime = item.WatchTime.ToString("yyyy-MM-dd HH:mm:ss.M"),
                 });
             }
+
             var json = JsonConvert.SerializeObject(items);
             var resp = await connection?.InvokeAsync<Resp<int>>("SendHistory", RoomID, overlay, json);
             if (resp.IsSuccess)
@@ -442,12 +466,15 @@ namespace AllLive.WinUI.ViewModels
             }
 
             var overlay = await ShowOverlayDialog();
-            var currentWords = JsonConvert.DeserializeObject<List<string>>(SettingHelper.GetValue<string>(SettingHelper.LiveDanmaku.SHIELD_WORD, "[]"));
+            var currentWords =
+                JsonConvert.DeserializeObject<List<string>>(
+                    SettingHelper.GetValue<string>(SettingHelper.LiveDanmaku.SHIELD_WORD, "[]"));
             if (currentWords.Count == 0)
             {
                 ShowMessage("暂无屏蔽关键词");
                 return;
             }
+
             var json = JsonConvert.SerializeObject(currentWords);
             var resp = await connection?.InvokeAsync<Resp<int>>("SendShieldWord", RoomID, overlay, json);
             if (resp.IsSuccess)
@@ -468,17 +495,19 @@ namespace AllLive.WinUI.ViewModels
                 return;
             }
 
-           
+
             var cookie = SettingHelper.GetValue<string>(SettingHelper.BILI_COOKIE, "");
             if (cookie == "")
             {
                 ShowMessage("未登录哔哩哔哩账号");
                 return;
             }
-         
-            var resp = await connection?.InvokeAsync<Resp<int>>("SendBiliAccount", RoomID, true, JsonConvert.SerializeObject(new { 
-                cookie= cookie
-            }));
+
+            var resp = await connection?.InvokeAsync<Resp<int>>("SendBiliAccount", RoomID, true,
+                JsonConvert.SerializeObject(new
+                {
+                    cookie = cookie
+                }));
             if (resp.IsSuccess)
             {
                 ShowMessage("发送成功");
@@ -502,10 +531,8 @@ namespace AllLive.WinUI.ViewModels
             var result = await dialog.ShowAsync();
             return result == ContentDialogResult.Primary;
         }
-
-
-
     }
+
     public class Resp<T>
     {
         public bool IsSuccess { get; set; } = true;
@@ -540,23 +567,17 @@ namespace AllLive.WinUI.ViewModels
 
     public class HistoryJsonItem
     {
-        [JsonProperty("siteId")]
-        public string SiteId;
+        [JsonProperty("siteId")] public string SiteId;
 
-        [JsonProperty("id")]
-        public string Id;
+        [JsonProperty("id")] public string Id;
 
-        [JsonProperty("roomId")]
-        public string RoomId;
+        [JsonProperty("roomId")] public string RoomId;
 
-        [JsonProperty("userName")]
-        public string UserName;
+        [JsonProperty("userName")] public string UserName;
 
-        [JsonProperty("face")]
-        public string Face;
+        [JsonProperty("face")] public string Face;
 
-        [JsonProperty("updateTime")]
-        public string UpdateTime;
+        [JsonProperty("updateTime")] public string UpdateTime;
 
         [JsonIgnore]
         public string SiteName
@@ -578,6 +599,5 @@ namespace AllLive.WinUI.ViewModels
                 }
             }
         }
-
     }
 }

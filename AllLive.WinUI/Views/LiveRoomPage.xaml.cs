@@ -136,17 +136,9 @@ namespace AllLive.WinUI.Views
 
             timer_focus.Start();
             controlTimer.Start();
-            if (false)
-            {
-                XBoxControl.Visibility = Visibility.Visible;
-                StandardControl.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                XBoxControl.Visibility = Visibility.Collapsed;
-                ClearXboxSettingBind();
-                StandardControl.Visibility = Visibility.Visible;
-            }
+            XBoxControl.Visibility = Visibility.Collapsed;
+            ClearXboxSettingBind();
+            StandardControl.Visibility = Visibility.Visible;
 
             // 新窗口打开，调整UI
             if (SettingHelper.GetValue(SettingHelper.NEW_WINDOW_LIVEROOM, false))
@@ -852,15 +844,7 @@ namespace AllLive.WinUI.Views
             if (e.NavigationMode == NavigationMode.New)
             {
                 pageArgs = e.Parameter as PageArgs;
-                if (false)
-                {
-                    LoadSetting();
-                    LoadXboxSetting();
-                }
-                else
-                {
-                    LoadSetting();
-                }
+                LoadSetting();
 
                 var siteInfo = MainVM.Sites.FirstOrDefault(x => x.LiveSite.Equals(pageArgs.Site));
 
@@ -877,10 +861,6 @@ namespace AllLive.WinUI.Views
                 liveRoomVM.LoadData(pageArgs.Site, data.RoomID);
 
                 // 如果是XBOX，自动进入全屏
-                if (false)
-                {
-                    SetFullScreen(true);
-                }
             }
         }
 
@@ -1732,14 +1712,7 @@ namespace AllLive.WinUI.Views
             if (mini)
             {
                 SetFullWindow(true);
-                if (false)
-                {
-                    XBoxControl.Visibility = Visibility.Collapsed;
-                }
-                else
-                {
-                    StandardControl.Visibility = Visibility.Collapsed;
-                }
+                StandardControl.Visibility = Visibility.Collapsed;
 
                 MiniControl.Visibility = Visibility.Visible;
 
@@ -1756,14 +1729,7 @@ namespace AllLive.WinUI.Views
             else
             {
                 SetFullWindow(false);
-                if (false)
-                {
-                    XBoxControl.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    StandardControl.Visibility = Visibility.Visible;
-                }
+                StandardControl.Visibility = Visibility.Visible;
 
                 MiniControl.Visibility = Visibility.Collapsed;
                 var appWindow2 = GetCurrentAppWindow();

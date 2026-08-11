@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Data;
 
 namespace AllLive.WinUI.Converters
 {
-    public class CountTextConvert : IValueConverter
+    public partial class CountTextConvert : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

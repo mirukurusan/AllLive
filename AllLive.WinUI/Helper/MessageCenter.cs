@@ -142,6 +142,6 @@ namespace AllLive.WinUI.Helper
 
         }
     }
-    class BlankPage : Page { }
+    partial class BlankPage : Page { }
 
 }

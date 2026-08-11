@@ -7,7 +7,7 @@ namespace AllLive.WinUI.Converters
     /// Double精度的转换器
     /// 部分控件的精度太高，导致无法绑定，所以需要转换
     /// </summary>
-    public class DoublePrecisionConvert : IValueConverter
+    public partial class DoublePrecisionConvert : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

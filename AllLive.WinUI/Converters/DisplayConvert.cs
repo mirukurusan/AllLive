@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Data;
 
 namespace AllLive.WinUI.Converters
 {
-    public class DisplayConvert : IValueConverter
+    public partial class DisplayConvert : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

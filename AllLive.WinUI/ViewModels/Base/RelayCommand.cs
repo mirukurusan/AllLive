@@ -9,6 +9,11 @@ namespace AllLive.WinUI.ViewModels
         private Func<T, bool> _CanExecute;
         public event EventHandler CanExecuteChanged;
 
+        public void NotifyCanExecuteChanged()
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+
         public RelayCommand(Action<T> command) : this(command, null)
         {
         }
@@ -38,6 +43,11 @@ namespace AllLive.WinUI.ViewModels
         private Action _Command;
         private Action<bool> _CanExecute;
         public event EventHandler CanExecuteChanged;
+
+        public void NotifyCanExecuteChanged()
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         public RelayCommand(Action command) : this(command, null)
         {

@@ -7,7 +7,7 @@ using Microsoft.UI.Xaml.Media;
 
 namespace AllLive.WinUI.Converters
 {
-    public class ColorConvert : IValueConverter
+    public partial class ColorConvert : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
