@@ -64,13 +64,41 @@ namespace AllLive.WinUI.Helper
         }
 
         /// <summary>
-        /// Get the recording folder (LocalFolder\Recordings), creating it if needed.
+        /// Get the recording folder, creating it if needed.
+        /// Honors the user-configured folder (SettingHelper.RECORD_FOLDER);
+        /// falls back to LocalFolder\Recordings when unset or invalid.
         /// Works in both packaged and unpackaged modes.
         /// </summary>
         public static async Task<StorageFolder> GetRecordingFolderAsync()
         {
+            var customPath = SettingHelper.GetValue<string>(SettingHelper.RECORD_FOLDER, "");
+            if (!string.IsNullOrEmpty(customPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(customPath);
+                    return await StorageFolder.GetFolderFromPathAsync(customPath);
+                }
+                catch
+                {
+                    // 无效/不可访问路径，回退默认目录
+                    LogHelper.Log("录制文件夹不可用，回退默认目录: " + customPath, LogType.ERROR);
+                }
+            }
+
             var root = await GetLocalFolderAsync();
             return await root.CreateFolderAsync("Recordings", CreationCollisionOption.OpenIfExists);
+        }
+
+        /// <summary>
+        /// Get the effective recording folder path string, without creating it.
+        /// Used by settings UI to display the current path.
+        /// </summary>
+        public static string GetRecordingFolderPath()
+        {
+            var customPath = SettingHelper.GetValue<string>(SettingHelper.RECORD_FOLDER, "");
+            if (!string.IsNullOrEmpty(customPath)) return customPath;
+            return Path.Combine(GetLocalFolderPath(), "Recordings");
         }
 
         /// <summary>

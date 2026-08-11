@@ -225,5 +225,10 @@ namespace AllLive.WinUI.Helper
         /// 默认开启直播录制
         /// </summary>
         public const string AUTO_START_RECORDING = "AutoStartRecording";
+
+        /// <summary>
+        /// 录制保存文件夹，空字符串表示使用默认目录（本地应用数据\Recordings）
+        /// </summary>
+        public const string RECORD_FOLDER = "RecordFolder";
     }
 }

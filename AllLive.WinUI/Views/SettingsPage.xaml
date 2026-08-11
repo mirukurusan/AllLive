@@ -225,8 +225,8 @@
                             </ComboBox.Items>
                         </ComboBox>
                     </Grid>
+                    <TextBlock Margin="4,12" FontSize="18">录制</TextBlock>
                     <Grid
-                        Margin="0,8,0,0"
                         Padding="8,12"
                         Background="{ThemeResource LayerFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -262,6 +262,44 @@
                                 <ComboBoxItem>MP4</ComboBoxItem>
                             </ComboBox.Items>
                         </ComboBox>
+                    </Grid>
+                    <Grid
+                        Margin="0,8,0,0"
+                        Padding="8,12"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Margin="0,0,12,0"
+                            MaxWidth="520">
+                            <TextBlock>录制保存文件夹</TextBlock>
+                            <TextBlock
+                                x:Name="txtRecordFolder"
+                                FontSize="12"
+                                Foreground="Gray"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <StackPanel
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Spacing="8">
+                            <Button
+                                x:Name="btnOpenRecordFolder"
+                                Content="打开"
+                                Click="BtnOpenRecordFolder_Click" />
+                            <Button
+                                x:Name="btnResetRecordFolder"
+                                Content="恢复默认"
+                                Click="BtnResetRecordFolder_Click" />
+                            <Button
+                                x:Name="btnPickRecordFolder"
+                                Content="更改"
+                                Click="BtnPickRecordFolder_Click" />
+                        </StackPanel>
                     </Grid>
                     <TextBlock Margin="4,12" FontSize="18">账号</TextBlock>
                     <Grid

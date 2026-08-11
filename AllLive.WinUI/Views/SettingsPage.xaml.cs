@@ -1,7 +1,9 @@
 ﻿using System;
 using Windows.Foundation;
 using Windows.Storage;
+using Windows.Storage.Pickers;
 using Windows.System;
+using WinRT.Interop;
 using AllLive.WinUI.Controls;
 using AllLive.WinUI.Helper;
 using AllLive.WinUI.ViewModels;
@@ -191,6 +193,8 @@ namespace AllLive.WinUI.Views
                     SettingHelper.SetValue(SettingHelper.RECORD_FORMAT, cbRecordFormat.SelectedIndex);
                 });
             });
+            //录制保存文件夹
+            UpdateRecordFolderDisplay();
             //弹幕开关
             var state = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.SHOW, true);
             DanmuSettingState.IsOn = state;
@@ -342,6 +346,58 @@ namespace AllLive.WinUI.Views
                 BtnLoginDouyin.Visibility = Visibility.Collapsed;
                 BtnLogoutDouyin.Visibility = Visibility.Visible;
             }
+        }
+
+        private void UpdateRecordFolderDisplay()
+        {
+            txtRecordFolder.Text = WinUIUtils.GetRecordingFolderPath();
+        }
+
+        private async void BtnOpenRecordFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var folder = await WinUIUtils.GetRecordingFolderAsync();
+                await Launcher.LaunchFolderAsync(folder);
+            }
+            catch (Exception ex)
+            {
+                WinUIUtils.ShowMessageToast("打开录制文件夹失败: " + ex.Message, xamlRoot: this.XamlRoot);
+            }
+        }
+
+        private async void BtnPickRecordFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var picker = new FolderPicker();
+                picker.FileTypeFilter.Add("*");
+
+                var window = App.GetMainWindow();
+                if (window != null)
+                {
+                    InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
+                }
+
+                var folder = await picker.PickSingleFolderAsync();
+                if (folder != null)
+                {
+                    SettingHelper.SetValue(SettingHelper.RECORD_FOLDER, folder.Path);
+                    UpdateRecordFolderDisplay();
+                    WinUIUtils.ShowMessageToast("录制文件夹已设置", xamlRoot: this.XamlRoot);
+                }
+            }
+            catch (Exception ex)
+            {
+                WinUIUtils.ShowMessageToast("选择文件夹失败: " + ex.Message, xamlRoot: this.XamlRoot);
+            }
+        }
+
+        private void BtnResetRecordFolder_Click(object sender, RoutedEventArgs e)
+        {
+            SettingHelper.SetValue(SettingHelper.RECORD_FOLDER, "");
+            UpdateRecordFolderDisplay();
+            WinUIUtils.ShowMessageToast("已恢复默认录制文件夹", xamlRoot: this.XamlRoot);
         }
     }
 }
