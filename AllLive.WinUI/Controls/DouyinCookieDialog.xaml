@@ -1,0 +1,30 @@
+<ContentDialog
+    x:Class="AllLive.WinUI.Controls.DouyinCookieDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="手动配置抖音Cookie"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
+    PrimaryButtonText="保存"
+    SecondaryButtonClick="ContentDialog_SecondaryButtonClick"
+    SecondaryButtonText="取消"
+    DefaultButton="Primary"
+    mc:Ignorable="d">
+
+    <StackPanel Width="420">
+        <TextBlock
+            x:Name="txtStatus"
+            Margin="0,0,0,8"
+            FontSize="12"
+            Foreground="Gray"
+            TextWrapping="Wrap"
+            Text="请打开浏览器的开发者工具(F12)后登录抖音，然后在开发者工具的Network中找到www.douyin.com或live.douyin.com的请求，复制Request Header中的Cookie后粘贴到下方" />
+        <TextBox
+            x:Name="txtCookie"
+            MinHeight="140"
+            MaxHeight="240"
+            AcceptsReturn="True"
+            TextWrapping="Wrap"/>
+    </StackPanel>
+</ContentDialog>

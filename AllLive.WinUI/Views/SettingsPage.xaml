@@ -291,6 +291,11 @@
                         BorderThickness="1"
                         CornerRadius="4">
                         <StackPanel Orientation="Horizontal">
+                            <Image
+                                Width="36"
+                                Height="36"
+                                Margin="0,0,12,0"
+                                Source="/Assets/Logo/douyin.png" />
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock>抖音</TextBlock>
                                 <TextBlock
@@ -302,19 +307,28 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <Button
-                            x:Name="BtnLoginDouyin"
+                        <StackPanel
                             HorizontalAlignment="Right"
-                            Click="BtnLoginDouyin_Click">
-                            立即登录
-                        </Button>
-                        <Button
-                            x:Name="BtnLogoutDouyin"
-                            HorizontalAlignment="Right"
-                            Click="BtnLogoutDouyin_Click"
-                            Visibility="Collapsed">
-                            注销登录
-                        </Button>
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                            <Button
+                                x:Name="BtnSetDouyinCookie"
+                                Click="BtnSetDouyinCookie_Click">
+                                手动配置Cookie
+                            </Button>
+                            <Button
+                                x:Name="BtnLoginDouyin"
+                                Click="BtnLoginDouyin_Click">
+                                立即登录
+                            </Button>
+                            <Button
+                                x:Name="BtnLogoutDouyin"
+                                Click="BtnLogoutDouyin_Click"
+                                Visibility="Collapsed">
+                                注销登录
+                            </Button>
+                        </StackPanel>
                     </Grid>
                     <TextBlock Margin="4,12" FontSize="18">互动</TextBlock>
                     <Grid

@@ -318,5 +318,20 @@ namespace AllLive.WinUI.Views
             BtnLoginDouyin.Visibility = Visibility.Visible;
             BtnLogoutDouyin.Visibility = Visibility.Collapsed;
         }
+
+        private async void BtnSetDouyinCookie_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new DouyinCookieDialog()
+            {
+                XamlRoot = this.XamlRoot
+            };
+            await dialog.ShowAsync();
+            if (dialog.LoginSuccess)
+            {
+                txtDouyin.Text = "已登录";
+                BtnLoginDouyin.Visibility = Visibility.Collapsed;
+                BtnLogoutDouyin.Visibility = Visibility.Visible;
+            }
+        }
     }
 }
