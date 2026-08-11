@@ -980,7 +980,6 @@ mc:Ignorable="d">
                     <PersonPicture
                         Width="48"
                         Height="48"
-                        Background="Blue"
                         ProfilePicture="{x:Bind Path=liveRoomVM.Photo, Mode=OneWay}" />
                     <StackPanel
                         Grid.Column="1"
