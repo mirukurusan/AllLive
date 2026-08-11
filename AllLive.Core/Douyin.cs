@@ -25,12 +25,15 @@ namespace AllLive.Core
         public ILiveDanmaku GetDanmaku() => new DouyinDanmaku();
 
         // 使用 QQBrowser User-Agent（参考 DouyinLiveRecorder / dart_simple_live）
-        private const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 Core/1.116.567.400 QQBrowser/19.7.6764.400";
+        private const string USER_AGENT =
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.97 Safari/537.36 Core/1.116.567.400 QQBrowser/19.7.6764.400";
+
         private const string REFERER = "https://live.douyin.com";
         private const string AUTHORITY = "live.douyin.com";
-        
+
         // 默认Cookie，只需要ttwid即可获取所有画质（参考pure_live项目）
-        private const string DEFAULT_COOKIE = "ttwid=1%7CB1qls3GdnZhUov9o2NxOMxxYS2ff6OSvEWbv0ytbES4%7C1680522049%7C280d802d6d478e3e78d0c807f7c487e7ffec0ae4e5fdd6a0fe74c3c6af149511";
+        private const string DEFAULT_COOKIE =
+            "ttwid=1%7CB1qls3GdnZhUov9o2NxOMxxYS2ff6OSvEWbv0ytbES4%7C1680522049%7C280d802d6d478e3e78d0c807f7c487e7ffec0ae4e5fdd6a0fe74c3c6af149511";
 
         /// <summary>
         /// 用户设置的Cookie（登录后获取，用于搜索等需要认证的API）
@@ -51,7 +54,7 @@ namespace AllLive.Core
             {
                 return headers;
             }
-            
+
             // 优先使用用户登录的Cookie，否则使用默认Cookie
             if (!string.IsNullOrEmpty(UserCookie))
             {
@@ -61,6 +64,7 @@ namespace AllLive.Core
             {
                 headers["Cookie"] = DEFAULT_COOKIE;
             }
+
             return headers;
         }
 
@@ -69,13 +73,15 @@ namespace AllLive.Core
             List<LiveCategory> categories = new List<LiveCategory>();
             var resp = await HttpUtil.GetString("https://live.douyin.com/", await GetRequestHeaders());
 
-            Regex regex = new Regex("\\{\\\\\"pathname\\\\\":\\\\\"\\/\\\\\",\\\\\"categoryData.*?\\]\\\\n", RegexOptions.Singleline);
+            Regex regex = new Regex("\\{\\\\\"pathname\\\\\":\\\\\"\\/\\\\\",\\\\\"categoryData.*?\\]\\\\n",
+                RegexOptions.Singleline);
             Match match = regex.Match(resp);
             string renderData = match.Success ? match.Groups[0].Value : "";
             if (string.IsNullOrEmpty(renderData))
             {
                 throw new Exception("Unable to get category data");
             }
+
             renderData = renderData.Trim().Replace("\\\"", "\"").Replace("\\\\", "\\").Replace("]\\n", "");
             // Parse JSON data
             var renderDataJson = JObject.Parse(renderData);
@@ -94,15 +100,18 @@ namespace AllLive.Core
                     };
                     subs.Add(subCategory);
                 }
+
                 var category = new LiveCategory()
                 {
                     Children = subs,
                     ID = id,
                     Name = item["partition"]["title"].ToString(),
                 };
-                subs.Insert(0, new LiveSubCategory() { ID = category.ID, Name = category.Name, ParentID = category.ID, Pic = "" });
+                subs.Insert(0,
+                    new LiveSubCategory() { ID = category.ID, Name = category.Name, ParentID = category.ID, Pic = "" });
                 categories.Add(category);
             }
+
             return categories;
         }
 
@@ -111,28 +120,30 @@ namespace AllLive.Core
             var ids = category.ID.Split(',');
             var partitionId = ids[0];
             var partitionType = ids[1];
-            var reqParams = new Dictionary<string, string> {
-                    {"aid","6383"},
-                    {"app_name","douyin_web" },
-                    {"live_id", "1"},
-                    {"device_platform","web" },
-                    { "language", "zh-CN"},
-                    { "enter_from", "link_share"},
-                    { "cookie_enabled", "true"},
-                    { "screen_width", "1980"},
-                    { "screen_height", "1080"},
-                    { "browser_language", "zh-CN"},
-                    { "browser_platform", "Win32"},
-                    { "browser_name", "Edge"},
-                    { "browser_version", "125.0.0.0"},
-                    {"browser_online", "true"},
-                    { "count","15" },
-                    { "offset", ((page - 1) * 15).ToString()},
-                    {"partition",partitionId},
-                    {"partition_type",partitionType},
-                    {"req_from","2" }
-                };
-            var url = $"https://live.douyin.com/webcast/web/partition/detail/room/v2/?{Utils.BuildQueryString(reqParams)}";
+            var reqParams = new Dictionary<string, string>
+            {
+                { "aid", "6383" },
+                { "app_name", "douyin_web" },
+                { "live_id", "1" },
+                { "device_platform", "web" },
+                { "language", "zh-CN" },
+                { "enter_from", "link_share" },
+                { "cookie_enabled", "true" },
+                { "screen_width", "1920" },
+                { "screen_height", "1080" },
+                { "browser_language", "zh-CN" },
+                { "browser_platform", "Win32" },
+                { "browser_name", "Edge" },
+                { "browser_version", "125.0.0.0" },
+                { "browser_online", "true" },
+                { "count", "15" },
+                { "offset", ((page - 1) * 15).ToString() },
+                { "partition", partitionId },
+                { "partition_type", partitionType },
+                { "req_from", "2" }
+            };
+            var url =
+                $"https://live.douyin.com/webcast/web/partition/detail/room/v2/?{Utils.BuildQueryString(reqParams)}";
 
             var requestUrl = await GetABougs(url);
             var resp = await HttpUtil.GetString(requestUrl,
@@ -148,6 +159,7 @@ namespace AllLive.Core
                     Rooms = new List<LiveRoomItem>()
                 };
             }
+
             var json = JObject.Parse(resp);
             var hasMore = (json["data"]["data"] as JArray).Count >= 15;
             var items = new List<LiveRoomItem>();
@@ -163,36 +175,40 @@ namespace AllLive.Core
                 };
                 items.Add(roomItem);
             }
+
             return new LiveCategoryResult()
             {
                 HasMore = hasMore,
                 Rooms = items
             };
         }
+
         public async Task<LiveCategoryResult> GetRecommendRooms(int page = 1)
         {
-            var reqParams = new Dictionary<string, string> {
-                    {"aid","6383"},
-                    {"app_name","douyin_web" },
-                    {"live_id", "1"},
-                    {"device_platform","web" },
-                    { "language", "zh-CN"},
-                    { "enter_from", "link_share"},
-                    { "cookie_enabled", "true"},
-                    { "screen_width", "1980"},
-                    { "screen_height", "1080"},
-                    { "browser_language", "zh-CN"},
-                    { "browser_platform", "Win32"},
-                    { "browser_name", "Edge"},
-                    { "browser_version", "125.0.0.0"},
-                    {"browser_online", "true"},
-                    { "count","15" },
-                    { "offset", ((page - 1) * 15).ToString()},
-                    {"partition","720" },
-                    {"partition_type","1"},
-                    {"req_from","2" }
-                };
-            var url = $"https://live.douyin.com/webcast/web/partition/detail/room/v2/?{Utils.BuildQueryString(reqParams)}";
+            var reqParams = new Dictionary<string, string>
+            {
+                { "aid", "6383" },
+                { "app_name", "douyin_web" },
+                { "live_id", "1" },
+                { "device_platform", "web" },
+                { "language", "zh-CN" },
+                { "enter_from", "link_share" },
+                { "cookie_enabled", "true" },
+                { "screen_width", "1920" },
+                { "screen_height", "1080" },
+                { "browser_language", "zh-CN" },
+                { "browser_platform", "Win32" },
+                { "browser_name", "Edge" },
+                { "browser_version", "125.0.0.0" },
+                { "browser_online", "true" },
+                { "count", "15" },
+                { "offset", ((page - 1) * 15).ToString() },
+                { "partition", "720" },
+                { "partition_type", "1" },
+                { "req_from", "2" }
+            };
+            var url =
+                $"https://live.douyin.com/webcast/web/partition/detail/room/v2/?{Utils.BuildQueryString(reqParams)}";
 
             var requestUrl = await GetABougs(url);
             var resp = await HttpUtil.GetString(requestUrl,
@@ -208,6 +224,7 @@ namespace AllLive.Core
                     Rooms = new List<LiveRoomItem>()
                 };
             }
+
             var json = JObject.Parse(resp);
             var hasMore = (json["data"]["data"] as JArray).Count >= 15;
             var items = new List<LiveRoomItem>();
@@ -223,12 +240,14 @@ namespace AllLive.Core
                 };
                 items.Add(roomItem);
             }
+
             return new LiveCategoryResult()
             {
                 HasMore = hasMore,
                 Rooms = items
             };
         }
+
         public async Task<LiveRoomDetail> GetRoomDetail(object roomId)
         {
             // There are two types of IDs: webRid and roomId
@@ -245,6 +264,7 @@ namespace AllLive.Core
 
             return await GetRoomDetailByRoomID(roomId as string);
         }
+
         /// <summary>
         /// Get room detail by RoomId
         /// </summary>
@@ -255,7 +275,7 @@ namespace AllLive.Core
         /// <returns></returns>
         private async Task<LiveRoomDetail> GetRoomDetailByRoomID(string roomId)
         {
-            var roomData = await GetRoomDataByRoomID(roomId);
+            var roomData = await GetRoomDataByRoomId(roomId);
             // Get WebRid from room info
             var webRid = roomData["data"]["room"]["owner"]["web_rid"].ToString();
             // Get user unique ID for danmaku
@@ -270,6 +290,7 @@ namespace AllLive.Core
                 var result = await GetRoomDetailByWebRid(webRid);
                 return result;
             }
+
             var roomStatus = status == 2;
             // Need to get cookie for danmaku websocket
             var headers = await GetRequestHeaders(forceRefresh: true);
@@ -281,8 +302,8 @@ namespace AllLive.Core
                 UserName = owner["nickname"].ToString(),
                 UserAvatar = owner["avatar_thumb"]["url_list"][0].ToString(),
                 Online = roomStatus
-                  ? (room["room_view_stats"]?["display_value"]?.ToObject<int>() ?? 0)
-                  : 0,
+                    ? (room["room_view_stats"]?["display_value"]?.ToObject<int>() ?? 0)
+                    : 0,
                 Status = roomStatus,
                 Url = $"https://live.douyin.com/{webRid}",
                 Introduction = owner?["signature"]?.ToString() ?? "",
@@ -296,7 +317,6 @@ namespace AllLive.Core
                 },
                 Data = roomStatus ? room["stream_url"] : null,
             };
-
         }
 
         /// <summary>
@@ -318,6 +338,7 @@ namespace AllLive.Core
             {
                 Trace.WriteLine(ex.Message);
             }
+
             return await GetRoomDetailByWebRidHtml(webRid);
         }
 
@@ -325,7 +346,7 @@ namespace AllLive.Core
         {
             Trace.WriteLine($"========== GetRoomDetailByWebRidApi Start ==========");
             Trace.WriteLine($"[RoomDetail] webRid={webRid}");
-            
+
             // Get room data
             var data = await GetRoomDataApi(webRid);
             var roomData = data["data"][0];
@@ -350,7 +371,7 @@ namespace AllLive.Core
             var cookie = headers.ContainsKey("Cookie") ? headers["Cookie"] : "";
             Trace.WriteLine($"[RoomDetail] Cookie length={cookie.Length}");
             Trace.WriteLine($"[RoomDetail] Cookie preview={cookie.Substring(0, Math.Min(100, cookie.Length))}...");
-            
+
             Trace.WriteLine($"========== GetRoomDetailByWebRidApi Done ==========");
             return new LiveRoomDetail()
             {
@@ -379,7 +400,6 @@ namespace AllLive.Core
                 },
                 Data = roomStatus ? roomData["stream_url"] : null,
             };
-
         }
 
         private async Task<LiveRoomDetail> GetRoomDetailByWebRidHtml(string webRid)
@@ -424,6 +444,7 @@ namespace AllLive.Core
                 Data = roomStatus ? room["stream_url"] : null,
             };
         }
+
         /// <summary>
         /// Get cookie before entering live room
         /// </summary>
@@ -445,13 +466,13 @@ namespace AllLive.Core
                         dyCookie += $"{cookie};";
                     }
                 }
-                
+
                 // 如果没有获取到Cookie，使用默认Cookie
                 if (string.IsNullOrEmpty(dyCookie))
                 {
                     dyCookie = DEFAULT_COOKIE;
                 }
-                
+
                 return dyCookie;
             }
             catch (Exception ex)
@@ -486,25 +507,27 @@ namespace AllLive.Core
             {
                 throw new Exception("Unable to get room data");
             }
+
             json = json.Trim().Replace("\\\"", "\"").Replace("\\\\", "\\").Replace("]\\n", "");
             return JObject.Parse(json)["state"];
         }
 
         private async Task<JToken> GetRoomDataApi(string webRid)
         {
-            var reqParams = new Dictionary<string, string> {
-                    {"aid","6383" },
-                    {"app_name","douyin_web" },
-                    {"live_id","1" },
-                    {"device_platform","web" },
-                    {"language","zh-CN" },
-                    {"browser_language","zh-CN" },
-                    {"browser_platform","Win32" },
-                    {"browser_name","Chrome" },
-                    {"browser_version","125.0.0.0" },
-                    {"web_rid",webRid },
-                    {"msToken","" }
-                };
+            var reqParams = new Dictionary<string, string>
+            {
+                { "aid", "6383" },
+                { "app_name", "douyin_web" },
+                { "live_id", "1" },
+                { "device_platform", "web" },
+                { "language", "zh-CN" },
+                { "browser_language", "zh-CN" },
+                { "browser_platform", "Win32" },
+                { "browser_name", "Chrome" },
+                { "browser_version", "125.0.0.0" },
+                { "web_rid", webRid },
+                { "msToken", "" }
+            };
             var url = $"https://live.douyin.com/webcast/room/web/enter/?{Utils.BuildQueryString(reqParams)}";
 
             var requestHeaders = await GetRequestHeaders();
@@ -517,22 +540,21 @@ namespace AllLive.Core
             );
 
 
-           
             return JObject.Parse(resp)["data"];
         }
 
-        private async Task<JToken> GetRoomDataByRoomID(string roomId)
+        private async Task<JToken> GetRoomDataByRoomId(string roomId)
         {
             var resp = await HttpUtil.GetString($"https://webcast.amemv.com/webcast/room/reflow/info/",
                 headers: await GetRequestHeaders(),
                 queryParameters: new Dictionary<string, string>
                 {
-                    {"type_id","0" },
-                    {"live_id","1" },
-                    {"room_id",roomId },
-                    {"sec_user_id","" },
-                    {"version_code","99.99.99" },
-                    {"app_id","6383" },
+                    { "type_id", "0" },
+                    { "live_id", "1" },
+                    { "room_id", roomId },
+                    { "sec_user_id", "" },
+                    { "version_code", "99.99.99" },
+                    { "app_id", "6383" },
                 }
             );
             return JObject.Parse(resp);
@@ -545,15 +567,16 @@ namespace AllLive.Core
             {
                 return Task.FromResult(qualities);
             }
+
             var data = roomDetail.Data as JToken;
-            var qulityList = data["live_core_sdk_data"]["pull_data"]["options"]["qualities"];
+            var qualityList = data["live_core_sdk_data"]["pull_data"]["options"]["qualities"];
             var streamData = data["live_core_sdk_data"]["pull_data"]["stream_data"].ToString();
 
             if (!streamData.StartsWith("{"))
             {
                 var flvList = (data["flv_pull_url"] as JToken).Values().Select(c => c.ToString()).ToList();
                 var hlsList = (data["hls_pull_url_map"] as JToken).Values().Select(c => c.ToString()).ToList();
-                foreach (var quality in qulityList)
+                foreach (var quality in qualityList)
                 {
                     int level = quality["level"].ToObject<int>();
                     List<String> urls = new List<string>();
@@ -562,11 +585,13 @@ namespace AllLive.Core
                     {
                         urls.Add(flvList[flvIndex]);
                     }
+
                     var hlsIndex = hlsList.Count - level;
                     if (hlsIndex >= 0 && hlsIndex < hlsList.Count)
                     {
                         urls.Add(hlsList[hlsIndex]);
                     }
+
                     var qualityItem = new LivePlayQuality()
                     {
                         Quality = quality["name"].ToString(),
@@ -582,7 +607,7 @@ namespace AllLive.Core
             else
             {
                 var qualityData = JObject.Parse(streamData)["data"] as JObject;
-                foreach (var quality in qulityList)
+                foreach (var quality in qualityList)
                 {
                     List<string> urls = new List<string>();
 
@@ -593,12 +618,14 @@ namespace AllLive.Core
                     {
                         urls.Add(flvUrl);
                     }
+
                     var hlsUrl =
                         qualityData[quality["sdk_key"].ToString()]?["main"]?["hls"]?.ToString();
                     if (hlsUrl != null && hlsUrl.Length > 0)
                     {
                         urls.Add(hlsUrl);
                     }
+
                     var qualityItem = new LivePlayQuality()
                     {
                         Quality = quality["name"].ToString(),
@@ -671,6 +698,7 @@ namespace AllLive.Core
                         Trace.WriteLine($"[Search] 获取房间信息失败: {ex.Message}");
                     }
                 }
+
                 return new LiveSearchResult() { HasMore = false, Rooms = new List<LiveRoomItem>() };
             }
 
@@ -685,72 +713,121 @@ namespace AllLive.Core
         {
             try
             {
-                var reqParams = new Dictionary<string, string> {
-                    {"device_platform", "webapp"},
-                    {"aid", "6383"},
-                    {"channel", "channel_pc_web"},
-                    {"search_channel", "aweme_live"},
-                    {"keyword", keyword},
-                    {"search_source", "switch_tab"},
-                    {"query_correct_type", "1"},
-                    {"is_filter_search", "0"},
-                    {"from_group_id", ""},
-                    {"offset", ((page - 1) * 10).ToString()},
-                    {"count", "10"},
-                    {"pc_client_type", "1"},
-                    {"version_code", "170400"},
-                    {"version_name", "17.4.0"},
-                    {"cookie_enabled", "true"},
-                    {"screen_width", "1980"},
-                    {"screen_height", "1080"},
-                    {"browser_language", "zh-CN"},
-                    {"browser_platform", "Win32"},
-                    {"browser_name", "Edge"},
-                    {"browser_version", "125.0.0.0"},
-                    {"browser_online", "true"},
-                    {"engine_name", "Blink"},
-                    {"engine_version", "125.0.0.0"},
-                    {"os_name", "Windows"},
-                    {"os_version", "10"},
-                    {"cpu_core_num", "12"},
-                    {"device_memory", "8"},
-                    {"platform", "PC"},
-                    {"downlink", "10"},
-                    {"effective_type", "4g"},
-                    {"round_trip_time", "100"},
-                    {"msToken", ""},
+                var reqParams = new Dictionary<string, string>
+                {
+                    { "device_platform", "webapp" },
+                    { "aid", "6383" },
+                    { "channel", "channel_pc_web" },
+                    { "search_channel", "aweme_live" },
+                    { "keyword", keyword },
+                    { "search_source", "switch_tab" },
+                    { "query_correct_type", "1" },
+                    { "is_filter_search", "0" },
+                    { "from_group_id", "" },
+                    { "offset", ((page - 1) * 10).ToString() },
+                    { "count", "10" },
+                    { "pc_client_type", "1" },
+                    { "version_code", "170400" },
+                    { "version_name", "17.4.0" },
+                    { "cookie_enabled", "true" },
+                    { "screen_width", "1920" },
+                    { "screen_height", "1080" },
+                    { "browser_language", "zh-CN" },
+                    { "browser_platform", "Win32" },
+                    { "browser_name", "Edge" },
+                    { "browser_version", "125.0.0.0" },
+                    { "browser_online", "true" },
+                    { "engine_name", "Blink" },
+                    { "engine_version", "125.0.0.0" },
+                    { "os_name", "Windows" },
+                    { "os_version", "10" },
+                    { "cpu_core_num", "12" },
+                    { "device_memory", "8" },
+                    { "platform", "PC" },
+                    { "downlink", "10" },
+                    { "effective_type", "4g" },
+                    { "round_trip_time", "100" },
+                    { "webid", "7382872326016435738" },
                 };
+                // 搜索接口无需 a_bogus 签名（参考 dart_simple_live）
                 var url = $"https://www.douyin.com/aweme/v1/web/live/search/?{Utils.BuildQueryString(reqParams)}";
 
-                var requestUrl = await GetABougs(url);
+                // 搜索API需要完整Cookie（优先用户Cookie，否则默认Cookie），
+                // 并先通过 HEAD 请求 live.douyin.com 预取 ttwid / __ac_nonce（参考 dart_simple_live）
+                var baseHeaders = await GetRequestHeaders(forceRefresh: true);
+                var dyCookie = "";
+                if (baseHeaders.TryGetValue("Cookie", out var savedCookie) && !string.IsNullOrEmpty(savedCookie))
+                {
+                    dyCookie = savedCookie.Trim();
+                    if (!dyCookie.EndsWith(";"))
+                    {
+                        dyCookie += ";";
+                    }
+                }
+
+                try
+                {
+                    var headResp = await HttpUtil.Head("https://live.douyin.com", headers: baseHeaders);
+                    if (headResp.Headers.TryGetValues("Set-Cookie", out var setCookies))
+                    {
+                        foreach (var element in setCookies)
+                        {
+                            var cookie = element.Split(';')[0];
+                            if (cookie.Contains("ttwid") || cookie.Contains("__ac_nonce"))
+                            {
+                                dyCookie += $"{cookie};";
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (string.IsNullOrEmpty(dyCookie))
+                    {
+                        throw;
+                    }
+
+                    Trace.WriteLine($"[Search] 预取Cookie的HEAD请求失败，使用已保存Cookie继续: {ex.Message}");
+                }
+
                 var searchHeaders = new Dictionary<string, string>
                 {
-                    {"Authority", "www.douyin.com"},
-                    {"Accept", "application/json, text/plain, */*"},
-                    {"Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8"},
-                    {"Referer", $"https://www.douyin.com/search/{Uri.EscapeDataString(keyword)}?type=live"},
-                    {"User-Agent", USER_AGENT},
+                    { "Authority", "www.douyin.com" },
+                    { "accept", "application/json, text/plain, */*" },
+                    { "accept-language", "zh-CN,zh;q=0.9,en;q=0.8" },
+                    { "cookie", dyCookie },
+                    { "priority", "u=1, i" },
+                    { "referer", $"https://www.douyin.com/search/{Uri.EscapeDataString(keyword)}?type=live" },
+                    { "sec-ch-ua", "\"Microsoft Edge\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\"" },
+                    { "sec-ch-ua-mobile", "?0" },
+                    { "sec-ch-ua-platform", "\"Windows\"" },
+                    { "sec-fetch-dest", "empty" },
+                    { "sec-fetch-mode", "cors" },
+                    { "sec-fetch-site", "same-origin" },
+                    { "user-agent", USER_AGENT },
                 };
 
-                // 搜索API需要用户Cookie
-                if (!string.IsNullOrEmpty(UserCookie))
+                var resp = await HttpUtil.GetString(url, headers: searchHeaders);
+
+                if (string.IsNullOrWhiteSpace(resp) ||
+                    resp.Trim().Equals("blocked", StringComparison.OrdinalIgnoreCase))
                 {
-                    searchHeaders["Cookie"] = UserCookie;
-                }
-                else
-                {
-                    searchHeaders["Cookie"] = DEFAULT_COOKIE;
+                    Trace.WriteLine("[Search] 搜索被限制");
+                    throw new Exception("抖音直播搜索被限制，请稍后再试");
                 }
 
-                var resp = await HttpUtil.GetString(requestUrl, headers: searchHeaders);
-
-                if (string.IsNullOrWhiteSpace(resp) || !resp.TrimStart().StartsWith("{"))
+                if (!resp.TrimStart().StartsWith("{"))
                 {
-                    Trace.WriteLine($"[Search] 搜索返回无效响应");
+                    Trace.WriteLine("[Search] 搜索返回无效响应");
                     return new LiveSearchResult() { HasMore = false, Rooms = new List<LiveRoomItem>() };
                 }
 
                 var json = JObject.Parse(resp);
+                if (json["status_code"]?.ToObject<int>() == 2483)
+                {
+                    throw new Exception("抖音搜索需要登录，请在账号管理中通过网页登录或手动配置完整抖音 Cookie");
+                }
+
                 var items = new List<LiveRoomItem>();
                 var dataArray = json["data"] as JArray;
                 if (dataArray != null)
@@ -766,7 +843,9 @@ namespace AllLive.Core
                                 Title = rawData["title"].ToString(),
                                 Cover = rawData["cover"]["url_list"][0].ToString(),
                                 UserName = rawData["owner"]["nickname"].ToString(),
-                                Online = rawData["stats"]?["total_user"]?.ToObject<int>() ?? 0,
+                                Online = int.TryParse(rawData["stats"]?["total_user"]?.ToString(), out var online)
+                                    ? online
+                                    : 0,
                             };
                             items.Add(roomItem);
                         }
@@ -786,7 +865,7 @@ namespace AllLive.Core
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Search] 关键词搜索失败: {ex.Message}");
-                return new LiveSearchResult() { HasMore = false, Rooms = new List<LiveRoomItem>() };
+                throw;
             }
         }
 
@@ -871,6 +950,7 @@ namespace AllLive.Core
             {
                 Trace.WriteLine($"[ResolveShortUrl] 异常: {ex.Message}");
             }
+
             return null;
         }
 
@@ -879,6 +959,7 @@ namespace AllLive.Core
             var result = await GetRoomDetail(roomId: roomId);
             return result.Status ? LiveStatusType.Live : LiveStatusType.Offline;
         }
+
         public Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId)
         {
             return Task.FromResult(new List<LiveSuperChatMessage>());
@@ -900,6 +981,7 @@ namespace AllLive.Core
                     sb.Append(random.Next(0, 9));
                 }
             }
+
             return sb.ToString();
         }
 
@@ -918,13 +1000,13 @@ namespace AllLive.Core
 
                 Trace.WriteLine($"[GetABougs] queryForSign length={queryForSign.Length}");
                 Trace.WriteLine($"[GetABougs] Calling DouyinABogusHelper.GenerateAsync...");
-                
+
                 var aBogus = await DouyinABogusHelper.GenerateAsync(queryForSign, USER_AGENT).ConfigureAwait(false);
-                
+
                 Trace.WriteLine($"[GetABougs] a_bogus result: '{aBogus}'");
                 Trace.WriteLine($"[GetABougs] a_bogus length: {aBogus?.Length ?? 0}");
                 Trace.WriteLine($"[GetABougs] a_bogus isEmpty: {string.IsNullOrEmpty(aBogus)}");
-                
+
                 if (string.IsNullOrEmpty(aBogus))
                 {
                     Trace.WriteLine("[GetABougs] Warning: a_bogus is empty, using unsigned URL");
@@ -957,13 +1039,14 @@ namespace AllLive.Core
             {
                 rng.GetBytes(buffer);
             }
+
             var sb = new StringBuilder(length);
             for (int i = 0; i < length; i++)
             {
                 sb.Append(chars[buffer[i] % chars.Length]);
             }
+
             return sb.ToString();
         }
     }
 }
-
