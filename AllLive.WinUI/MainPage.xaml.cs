@@ -104,7 +104,7 @@ namespace AllLive.WinUI
             var parseResult = await SiteParser.ParseUrl(url);
             if (parseResult.Item1 != LiveSite.Unknown && !string.IsNullOrEmpty(parseResult.Item2))
             {
-                this.Frame.Navigate(typeof(LiveRoomPage), new PageArgs()
+                MessageCenter.NavigatePage(typeof(LiveRoomPage), new PageArgs()
                 {
                     Site = MainVM.Sites[(int)parseResult.Item1].LiveSite,
                     Data = new LiveRoomItem()
