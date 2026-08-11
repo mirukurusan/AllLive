@@ -266,7 +266,7 @@ namespace AllLive.WinUI.Views
 
         private async void BtnGithub_Click(object sender, RoutedEventArgs e)
         {
-            await Launcher.LaunchUriAsync(new Uri("https://github.com/xiaoyaocz/AllLive"));
+            await Launcher.LaunchUriAsync(new Uri("https://github.com/mirukurusan/AllLive"));
         }
 
         private async void BtnLog_Click(object sender, RoutedEventArgs e)
