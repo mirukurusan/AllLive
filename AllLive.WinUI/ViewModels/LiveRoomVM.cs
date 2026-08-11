@@ -7,6 +7,7 @@ using System.Linq;
 using System.Timers;
 using System.Windows.Input;
 using Windows.Networking.Connectivity;
+using Microsoft.UI.Xaml;
 using AllLive.Core.Helper;
 using AllLive.Core.Interface;
 using AllLive.Core.Models;
@@ -46,6 +47,11 @@ namespace AllLive.WinUI.ViewModels
         public ICommand AddFavoriteCommand { get; set; }
         public ICommand RemoveFavoriteCommand { get; set; }
         public int MessageCleanCount { get; set; } = 200;
+
+        /// <summary>
+        /// 所属直播间页面的 XamlRoot
+        /// </summary>
+        public XamlRoot XamlRoot { get; set; }
 
         /// <summary>
         /// 保留SC
@@ -466,7 +472,7 @@ namespace AllLive.WinUI.ViewModels
                 var data = await Site.GetPlayUrls(detail, CurrentQuality);
                 if (data.Count == 0)
                 {
-                    WinUIUtils.ShowMessageToast("加载播放地址失败");
+                    WinUIUtils.ShowMessageToast("加载播放地址失败", xamlRoot: XamlRoot);
                     return;
                 }
                 List<PlayurlLine> ls = new List<PlayurlLine>();
@@ -484,7 +490,7 @@ namespace AllLive.WinUI.ViewModels
             }
             catch (Exception)
             {
-                WinUIUtils.ShowMessageToast("加载播放地址失败");
+                WinUIUtils.ShowMessageToast("加载播放地址失败", xamlRoot: XamlRoot);
             }
 
 
@@ -508,7 +514,7 @@ namespace AllLive.WinUI.ViewModels
             catch (Exception ex)
             {
                 LogHelper.Log("加载SC失败", LogType.ERROR, ex);
-                WinUIUtils.ShowMessageToast("加载SC失败");
+                WinUIUtils.ShowMessageToast("加载SC失败", xamlRoot: XamlRoot);
             }
 
         }

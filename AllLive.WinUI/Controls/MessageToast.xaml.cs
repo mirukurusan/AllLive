@@ -16,19 +16,36 @@ namespace AllLive.WinUI.Controls
 
         private string m_TextBlockContent = "";
         private TimeSpan m_ShowTime;
-        public MessageToast()
+        // toast显示的窗口
+        private XamlRoot m_XamlRoot;
+
+        public MessageToast() : this(null)
         {
-            this.InitializeComponent();
-            m_Popup = new Popup();
-            var window = App.GetMainWindow();
-            this.Width = window != null ? window.Bounds.Width : 1920;
-            this.Height = window != null ? window.Bounds.Height : 1080;
-            m_Popup.Child = this;
-            this.Loaded += NotifyPopup_Loaded;
-            this.Unloaded += NotifyPopup_Unloaded;
         }
 
-        public MessageToast(string content, TimeSpan showTime) : this()
+        public MessageToast(XamlRoot xamlRoot)
+        {
+            InitializeComponent();
+            m_XamlRoot = xamlRoot;
+            m_Popup = new Popup();
+            if (m_XamlRoot != null)
+            {
+                Width = m_XamlRoot.Size.Width;
+                Height = m_XamlRoot.Size.Height;
+                m_Popup.XamlRoot = m_XamlRoot;
+            }
+            else
+            {
+                var window = App.GetMainWindow();
+                Width = window != null ? window.Bounds.Width : 1920;
+                Height = window != null ? window.Bounds.Height : 1080;
+            }
+            m_Popup.Child = this;
+            Loaded += NotifyPopup_Loaded;
+            Unloaded += NotifyPopup_Unloaded;
+        }
+
+        public MessageToast(string content, TimeSpan showTime, XamlRoot xamlRoot) : this(xamlRoot)
         {
             if (m_TextBlockContent == null)
             {
@@ -37,7 +54,7 @@ namespace AllLive.WinUI.Controls
             this.m_TextBlockContent = content;
             this.m_ShowTime = showTime;
         }
-        public MessageToast(string content, TimeSpan showTime, List<MyUICommand> commands) : this()
+        public MessageToast(string content, TimeSpan showTime, List<MyUICommand> commands) : this(content, showTime, (XamlRoot)null)
         {
             if (m_TextBlockContent == null)
             {
@@ -84,10 +101,17 @@ namespace AllLive.WinUI.Controls
                 m_TextBlockContent = "";
             }
             this.tbNotify.Text = m_TextBlockContent;
-            var window = App.GetMainWindow();
-            if (window != null)
+            if (m_XamlRoot != null)
             {
-                window.SizeChanged += Current_SizeChanged;
+                m_XamlRoot.Changed += Current_XamlRoot_Changed;
+            }
+            else
+            {
+                var window = App.GetMainWindow();
+                if (window != null)
+                {
+                    window.SizeChanged += Current_SizeChanged;
+                }
             }
             await AnimationBuilder.Create().Offset(to: new Vector2(0, -72), duration: TimeSpan.FromMilliseconds(200)).StartAsync(this);
             //await this.Offset(offsetX: 0, offsetY: -72, duration: 200, delay: 0, easingType: EasingType.Default).StartAsync();
@@ -97,6 +121,12 @@ namespace AllLive.WinUI.Controls
         }
 
 
+        private void Current_XamlRoot_Changed(XamlRoot sender, XamlRootChangedEventArgs args)
+        {
+            this.Width = sender.Size.Width;
+            this.Height = sender.Size.Height;
+        }
+
         private void Current_SizeChanged(object sender, WindowSizeChangedEventArgs e)
         {
             this.Width = e.Size.Width;
@@ -105,10 +135,17 @@ namespace AllLive.WinUI.Controls
 
         private void NotifyPopup_Unloaded(object sender, RoutedEventArgs e)
         {
-            var window = App.GetMainWindow();
-            if (window != null)
+            if (m_XamlRoot != null)
             {
-                window.SizeChanged -= Current_SizeChanged;
+                m_XamlRoot.Changed -= Current_XamlRoot_Changed;
+            }
+            else
+            {
+                var window = App.GetMainWindow();
+                if (window != null)
+                {
+                    window.SizeChanged -= Current_SizeChanged;
+                }
             }
         }
 

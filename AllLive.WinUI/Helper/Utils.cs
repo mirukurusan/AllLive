@@ -100,9 +100,9 @@ namespace AllLive.WinUI.Helper
             }
         }
 
-        public  static void ShowMessageToast(string message, int seconds = 2)
+        public  static void ShowMessageToast(string message, int seconds = 2, XamlRoot xamlRoot = null)
         {
-            MessageToast ms = new MessageToast(message, TimeSpan.FromSeconds(seconds));
+            MessageToast ms = new MessageToast(message, TimeSpan.FromSeconds(seconds), xamlRoot);
             ms.Show();
         }
         public async static Task<bool> ShowDialog(string title, string content)

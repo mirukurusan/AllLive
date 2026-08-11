@@ -108,6 +108,7 @@ namespace AllLive.WinUI.Views
                 if (XamlRoot != null)
                 {
                     XamlRoot.Changed += (_, _) => UpdateDanmakuDpi();
+                    liveRoomVM.XamlRoot = XamlRoot;
                 }
             };
 
@@ -608,12 +609,12 @@ namespace AllLive.WinUI.Views
                     if (liveRoomVM.IsFavorite)
                     {
                         liveRoomVM.RemoveFavoriteCommand.Execute(null);
-                        WinUIUtils.ShowMessageToast("已取消关注");
+                        WinUIUtils.ShowMessageToast("已取消关注", xamlRoot: this.XamlRoot);
                     }
                     else
                     {
                         liveRoomVM.AddFavoriteCommand.Execute(null);
-                        WinUIUtils.ShowMessageToast("已添加关注");
+                        WinUIUtils.ShowMessageToast("已添加关注", xamlRoot: this.XamlRoot);
                     }
 
                     break;
@@ -708,7 +709,7 @@ namespace AllLive.WinUI.Views
             }
             catch (Exception ex)
             {
-                WinUIUtils.ShowMessageToast("播放失败" + ex.Message);
+                WinUIUtils.ShowMessageToast("播放失败" + ex.Message, xamlRoot: this.XamlRoot);
             }
 
         }
@@ -906,11 +907,11 @@ namespace AllLive.WinUI.Views
                          pixelBuffer.ToArray());
                     await encoder.FlushAsync();
                 }
-                WinUIUtils.ShowMessageToast("截图已经保存至图片库");
+                WinUIUtils.ShowMessageToast("截图已经保存至图片库", xamlRoot: this.XamlRoot);
             }
             catch (Exception)
             {
-                WinUIUtils.ShowMessageToast("截图失败");
+                WinUIUtils.ShowMessageToast("截图失败", xamlRoot: this.XamlRoot);
             }
         }
 
@@ -928,11 +929,11 @@ namespace AllLive.WinUI.Views
             }
             catch (FileNotFoundException)
             {
-                WinUIUtils.ShowMessageToast("录制文件夹尚不存在");
+                WinUIUtils.ShowMessageToast("录制文件夹尚不存在", xamlRoot: this.XamlRoot);
             }
             catch (Exception ex)
             {
-                WinUIUtils.ShowMessageToast("打开录制文件夹失败: " + ex.Message);
+                WinUIUtils.ShowMessageToast("打开录制文件夹失败: " + ex.Message, xamlRoot: this.XamlRoot);
             }
         }
 
@@ -954,7 +955,7 @@ namespace AllLive.WinUI.Views
             {
                 if (interopMSS == null)
                 {
-                    WinUIUtils.ShowMessageToast("播放器未就绪");
+                    WinUIUtils.ShowMessageToast("播放器未就绪", xamlRoot: this.XamlRoot);
                     return;
                 }
 
@@ -987,11 +988,11 @@ namespace AllLive.WinUI.Views
                     Glyph = ""
                 };
 
-                WinUIUtils.ShowMessageToast("开始录制");
+                WinUIUtils.ShowMessageToast("开始录制", xamlRoot: this.XamlRoot);
             }
             catch (Exception ex)
             {
-                WinUIUtils.ShowMessageToast("录制启动失败: " + ex.Message);
+                WinUIUtils.ShowMessageToast("录制启动失败: " + ex.Message, xamlRoot: this.XamlRoot);
                 LogHelper.Log("录制启动失败", LogType.ERROR, ex);
             }
         }
@@ -1017,11 +1018,11 @@ namespace AllLive.WinUI.Views
                     Glyph = ""
                 };
 
-                WinUIUtils.ShowMessageToast("停止录制，文件已保存至 " + _recordingFile.Path);
+                WinUIUtils.ShowMessageToast("停止录制，文件已保存至 " + _recordingFile.Path, xamlRoot: this.XamlRoot);
             }
             catch (Exception ex)
             {
-                WinUIUtils.ShowMessageToast("停止录制失败: " + ex.Message);
+                WinUIUtils.ShowMessageToast("停止录制失败: " + ex.Message, xamlRoot: this.XamlRoot);
                 LogHelper.Log("停止录制失败", LogType.ERROR, ex);
             }
         }
@@ -1060,7 +1061,7 @@ namespace AllLive.WinUI.Views
         {
             await new DispatcherQueueHelper(this.DispatcherQueue).RunOnUIThreadAsync(() =>
             {
-                WinUIUtils.ShowMessageToast("录制错误: " + args.Message);
+                WinUIUtils.ShowMessageToast("录制错误: " + args.Message, xamlRoot: this.XamlRoot);
             });
 
             await StopRecording();
@@ -1152,7 +1153,7 @@ namespace AllLive.WinUI.Views
                 cbDecoder.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
                 {
                     SettingHelper.SetValue(SettingHelper.VIDEO_DECODER, cbDecoder.SelectedIndex);
-                    WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效");
+                    WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效", xamlRoot: this.XamlRoot);
                 });
             });
             quality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY, 0);
@@ -1161,7 +1162,7 @@ namespace AllLive.WinUI.Views
                 quality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
                 {
                     SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY, quality.SelectedIndex);
-                    WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效");
+                    WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效", xamlRoot: this.XamlRoot);
                 });
             });
             meteredQuality.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_QUALITY_METERED, 0);
@@ -1170,7 +1171,7 @@ namespace AllLive.WinUI.Views
                 quality.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
                 {
                     SettingHelper.SetValue(SettingHelper.VIDEO_QUALITY_METERED, meteredQuality.SelectedIndex);
-                    WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效");
+                    WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效", xamlRoot: this.XamlRoot);
                 });
             });
 
@@ -1325,7 +1326,7 @@ namespace AllLive.WinUI.Views
                 xboxSettingsDecoder.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
                 {
                     SettingHelper.SetValue(SettingHelper.VIDEO_DECODER, xboxSettingsDecoder.SelectedIndex);
-                    WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效");
+                    WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效", xamlRoot: this.XamlRoot);
                 });
             });
 
@@ -1440,7 +1441,7 @@ namespace AllLive.WinUI.Views
         {
             if (string.IsNullOrEmpty(LiveDanmuSettingTxtWord.Text))
             {
-                WinUIUtils.ShowMessageToast("关键字不能为空");
+                WinUIUtils.ShowMessageToast("关键字不能为空", xamlRoot: this.XamlRoot);
                 return;
             }
             if (!settingVM.ShieldWords.Contains(LiveDanmuSettingTxtWord.Text))
@@ -1805,7 +1806,7 @@ namespace AllLive.WinUI.Views
                 return;
             }
             WinUIUtils.SetClipboard(liveRoomVM.detail.Url);
-            WinUIUtils.ShowMessageToast("已复制链接到剪切板");
+            WinUIUtils.ShowMessageToast("已复制链接到剪切板", xamlRoot: this.XamlRoot);
         }
 
         private async void BottomBtnOpenBrowser_Click(object sender, RoutedEventArgs e)
@@ -1824,7 +1825,7 @@ namespace AllLive.WinUI.Views
                 return;
             }
             WinUIUtils.SetClipboard(liveRoomVM.CurrentLine.Url);
-            WinUIUtils.ShowMessageToast("已复制链接到剪切板");
+            WinUIUtils.ShowMessageToast("已复制链接到剪切板", xamlRoot: this.XamlRoot);
         }
 
         private void BottomBtnRefresh_Click(object sender, RoutedEventArgs e)
