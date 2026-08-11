@@ -256,7 +256,12 @@ namespace AllLive.Core
                 return LiveStatusType.Live;
             return LiveStatusType.Offline;
         }
-        public Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId)
+        /// <summary>
+        /// 斗鱼暂不支持SC，无需轮询
+        /// </summary>
+        public bool NeedPollSuperChat => false;
+
+        public Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId, LiveRoomDetail detail = null)
         {
             return Task.FromResult(new List<LiveSuperChatMessage>());
         }

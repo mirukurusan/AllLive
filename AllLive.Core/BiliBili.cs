@@ -384,7 +384,12 @@ namespace AllLive.Core
             }
         }
 
-        public async Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId)
+        /// <summary>
+        /// B站弹幕连接会推送SC，无需轮询
+        /// </summary>
+        public bool NeedPollSuperChat => false;
+
+        public async Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId, LiveRoomDetail detail = null)
         {
 
             var resp = await HttpUtil.GetString($"https://api.live.bilibili.com/av/v1/SuperChat/getMessageList?room_id={roomId}", headers: await GetRequestHeader());

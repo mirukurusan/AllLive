@@ -63,8 +63,14 @@ namespace AllLive.Core.Interface
         /// 读取SC
         /// </summary>
         /// <param name="roomId">房间ID</param>
+        /// <param name="detail">房间详情</param>
         /// <returns></returns>
-        Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId);
+        Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId, LiveRoomDetail detail = null);
+
+        /// <summary>
+        /// 是否需要轮询拉取SC
+        /// </summary>
+        bool NeedPollSuperChat { get; }
 
         /// <summary>
         /// 读取直播状态

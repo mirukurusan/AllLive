@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Input;
 using Windows.Networking.Connectivity;
@@ -28,6 +29,11 @@ namespace AllLive.WinUI.ViewModels
         private Timer _messageProcessTimer;
         private const int MESSAGE_BATCH_INTERVAL = 100; // 100ms 处理一批
         private const int MESSAGE_BATCH_SIZE = 10; // 每批最多处理10条
+
+        // SC 轮询（仅弹幕连接不推送SC的站点启用，如虎牙）
+        private Timer _scPollTimer;
+        private bool _scPolling;
+        private const int SC_POLL_INTERVAL = 30 * 1000; // 30s 轮询一次
 
         public LiveRoomVM(SettingVM settingVM)
         {
@@ -334,6 +340,8 @@ namespace AllLive.WinUI.ViewModels
                 Living = result.Status;
                 //加载SC
                 LoadSuperChat();
+                //弹幕不推送SC的站点，启动轮询增量拉取
+                StartSCPoll();
                 //检查收藏情况
                 FavoriteID = DatabaseHelper.CheckFavorite(RoomID, Site.Name);
                 IsFavorite = FavoriteID != null;
@@ -569,7 +577,7 @@ namespace AllLive.WinUI.ViewModels
         {
             try
             {
-                var data = await Site.GetSuperChatMessages(RoomID);
+                var data = await Site.GetSuperChatMessages(RoomID, detail);
                 if (data.Count > 0)
                 {
                     foreach (var item in data)
@@ -582,6 +590,55 @@ namespace AllLive.WinUI.ViewModels
             {
                 LogHelper.Log("加载SC失败", LogType.ERROR, ex);
                 WinUIUtils.ShowMessageToast("加载SC失败", xamlRoot: XamlRoot);
+            }
+        }
+
+        private void StartSCPoll()
+        {
+            // 弹幕连接会推送SC的站点（如B站）无需轮询
+            if (Site == null || !Site.NeedPollSuperChat) return;
+
+            _scPollTimer?.Stop();
+            _scPollTimer?.Dispose();
+            _scPollTimer = new Timer(SC_POLL_INTERVAL);
+            _scPollTimer.Elapsed += async (s, e) => await PollSuperChat();
+            _scPollTimer.AutoReset = true;
+            _scPollTimer.Start();
+        }
+
+        private async Task PollSuperChat()
+        {
+            if (_scPolling) return;
+            _scPolling = true;
+            try
+            {
+                var data = await Site.GetSuperChatMessages(RoomID, detail);
+                if (data == null || data.Count == 0) return;
+
+                await Dispatcher.RunOnUIThreadAsync(() =>
+                {
+                    var existingIds = new HashSet<string>(SuperChatMessages
+                        .Where(x => !string.IsNullOrEmpty(x.Id))
+                        .Select(x => x.Id));
+                    foreach (var item in data)
+                    {
+                        // 已在列表中（仍在外显）的SC跳过，只插入新增的
+                        if (!string.IsNullOrEmpty(item.Id) && existingIds.Contains(item.Id))
+                        {
+                            continue;
+                        }
+                        SuperChatMessages.Insert(0, new SuperChatItem(item, KeepSC ? false : true));
+                        if (!string.IsNullOrEmpty(item.Id)) existingIds.Add(item.Id);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                LogHelper.Log("轮询SC失败", LogType.ERROR, ex);
+            }
+            finally
+            {
+                _scPolling = false;
             }
         }
 
@@ -672,6 +729,9 @@ namespace AllLive.WinUI.ViewModels
             scTimer?.Stop();
             scTimer?.Dispose();
             scTimer = null;
+            _scPollTimer?.Stop();
+            _scPollTimer?.Dispose();
+            _scPollTimer = null;
             // 清空消息队列
             while (_messageQueue.TryDequeue(out _))
             {
@@ -708,6 +768,7 @@ namespace AllLive.WinUI.ViewModels
     {
         public SuperChatItem(LiveSuperChatMessage message, bool showCountdown)
         {
+            Id = message.Id;
             UserName = message.UserName;
             Face = message.Face;
             Message = message.Message;

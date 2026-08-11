@@ -347,11 +347,13 @@ namespace AllLive.Core
             var title = tLiveInfo?["sIntroduction"]?.ToString() ?? "";
             if (string.IsNullOrEmpty(title)) title = tLiveInfo?["sRoomName"]?.ToString() ?? "";
 
+            var lProfileRoom = tLiveInfo?["lProfileRoom"]?.ToInt64() ?? 0;
+
             return new LiveRoomDetail()
             {
                 Cover = tLiveInfo?["sScreenshot"]?.ToString() ?? "",
                 Online = tLiveInfo?["lTotalCount"]?.ToInt32() ?? 0,
-                RoomID = tLiveInfo?["lProfileRoom"]?.ToString() ?? roomId.ToString(),
+                RoomID = lProfileRoom > 0 ? lProfileRoom.ToString() : roomId.ToString(),
                 Title = title,
                 UserName = tProfileInfo?["sNick"]?.ToString() ?? "",
                 UserAvatar = tProfileInfo?["sAvatar180"]?.ToString() ?? "",
@@ -563,35 +565,74 @@ namespace AllLive.Core
             }
         }
 
-        public async Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId)
+        /// <summary>
+        /// 虎牙弹幕连接不推送SC，需要轮询拉取
+        /// </summary>
+        public bool NeedPollSuperChat => true;
+
+        public async Task<List<LiveSuperChatMessage>> GetSuperChatMessages(object roomId, LiveRoomDetail detail = null)
         {
             try
             {
-                var roomIdStr = roomId.ToString();
-                var pidCandidates = new HashSet<long>();
-
-                // 尝试从 GetRoomInfo 获取 pid 候选值 (topSid / subSid)
-                try
+                var roomIdStr = roomId?.ToString();
+                if (string.IsNullOrWhiteSpace(roomIdStr) || roomIdStr == "0")
                 {
-                    var roomInfo = await GetRoomInfo(roomIdStr);
-                    if (roomInfo != null)
+                    return new List<LiveSuperChatMessage>();
+                }
+
+                var pidCandidates = new List<long>();
+                long topSid = 0, subSid = 0;
+
+                if (detail?.DanmakuData is HuyaDanmakuArgs danmakuArgs)
+                {
+                    topSid = danmakuArgs.TopSid;
+                    subSid = danmakuArgs.SubSid;
+                }
+                if (detail?.Data is HuyaUrlDataModel urlData && urlData.Lines != null)
+                {
+                    foreach (var line in urlData.Lines)
                     {
-                        var topSid = roomInfo["_topSid"]?.ToInt64() ?? 0;
-                        var subSid = roomInfo["_subSid"]?.ToInt64() ?? 0;
-                        if (topSid > 0) pidCandidates.Add(topSid);
-                        if (subSid > 0) pidCandidates.Add(subSid);
+                        if (line.PresenterUid > 0) pidCandidates.Add(line.PresenterUid);
                     }
                 }
-                catch
+                if (topSid > 0) pidCandidates.Add(topSid);
+                if (subSid > 0 && subSid != topSid) pidCandidates.Add(subSid);
+
+                long.TryParse(roomIdStr, out var profileRoomId);
+                if (profileRoomId > 0) pidCandidates.Add(profileRoomId);
+
+                if (pidCandidates.Count == 0 ||
+                    (pidCandidates.Count == 1 && pidCandidates.Contains(profileRoomId)))
                 {
-                    // 如果 GetRoomInfo 失败，继续使用 roomId
+                    JObject roomInfo;
+                    try
+                    {
+                        roomInfo = await GetRoomInfo(roomIdStr);
+                    }
+                    catch
+                    {
+                        roomInfo = null;
+                    }
+
+                    if (roomInfo == null)
+                    {
+                        LogHeadlineEmpty(roomIdStr, pidCandidates, "room info unavailable");
+                        return new List<LiveSuperChatMessage>();
+                    }
+
+                    var eLiveStatus = roomInfo["roomInfo"]?["eLiveStatus"]?.ToObject<int?>();
+                    if (eLiveStatus != null && eLiveStatus != 2)
+                    {
+                        return new List<LiveSuperChatMessage>();
+                    }
+
+                    if (topSid <= 0) topSid = roomInfo["_topSid"]?.ToInt64() ?? 0;
+                    if (subSid <= 0) subSid = roomInfo["_subSid"]?.ToInt64() ?? 0;
+                    if (topSid > 0) pidCandidates.Add(topSid);
+                    if (subSid > 0 && subSid != topSid) pidCandidates.Add(subSid);
                 }
 
-                // roomId 本身也可以作为 pid
-                if (long.TryParse(roomIdStr, out var profileRoomId) && profileRoomId > 0)
-                {
-                    pidCandidates.Add(profileRoomId);
-                }
+                pidCandidates = pidCandidates.Distinct().Where(p => p > 0).ToList();
 
                 if (pidCandidates.Count == 0)
                 {
@@ -601,7 +642,6 @@ namespace AllLive.Core
 
                 foreach (var pid in pidCandidates)
                 {
-                    if (pid <= 0) continue;
                     try
                     {
                         var messages = await FetchHeadLineMessages(pid);
@@ -626,7 +666,7 @@ namespace AllLive.Core
             }
         }
 
-        private void LogHeadlineEmpty(string roomId, HashSet<long> pidCandidates, string reason)
+        private void LogHeadlineEmpty(string roomId, IEnumerable<long> pidCandidates, string reason)
         {
             var now = DateTime.Now;
             var last = _lastHeadlineEmptyLogAt;
@@ -676,6 +716,7 @@ namespace AllLive.Core
 
                 messages.Add(new LiveSuperChatMessage()
                 {
+                    Id = item.lMessageId > 0 ? item.lMessageId.ToString() : null,
                     UserName = item.tMessageUser?.sNick?.Trim() ?? "",
                     Face = item.tMessageUser?.sAvatar ?? "",
                     Message = content,
