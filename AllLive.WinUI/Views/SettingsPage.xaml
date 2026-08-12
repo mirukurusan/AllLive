@@ -172,9 +172,9 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
                             <ComboBox.Items>
-                                <ComboBoxItem>自动</ComboBoxItem>
-                                <ComboBoxItem>硬件解码</ComboBoxItem>
-                                <ComboBoxItem>软件解码</ComboBoxItem>
+                                <ComboBoxItem>自动(FFmpeg硬解)</ComboBoxItem>
+                                <ComboBoxItem>系统解码器硬解</ComboBoxItem>
+                                <ComboBoxItem>FFmpeg软解</ComboBoxItem>
                             </ComboBox.Items>
                         </ComboBox>
                     </Grid>

@@ -211,9 +211,9 @@ mc:Ignorable="d">
                                         VerticalAlignment="Center"
                                         HorizontalContentAlignment="Center">
                                         <ComboBox.Items>
-                                            <ComboBoxItem>自动</ComboBoxItem>
-                                            <ComboBoxItem>强制硬解</ComboBoxItem>
-                                            <ComboBoxItem>强制软解</ComboBoxItem>
+                                            <ComboBoxItem>自动(FFmpeg硬解)</ComboBoxItem>
+                                            <ComboBoxItem>系统解码器硬解</ComboBoxItem>
+                                            <ComboBoxItem>FFmpeg软解</ComboBoxItem>
                                         </ComboBox.Items>
                                     </ComboBox>
                                 </Grid>
@@ -1142,9 +1142,9 @@ mc:Ignorable="d">
                                         Width="140"
                                         Margin="0,8,0,0">
                                         <ComboBox.Items>
-                                            <ComboBoxItem>自动</ComboBoxItem>
-                                            <ComboBoxItem>强制硬解</ComboBoxItem>
-                                            <ComboBoxItem>强制软解</ComboBoxItem>
+                                            <ComboBoxItem>自动(FFmpeg硬解)</ComboBoxItem>
+                                            <ComboBoxItem>系统解码器硬解</ComboBoxItem>
+                                            <ComboBoxItem>FFmpeg软解</ComboBoxItem>
                                         </ComboBox.Items>
                                     </ComboBox>
                                     <TextBlock Margin="0,12,0,0">默认清晰度</TextBlock>
