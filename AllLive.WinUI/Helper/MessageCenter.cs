@@ -82,6 +82,9 @@ namespace AllLive.WinUI.Helper
                 newWindow.Content = frame;
                 newWindow.Activate();
 
+                // 设置任务栏图标，避免新窗口显示为空白文件图标
+                App.ApplyAppIcon(newWindow);
+
                 // 记录直播窗口，并隐藏系统默认标题栏（WinUI Desktop），只保留页面内自定义标题栏
                 App.SetLiveRoomWindow(newWindow);
                 App.ApplyWindowTitleBar(App.GetLiveRoomAppWindow());

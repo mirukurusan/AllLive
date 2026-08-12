@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Windows.UI;
 using Windows.UI.ViewManagement;
@@ -45,8 +46,44 @@ namespace AllLive.WinUI
             m_window = new MainWindow();
             m_window.Activate();
 
+            // 设置窗口任务栏图标
+            ApplyAppIcon(m_window);
+
             // Run async init on a background task to not block the window
             _ = InitializeAsync(e);
+        }
+
+        /// <summary>
+        /// 为窗口设置应用图标（任务栏）。
+        /// 新窗口播放模式下创建的 Window 默认没有图标，任务栏会显示空白文件图标，需要显式设置。
+        /// </summary>
+        public static void ApplyAppIcon(Window window)
+        {
+            try
+            {
+                var appWindow = GetAppWindow(window);
+                if (appWindow == null) return;
+                string iconPath = GetAppIconPath();
+                if (File.Exists(iconPath))
+                {
+                    appWindow.SetIcon(iconPath);
+                }
+            }
+            catch { }
+        }
+
+        private static string GetAppIconPath()
+        {
+            try
+            {
+                var package = Windows.ApplicationModel.Package.Current;
+                if (package != null)
+                {
+                    return Path.Combine(package.InstalledLocation.Path, "Assets", "App.ico");
+                }
+            }
+            catch { }
+            return Path.Combine(AppContext.BaseDirectory, "Assets", "App.ico");
         }
 
         private async Task InitializeAsync(LaunchActivatedEventArgs e)
