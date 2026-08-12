@@ -137,7 +137,7 @@ namespace AllLive.WinUI.Views
             timer_focus.Start();
             controlTimer.Start();
             XBoxControl.Visibility = Visibility.Collapsed;
-            ClearXboxSettingBind();
+            ClearSettingsPanelBind();
             StandardControl.Visibility = Visibility.Visible;
 
             // 新窗口打开，调整UI
@@ -283,17 +283,17 @@ namespace AllLive.WinUI.Views
                 MessageCenter.HideTitlebar(hide);
             }
         }
-        private void ClearXboxSettingBind()
+        private void ClearSettingsPanelBind()
         {
             XboxSuperChat.ClearValue(ListView.ItemsSourceProperty);
-            xboxSettingsDMSize.ClearValue(ComboBox.SelectedValueProperty);
-            xboxSettingsDecoder.ClearValue(ToggleSwitch.IsOnProperty);
-            xboxSettingsDMArea.ClearValue(ComboBox.SelectedIndexProperty);
-            xboxSettingsDMOpacity.ClearValue(ComboBox.SelectedValueProperty);
-            xboxSettingsDMSpeed.ClearValue(ComboBox.SelectedValueProperty);
-            xboxSettingsDMStyle.ClearValue(ComboBox.SelectedValueProperty);
-            xboxSettingsDMColorful.ClearValue(ToggleSwitch.IsOnProperty);
-            xboxSettingsDMBold.ClearValue(ToggleSwitch.IsOnProperty);
+            settingsDMSize.ClearValue(ComboBox.SelectedValueProperty);
+            settingsDecoder.ClearValue(ToggleSwitch.IsOnProperty);
+            settingsDMArea.ClearValue(ComboBox.SelectedIndexProperty);
+            settingsDMOpacity.ClearValue(ComboBox.SelectedValueProperty);
+            settingsDMSpeed.ClearValue(ComboBox.SelectedValueProperty);
+            settingsDMStyle.ClearValue(ComboBox.SelectedValueProperty);
+            settingsDMColorful.ClearValue(ToggleSwitch.IsOnProperty);
+            settingsDMBold.ClearValue(ToggleSwitch.IsOnProperty);
         }
 
         #region 播放器事件
@@ -578,7 +578,7 @@ namespace AllLive.WinUI.Views
                     break;
                 case VirtualKey.GamepadMenu:
                     //打开设置
-                    XBoxSettings.Visibility = Visibility.Visible;
+                    SettingsPanel.Visibility = Visibility.Visible;
                     XboxSuperChat.Visibility = Visibility.Collapsed;
                     XBoxSplitView.IsPaneOpen = true;
                     break;
@@ -592,7 +592,7 @@ namespace AllLive.WinUI.Views
                     break;
                 case VirtualKey.GamepadY:
                     //查看SC
-                    XBoxSettings.Visibility = Visibility.Collapsed;
+                    SettingsPanel.Visibility = Visibility.Collapsed;
                     XboxSuperChat.Visibility = Visibility.Visible;
                     XBoxSplitView.IsPaneOpen = true;
                     break;
@@ -845,6 +845,7 @@ namespace AllLive.WinUI.Views
             {
                 pageArgs = e.Parameter as PageArgs;
                 LoadSetting();
+                LoadSettingsPanel();
 
                 var siteInfo = MainVM.Sites.FirstOrDefault(x => x.LiveSite.Equals(pageArgs.Site));
 
@@ -1229,7 +1230,7 @@ namespace AllLive.WinUI.Views
             DanmuTopMargin.Value = DanmuControl.Margin.Top;
             DanmuTopMargin.ValueChanged += new RangeBaseValueChangedEventHandler((e, args) =>
             {
-                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.TOP_MARGIN, DanmuTopMargin.Value);
+                SettingHelper.SetValue<int>(SettingHelper.LiveDanmaku.TOP_MARGIN, (int)DanmuTopMargin.Value);
                 DanmuControl.Margin = new Thickness(0, DanmuTopMargin.Value, 0, 0);
             });
             //弹幕大小
@@ -1244,7 +1245,7 @@ namespace AllLive.WinUI.Views
             DanmuSettingSpeed.ValueChanged += new RangeBaseValueChangedEventHandler((e, args) =>
             {
                 if (isMini) return;
-                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.SPEED, DanmuSettingSpeed.Value);
+                SettingHelper.SetValue<int>(SettingHelper.LiveDanmaku.SPEED, (int)DanmuSettingSpeed.Value);
             });
 
             //保留一位小数
@@ -1260,15 +1261,7 @@ namespace AllLive.WinUI.Views
                 SettingHelper.SetValue<bool>(SettingHelper.LiveDanmaku.BOLD, DanmuSettingBold.IsOn);
             });
             //弹幕样式
-            //NSDanmaku 的"描边"(2) 样式会把文字渲染成 Win2D 位图，在高 DPI / 位移动画下字体模糊；
-            //"重叠"(0) 使用实时 TextBlock，由 DirectWrite 原生渲染，字体清晰。因此默认样式改为"重叠"，
-            //并把旧设置里保存的"描边"(2) 迁移为"重叠"(0)。
             var danmuStyle = SettingHelper.GetValue<int>(SettingHelper.LiveDanmaku.BORDER_STYLE, 0);
-            if (danmuStyle == 2)
-            {
-                danmuStyle = 0;
-                SettingHelper.SetValue<int>(SettingHelper.LiveDanmaku.BORDER_STYLE, danmuStyle);
-            }
             if (danmuStyle > 2)
             {
                 danmuStyle = 2;
@@ -1297,15 +1290,15 @@ namespace AllLive.WinUI.Views
                 SettingHelper.SetValue<bool>(SettingHelper.LiveDanmaku.COLOURFUL, DanmuSettingColourful.IsOn);
             });
         }
-        private void LoadXboxSetting()
+        private void LoadSettingsPanel()
         {
 
-            xboxSettingsDecoder.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_DECODER, 0);
-            xboxSettingsDecoder.Loaded += new RoutedEventHandler((sender, e) =>
+            settingsDecoder.SelectedIndex = SettingHelper.GetValue<int>(SettingHelper.VIDEO_DECODER, 0);
+            settingsDecoder.Loaded += new RoutedEventHandler((sender, e) =>
             {
-                xboxSettingsDecoder.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
+                settingsDecoder.SelectionChanged += new SelectionChangedEventHandler((obj, args) =>
                 {
-                    SettingHelper.SetValue(SettingHelper.VIDEO_DECODER, xboxSettingsDecoder.SelectedIndex);
+                    SettingHelper.SetValue(SettingHelper.VIDEO_DECODER, settingsDecoder.SelectedIndex);
                     WinUIUtils.ShowMessageToast("更改清晰度或刷新后生效", xamlRoot: this.XamlRoot);
                 });
             });
@@ -1336,43 +1329,43 @@ namespace AllLive.WinUI.Views
 
             //弹幕大小
             //DanmuControl.DanmakuSizeZoom = SettingHelper.GetValue<double>(SettingHelper.LiveDanmaku.FONT_ZOOM, 1);
-            xboxSettingsDMSize.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
+            settingsDMSize.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
             {
-                if (xboxSettingsDMSize.SelectedValue == null)
+                if (settingsDMSize.SelectedValue == null)
                 {
                     return;
                 }
-                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.FONT_ZOOM, (double)xboxSettingsDMSize.SelectedValue);
+                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.FONT_ZOOM, (double)settingsDMSize.SelectedValue);
             });
 
             //弹幕速度
             //DanmuControl.DanmakuDuration = SettingHelper.GetValue<int>(SettingHelper.LiveDanmaku.SPEED, 10);
-            xboxSettingsDMSpeed.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
+            settingsDMSpeed.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
             {
-                if (xboxSettingsDMSpeed.SelectedValue == null)
+                if (settingsDMSpeed.SelectedValue == null)
                 {
                     return;
                 }
-                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.SPEED, (int)xboxSettingsDMSpeed.SelectedValue);
+                SettingHelper.SetValue<int>(SettingHelper.LiveDanmaku.SPEED, (int)settingsDMSpeed.SelectedValue);
             });
 
             //弹幕透明度
             //DanmuControl.Opacity = SettingHelper.GetValue<double>(SettingHelper.LiveDanmaku.OPACITY, 1.0);
-            xboxSettingsDMOpacity.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
+            settingsDMOpacity.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
             {
-                if (xboxSettingsDMOpacity.SelectedValue == null)
+                if (settingsDMOpacity.SelectedValue == null)
                 {
                     return;
                 }
-                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.OPACITY, (double)xboxSettingsDMOpacity.SelectedValue);
+                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.OPACITY, (double)settingsDMOpacity.SelectedValue);
             });
 
 
             //弹幕加粗
             //DanmuControl.DanmakuBold = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.BOLD, false);
-            xboxSettingsDMBold.Toggled += new RoutedEventHandler((e, args) =>
+            settingsDMBold.Toggled += new RoutedEventHandler((e, args) =>
             {
-                SettingHelper.SetValue<bool>(SettingHelper.LiveDanmaku.BOLD, xboxSettingsDMBold.IsOn);
+                SettingHelper.SetValue<bool>(SettingHelper.LiveDanmaku.BOLD, settingsDMBold.IsOn);
             });
 
             //弹幕样式
@@ -1382,31 +1375,31 @@ namespace AllLive.WinUI.Views
                 danmuStyle = 2;
             }
             //DanmuControl.DanmakuStyle = (DanmakuBorderStyle)danmuStyle;
-            xboxSettingsDMStyle.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
+            settingsDMStyle.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
             {
-                if (xboxSettingsDMStyle.SelectedIndex != -1)
+                if (settingsDMStyle.SelectedIndex != -1)
                 {
-                    SettingHelper.SetValue<int>(SettingHelper.LiveDanmaku.BORDER_STYLE, xboxSettingsDMStyle.SelectedIndex);
+                    SettingHelper.SetValue<int>(SettingHelper.LiveDanmaku.BORDER_STYLE, settingsDMStyle.SelectedIndex);
                 }
             });
 
 
             //弹幕显示区域
             //DanmuControl.DanmakuArea = SettingHelper.GetValue<double>(SettingHelper.LiveDanmaku.AREA, 1);
-            xboxSettingsDMArea.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
+            settingsDMArea.SelectionChanged += new SelectionChangedEventHandler((e, args) =>
             {
-                if (xboxSettingsDMArea.SelectedValue == null)
+                if (settingsDMArea.SelectedValue == null)
                 {
                     return;
                 }
-                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.AREA, (double)xboxSettingsDMArea.SelectedValue);
+                SettingHelper.SetValue<double>(SettingHelper.LiveDanmaku.AREA, (double)settingsDMArea.SelectedValue);
             });
 
             //彩色弹幕
-            xboxSettingsDMColorful.IsOn = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.COLOURFUL, true);
-            xboxSettingsDMColorful.Toggled += new RoutedEventHandler((e, args) =>
+            settingsDMColorful.IsOn = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.COLOURFUL, true);
+            settingsDMColorful.Toggled += new RoutedEventHandler((e, args) =>
             {
-                SettingHelper.SetValue<bool>(SettingHelper.LiveDanmaku.COLOURFUL, xboxSettingsDMColorful.IsOn);
+                SettingHelper.SetValue<bool>(SettingHelper.LiveDanmaku.COLOURFUL, settingsDMColorful.IsOn);
             });
 
         }

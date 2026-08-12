@@ -150,7 +150,7 @@ mc:Ignorable="d">
 
                         </ListView>
 
-                        <ScrollViewer x:Name="XBoxSettings">
+                        <ScrollViewer x:Name="SettingsPanel">
                             <StackPanel Margin="8">
                                 <TextBlock Margin="4,12" FontSize="18">播放</TextBlock>
                                 <Grid
@@ -163,7 +163,7 @@ mc:Ignorable="d">
                                         <TextBlock>清晰度</TextBlock>
                                     </StackPanel>
                                     <ComboBox
-                                        x:Name="xboxSettingsQuality"
+                                        x:Name="settingsQuality"
                                         MinWidth="80"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -184,7 +184,7 @@ mc:Ignorable="d">
                                         <TextBlock>线路</TextBlock>
                                     </StackPanel>
                                     <ComboBox
-                                        x:Name="xboxSettingsLine"
+                                        x:Name="settingsLine"
                                         MinWidth="80"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -205,7 +205,7 @@ mc:Ignorable="d">
                                         <TextBlock>解码器</TextBlock>
                                     </StackPanel>
                                     <ComboBox
-                                        x:Name="xboxSettingsDecoder"
+                                        x:Name="settingsDecoder"
                                         MinWidth="80"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -228,7 +228,7 @@ mc:Ignorable="d">
                                         <TextBlock>弹幕开关</TextBlock>
                                     </StackPanel>
                                     <ToggleSwitch
-                                        x:Name="xboxSettingsDMEnable"
+                                        x:Name="settingsDMEnable"
                                         MinWidth="72"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -245,7 +245,7 @@ mc:Ignorable="d">
                                         <TextBlock>透明度</TextBlock>
                                     </StackPanel>
                                     <ComboBox
-                                        x:Name="xboxSettingsDMOpacity"
+                                        x:Name="settingsDMOpacity"
                                         MinWidth="80"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -267,7 +267,7 @@ mc:Ignorable="d">
                                         <TextBlock>弹幕速度</TextBlock>
                                     </StackPanel>
                                     <ComboBox
-                                        x:Name="xboxSettingsDMSpeed"
+                                        x:Name="settingsDMSpeed"
                                         MinWidth="80"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -289,7 +289,7 @@ mc:Ignorable="d">
                                         <TextBlock>字体大小</TextBlock>
                                     </StackPanel>
                                     <ComboBox
-                                        x:Name="xboxSettingsDMSize"
+                                        x:Name="settingsDMSize"
                                         MinWidth="80"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -311,7 +311,7 @@ mc:Ignorable="d">
                                         <TextBlock>显示区域</TextBlock>
                                     </StackPanel>
                                     <ComboBox
-                                        x:Name="xboxSettingsDMArea"
+                                        x:Name="settingsDMArea"
                                         MinWidth="80"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -333,7 +333,7 @@ mc:Ignorable="d">
                                         <TextBlock>显示样式</TextBlock>
                                     </StackPanel>
                                     <ComboBox
-                                        x:Name="xboxSettingsDMStyle"
+                                        x:Name="settingsDMStyle"
                                         MinWidth="80"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -358,7 +358,7 @@ mc:Ignorable="d">
                                         <TextBlock>字体加粗</TextBlock>
                                     </StackPanel>
                                     <ToggleSwitch
-                                        x:Name="xboxSettingsDMBold"
+                                        x:Name="settingsDMBold"
                                         MinWidth="72"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -375,7 +375,7 @@ mc:Ignorable="d">
                                         <TextBlock>彩色弹幕</TextBlock>
                                     </StackPanel>
                                     <ToggleSwitch
-                                        x:Name="xboxSettingsDMColorful"
+                                        x:Name="settingsDMColorful"
                                         MinWidth="72"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center" />

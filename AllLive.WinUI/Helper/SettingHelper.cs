@@ -47,7 +47,9 @@ namespace AllLive.WinUI.Helper
                 {
                     var val = fallback[key];
                     if (val is T typed) return typed;
-                    try { return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(val)); } catch { return _default; }
+                    try { return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(val)); } catch { }
+                    try { return (T)Convert.ChangeType(val, typeof(T)); } catch { }
+                    return _default;
                 }
                 return _default;
             }
