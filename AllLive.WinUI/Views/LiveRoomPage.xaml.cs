@@ -53,6 +53,11 @@ namespace AllLive.WinUI.Views
         PageArgs pageArgs;
         //当前处于小窗
         private bool isMini = false;
+
+        private InputNonClientPointerSource _miniNonClientPointerSource;
+        private AppWindow _miniDragAppWindow;
+        private int _lastMiniDragWidth = -1;
+        private const double MINI_DRAG_STRIP_HEIGHT = 32; // 顶部可拖动区域高度（DIP）
         DispatcherTimer timer_focus;
         DispatcherTimer controlTimer;
 
@@ -1709,11 +1714,26 @@ namespace AllLive.WinUI.Views
 
                 MiniControl.Visibility = Visibility.Visible;
 
-                // CompactOverlay via AppWindow
+                // 小窗模式：CompactOverlay 固定尺寸、无法由用户拖拽调整大小（WindowsAppSDK#1593），
+                // 改用 OverlappedPresenter 实现可调整大小的置顶 PiP 窗口。
                 var appWindow = GetCurrentAppWindow();
                 if (appWindow != null)
                 {
-                    appWindow.SetPresenter(AppWindowPresenterKind.CompactOverlay);
+                    var presenter = OverlappedPresenter.Create();
+                    presenter.IsAlwaysOnTop = true;   // 置顶
+                    presenter.IsMaximizable = false;
+                    presenter.IsMinimizable = false;
+                    presenter.IsResizable = true;     // 允许用户拖拽窗口边缘调整尺寸
+                    // 隐藏标题栏与系统按钮（小窗内有"恢复窗口"按钮可退出），保留边框以便调整大小
+                    presenter.SetBorderAndTitleBar(true, false);
+                    appWindow.SetPresenter(presenter);
+                    // 从大窗口进入小窗时给一个 PiP 默认尺寸；用户已调小过的尺寸会保留
+                    if (appWindow.Size.Width > 800)
+                    {
+                        appWindow.Resize(new Windows.Graphics.SizeInt32(400, 300));
+                    }
+                    // 小窗没有系统标题栏，把窗口顶部注册为拖动区域，让用户能拖动顶部移动小窗
+                    ApplyMiniDragRegion(appWindow);
                     DanmuControl.DanmakuSizeZoom = 0.5;
                     DanmuControl.DanmakuDuration = 6;
                     DanmuControl.ClearAll();
@@ -1727,7 +1747,11 @@ namespace AllLive.WinUI.Views
                 MiniControl.Visibility = Visibility.Collapsed;
                 var appWindow2 = GetCurrentAppWindow();
                 if (appWindow2 != null)
+                {
+                    // 退出小窗：移除顶部拖动区域，恢复正常窗口的拖动行为
+                    RemoveMiniDragRegion(appWindow2);
                     appWindow2.SetPresenter(AppWindowPresenterKind.Default);
+                }
                 DanmuControl.DanmakuSizeZoom = SettingHelper.GetValue<double>(SettingHelper.LiveDanmaku.FONT_ZOOM, 1);
                 DanmuControl.DanmakuDuration = SettingHelper.GetValue<int>(SettingHelper.LiveDanmaku.SPEED, 10);
                 DanmuControl.ClearAll();
@@ -1735,6 +1759,70 @@ namespace AllLive.WinUI.Views
             }
 
         }
+        /// <summary>
+        /// 进入小窗后调用：把窗口顶部注册为非客户区 Caption（拖动）区域。
+        /// 小窗用 SetBorderAndTitleBar(true, false) 隐藏了系统标题栏，窗口没有任何可拖动的区域，
+        /// 因此用 InputNonClientPointerSource 把顶部一条注册为标题栏区域，拖动顶部即可移动窗口。
+        /// 区域坐标使用物理像素，窗口尺寸变化时需按新尺寸重新设置。
+        /// </summary>
+        private void ApplyMiniDragRegion(AppWindow appWindow)
+        {
+            RemoveMiniDragRegion(appWindow);
+            _miniDragAppWindow = appWindow;
+            _miniNonClientPointerSource = InputNonClientPointerSource.GetForWindowId(appWindow.Id);
+            appWindow.Changed += OnMiniDragWindowChanged;
+            UpdateMiniDragRegion();
+        }
+
+        /// <summary>
+        /// 退出小窗时调用：移除顶部拖动区域，避免影响正常窗口的标题栏拖动。
+        /// </summary>
+        private void RemoveMiniDragRegion(AppWindow appWindow)
+        {
+            if (appWindow != null)
+            {
+                appWindow.Changed -= OnMiniDragWindowChanged;
+            }
+            if (_miniNonClientPointerSource != null)
+            {
+                try
+                {
+                    _miniNonClientPointerSource.ClearRegionRects(NonClientRegionKind.Caption);
+                }
+                catch (Exception) { }
+            }
+            _miniNonClientPointerSource = null;
+            _miniDragAppWindow = null;
+            _lastMiniDragWidth = -1;
+        }
+
+        private void OnMiniDragWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
+        {
+            if (args.DidSizeChange)
+            {
+                UpdateMiniDragRegion();
+            }
+        }
+
+        /// <summary>
+        /// 按当前窗口尺寸重新计算顶部拖动区域。
+        /// </summary>
+        private void UpdateMiniDragRegion()
+        {
+            var appWindow = _miniDragAppWindow;
+            if (appWindow == null || _miniNonClientPointerSource == null) return;
+            // 尺寸未变化时无需重复设置
+            if (_lastMiniDragWidth == appWindow.Size.Width) return;
+            _lastMiniDragWidth = appWindow.Size.Width;
+
+            // 拖动区域坐标为物理像素：宽度直接用窗口物理像素宽度，高度按 DPI 缩放
+            double scale = this.XamlRoot != null ? this.XamlRoot.RasterizationScale : 1.0;
+            int height = (int)Math.Round(MINI_DRAG_STRIP_HEIGHT * scale);
+            var rect = new Windows.Graphics.RectInt32(0, 0, appWindow.Size.Width, height);
+            _miniNonClientPointerSource.ClearRegionRects(NonClientRegionKind.Caption);
+            _miniNonClientPointerSource.SetRegionRects(NonClientRegionKind.Caption, new[] { rect });
+        }
+
         private void BottomBtnExitMiniWindows_Click(object sender, RoutedEventArgs e)
         {
             MiniWidnows(false);
