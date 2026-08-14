@@ -167,11 +167,13 @@ namespace AllLive.Core.Danmaku
 
         private void Ws_OnClose(object sender, CloseEventArgs e)
         {
+            timer?.Stop();
             OnClose?.Invoke(this, e.Reason);
         }
 
         private void Ws_OnError(object sender, WebSocketSharp.ErrorEventArgs e)
         {
+            timer?.Stop();
             OnClose?.Invoke(this, e.Message);
         }
 
@@ -184,7 +186,19 @@ namespace AllLive.Core.Danmaku
         {
             await Task.Run(() =>
             {
-                ws.Send(heartBeatData);
+                // 连接已关闭时跳过心跳，避免发送失败抛出异常
+                if (ws?.ReadyState != WebSocketState.Open)
+                {
+                    return;
+                }
+                try
+                {
+                    ws.Send(heartBeatData);
+                }
+                catch (Exception)
+                {
+                    // 发送瞬间连接可能被关闭，忽略
+                }
             });
         }
 
