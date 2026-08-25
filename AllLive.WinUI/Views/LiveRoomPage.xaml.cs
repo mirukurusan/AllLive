@@ -58,6 +58,13 @@ namespace AllLive.WinUI.Views
         private AppWindow _miniDragAppWindow;
         private int _lastMiniDragWidth = -1;
         private const double MINI_DRAG_STRIP_HEIGHT = 32; // 顶部可拖动区域高度（DIP）
+        private const int MINI_WINDOW_MIN_WIDTH = 640;    // 小窗最小宽度（物理像素）
+        private const uint WM_GETMINMAXINFO = 0x0024;
+        private const uint WM_NCDESTROY = 0x0082;
+        private static readonly UIntPtr MINI_WINDOW_SUBCLASS_ID = new UIntPtr(0x4C1E); // 子类化 ID
+        private SUBCLASSPROC _miniSubclassProc;           // 持有 WndProc 委托引用，防止被 GC 回收
+        private IntPtr _miniWindowHwnd = IntPtr.Zero;     // 已子类化的窗口句柄
+        private bool _miniMinWidthInstalled = false;      // 最小宽度限制是否已安装
         // 进入小窗前的窗口尺寸，退出小窗时恢复
         private Windows.Graphics.SizeInt32? _preMiniWindowSize = null;
         DispatcherTimer timer_focus;
@@ -85,6 +92,35 @@ namespace AllLive.WinUI.Views
             uint dwFlags,
             IntPtr hToken,
             out string ppszPath);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MINMAXINFO
+        {
+            public POINT ptReserved;
+            public POINT ptMaxSize;
+            public POINT ptMaxPosition;
+            public POINT ptMinTrackSize;
+            public POINT ptMaxTrackSize;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate IntPtr SUBCLASSPROC(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, UIntPtr dwRefData);
+
+        [DllImport("comctl32.dll")]
+        private static extern bool SetWindowSubclass(IntPtr hWnd, SUBCLASSPROC pfnSubclass, UIntPtr uIdSubclass, UIntPtr dwRefData);
+
+        [DllImport("comctl32.dll")]
+        private static extern IntPtr DefSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("comctl32.dll")]
+        private static extern bool RemoveWindowSubclass(IntPtr hWnd, SUBCLASSPROC pfnSubclass, UIntPtr uIdSubclass);
 
         /// <summary>
         /// 通过 Win32 API 获取视频库真实路径（支持库重定向，Debug/Release 均有效）
@@ -184,6 +220,9 @@ namespace AllLive.WinUI.Views
                 return;
             }
             isCleanedUp = true;
+
+            // 移除小窗最小宽度子类化，避免窗口关闭后残留 WndProc 引用
+            RemoveMiniMinWidthConstraint();
 
             // 取消 ViewModel 事件订阅
             if (liveRoomVM != null)
@@ -1739,6 +1778,8 @@ namespace AllLive.WinUI.Views
                     // 隐藏标题栏与系统按钮（小窗内有"恢复窗口"按钮可退出），保留边框以便调整大小
                     presenter.SetBorderAndTitleBar(true, false);
                     appWindow.SetPresenter(presenter);
+                    // 限制最小宽度
+                    InstallMiniMinWidthConstraint(appWindow);
 
                     // 优先使用保存过的小窗尺寸；没有保存且当前窗口较宽时，给一个 PiP 默认尺寸
                     var miniWidth = SettingHelper.GetValue<double>(SettingHelper.MINI_WINDOW_WIDTH, 0);
@@ -1786,6 +1827,8 @@ namespace AllLive.WinUI.Views
                     }
                     // 退出小窗：移除顶部拖动区域，恢复正常窗口的拖动行为
                     RemoveMiniDragRegion(appWindow2);
+                    // 退出小窗：移除最小宽度限制，恢复正常窗口的可调尺寸
+                    RemoveMiniMinWidthConstraint();
                     appWindow2.SetPresenter(AppWindowPresenterKind.Default);
                     // 恢复进入小窗前的窗口尺寸
                     if (_preMiniWindowSize != null)
@@ -1857,6 +1900,64 @@ namespace AllLive.WinUI.Views
             {
                 UpdateMiniDragRegion();
             }
+        }
+
+        /// <summary>
+        /// 安装小窗最小宽度限制：子类化窗口处理 WM_GETMINMAXINFO，
+        /// 由窗口管理器在拖拽时直接限制最小尺寸（比事后 Resize 回拉更平滑，无闪烁）。
+        /// </summary>
+        private void InstallMiniMinWidthConstraint(AppWindow appWindow)
+        {
+            if (_miniMinWidthInstalled || appWindow == null) return;
+            var hwnd = Win32Interop.GetWindowFromWindowId(appWindow.Id);
+            if (hwnd == IntPtr.Zero) return;
+            _miniWindowHwnd = hwnd;
+            _miniSubclassProc = MiniWindowWndProc;
+            _miniMinWidthInstalled = SetWindowSubclass(hwnd, _miniSubclassProc, MINI_WINDOW_SUBCLASS_ID, UIntPtr.Zero);
+        }
+
+        /// <summary>
+        /// 移除小窗最小宽度限制，恢复普通窗口尺寸行为。
+        /// </summary>
+        private void RemoveMiniMinWidthConstraint()
+        {
+            if (!_miniMinWidthInstalled || _miniWindowHwnd == IntPtr.Zero) return;
+            try
+            {
+                RemoveWindowSubclass(_miniWindowHwnd, _miniSubclassProc, MINI_WINDOW_SUBCLASS_ID);
+            }
+            catch (Exception) { }
+            _miniWindowHwnd = IntPtr.Zero;
+            _miniSubclassProc = null;
+            _miniMinWidthInstalled = false;
+        }
+
+        /// <summary>
+        /// 小窗窗口过程：仅在小窗模式下把最小拖拽宽度限制为 640（物理像素）。
+        /// </summary>
+        private IntPtr MiniWindowWndProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, UIntPtr dwRefData)
+        {
+            if (uMsg == WM_GETMINMAXINFO && isMini)
+            {
+                try
+                {
+                    var info = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+                    if (info.ptMinTrackSize.X < MINI_WINDOW_MIN_WIDTH)
+                    {
+                        info.ptMinTrackSize.X = MINI_WINDOW_MIN_WIDTH;
+                        Marshal.StructureToPtr(info, lParam, false);
+                    }
+                }
+                catch (Exception) { }
+            }
+            else if (uMsg == WM_NCDESTROY)
+            {
+                // 窗口销毁时子类会被系统自动移除，仅清理状态
+                _miniMinWidthInstalled = false;
+                _miniWindowHwnd = IntPtr.Zero;
+                _miniSubclassProc = null;
+            }
+            return DefSubclassProc(hWnd, uMsg, wParam, lParam);
         }
 
         /// <summary>
