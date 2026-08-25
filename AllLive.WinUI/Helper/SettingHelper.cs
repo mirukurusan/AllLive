@@ -98,6 +98,14 @@ namespace AllLive.WinUI.Helper
         /// 右侧详情宽度
         /// </summary>
         public const string RIGHT_DETAIL_WIDTH = "PlayerRightDetailWidth";
+        /// <summary>
+        /// 小窗窗口宽度（物理像素）
+        /// </summary>
+        public const string MINI_WINDOW_WIDTH = "MiniWindowWidth";
+        /// <summary>
+        /// 小窗窗口高度（物理像素）
+        /// </summary>
+        public const string MINI_WINDOW_HEIGHT = "MiniWindowHeight";
 
         /// <summary>
         /// 新窗口打开直播间

@@ -58,6 +58,8 @@ namespace AllLive.WinUI.Views
         private AppWindow _miniDragAppWindow;
         private int _lastMiniDragWidth = -1;
         private const double MINI_DRAG_STRIP_HEIGHT = 32; // 顶部可拖动区域高度（DIP）
+        // 进入小窗前的窗口尺寸，退出小窗时恢复
+        private Windows.Graphics.SizeInt32? _preMiniWindowSize = null;
         DispatcherTimer timer_focus;
         DispatcherTimer controlTimer;
 
@@ -541,8 +543,8 @@ namespace AllLive.WinUI.Views
                     break;
                 case VirtualKey.F8:
                 case VirtualKey.T:
-                    //小窗播放
-                    MiniWidnows(BottomBtnExitMiniWindows.Visibility == Visibility.Visible);
+                    //小窗播放/退出切换
+                    MiniWindow(!isMini);
 
                     break;
                 case VirtualKey.F12:
@@ -782,7 +784,7 @@ namespace AllLive.WinUI.Views
             }
 
             SetFullScreen(false);
-            MiniWidnows(false);
+            MiniWindow(false);
             //取消屏幕常亮
             if (dispRequest != null)
             {
@@ -1470,7 +1472,7 @@ namespace AllLive.WinUI.Views
         {
             if (isMini)
             {
-                MiniWidnows(false);
+                MiniWindow(false);
                 return;
             }
 
@@ -1644,7 +1646,7 @@ namespace AllLive.WinUI.Views
 
         private void PlayBtnMinWindow_Click(object sender, RoutedEventArgs e)
         {
-            MiniWidnows(true);
+            MiniWindow(true);
         }
         private void SetFullWindow(bool e)
         {
@@ -1703,9 +1705,10 @@ namespace AllLive.WinUI.Views
                 }
             }
         }
-        private async void MiniWidnows(bool mini)
+        private async void MiniWindow(bool mini)
         {
             HideTitleBar(mini);
+            bool wasMini = isMini;
             isMini = mini;
             if (mini)
             {
@@ -1719,6 +1722,12 @@ namespace AllLive.WinUI.Views
                 var appWindow = GetCurrentAppWindow();
                 if (appWindow != null)
                 {
+                    // 记录进入小窗前的窗口尺寸，退出小窗时恢复
+                    if (!wasMini)
+                    {
+                        _preMiniWindowSize = appWindow.Size;
+                    }
+
                     var presenter = OverlappedPresenter.Create();
                     presenter.IsAlwaysOnTop = true;   // 置顶
                     presenter.IsMaximizable = false;
@@ -1727,11 +1736,27 @@ namespace AllLive.WinUI.Views
                     // 隐藏标题栏与系统按钮（小窗内有"恢复窗口"按钮可退出），保留边框以便调整大小
                     presenter.SetBorderAndTitleBar(true, false);
                     appWindow.SetPresenter(presenter);
-                    // 从大窗口进入小窗时给一个 PiP 默认尺寸；用户已调小过的尺寸会保留
-                    if (appWindow.Size.Width > 800)
+
+                    // 优先使用保存过的小窗尺寸；没有保存且当前窗口较宽时，给一个 PiP 默认尺寸
+                    var miniWidth = SettingHelper.GetValue<double>(SettingHelper.MINI_WINDOW_WIDTH, 0);
+                    var miniHeight = SettingHelper.GetValue<double>(SettingHelper.MINI_WINDOW_HEIGHT, 0);
+                    Windows.Graphics.SizeInt32 miniSize;
+                    if (miniWidth > 0 && miniHeight > 0)
                     {
-                        appWindow.Resize(new Windows.Graphics.SizeInt32(400, 300));
+                        miniSize = new Windows.Graphics.SizeInt32((int)miniWidth, (int)miniHeight);
                     }
+                    else if (appWindow.Size.Width > 800)
+                    {
+                        miniSize = new Windows.Graphics.SizeInt32(960, 540);
+                    }
+                    else
+                    {
+                        miniSize = appWindow.Size;
+                    }
+                    appWindow.Resize(miniSize);
+                    // 保存本次进入使用的小窗尺寸；用户拖拽调整后会在退出小窗时更新
+                    SaveMiniWindowSize(miniSize);
+
                     // 小窗没有系统标题栏，把窗口顶部注册为拖动区域，让用户能拖动顶部移动小窗
                     ApplyMiniDragRegion(appWindow);
                     DanmuControl.DanmakuSizeZoom = 0.5;
@@ -1748,9 +1773,24 @@ namespace AllLive.WinUI.Views
                 var appWindow2 = GetCurrentAppWindow();
                 if (appWindow2 != null)
                 {
+                    // 退出小窗：先保存用户调整后的尺寸，供下次进入小窗复用
+                    if (wasMini)
+                    {
+                        SaveMiniWindowSize(appWindow2.Size);
+                    }
                     // 退出小窗：移除顶部拖动区域，恢复正常窗口的拖动行为
                     RemoveMiniDragRegion(appWindow2);
                     appWindow2.SetPresenter(AppWindowPresenterKind.Default);
+                    // 恢复进入小窗前的窗口尺寸
+                    if (_preMiniWindowSize != null)
+                    {
+                        try
+                        {
+                            appWindow2.Resize(_preMiniWindowSize.Value);
+                        }
+                        catch (Exception) { }
+                        _preMiniWindowSize = null;
+                    }
                 }
                 DanmuControl.DanmakuSizeZoom = SettingHelper.GetValue<double>(SettingHelper.LiveDanmaku.FONT_ZOOM, 1);
                 DanmuControl.DanmakuDuration = SettingHelper.GetValue<int>(SettingHelper.LiveDanmaku.SPEED, 10);
@@ -1758,6 +1798,15 @@ namespace AllLive.WinUI.Views
                 DanmuControl.Visibility = SettingHelper.GetValue<bool>(SettingHelper.LiveDanmaku.SHOW, true) ? Visibility.Visible : Visibility.Collapsed;
             }
 
+        }
+        /// <summary>
+        /// 保存小窗窗口尺寸（物理像素），下次进入小窗模式时复用。
+        /// </summary>
+        private void SaveMiniWindowSize(Windows.Graphics.SizeInt32 size)
+        {
+            if (size.Width <= 0 || size.Height <= 0) return;
+            SettingHelper.SetValue<double>(SettingHelper.MINI_WINDOW_WIDTH, size.Width);
+            SettingHelper.SetValue<double>(SettingHelper.MINI_WINDOW_HEIGHT, size.Height);
         }
         /// <summary>
         /// 进入小窗后调用：把窗口顶部注册为非客户区 Caption（拖动）区域。
@@ -1825,7 +1874,7 @@ namespace AllLive.WinUI.Views
 
         private void BottomBtnExitMiniWindows_Click(object sender, RoutedEventArgs e)
         {
-            MiniWidnows(false);
+            MiniWindow(false);
         }
 
         private async void PlayTopBtnScreenshot_Click(object sender, RoutedEventArgs e)
