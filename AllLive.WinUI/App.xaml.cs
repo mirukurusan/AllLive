@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Windows.UI;
@@ -48,6 +49,11 @@ namespace AllLive.WinUI
 
             // 设置窗口任务栏图标
             ApplyAppIcon(m_window);
+
+            // 恢复并持久化主窗口尺寸
+            var mainAppWindow = GetAppWindow(m_window);
+            RestoreWindowSize(mainAppWindow, SettingHelper.MAIN_WINDOW_WIDTH, SettingHelper.MAIN_WINDOW_HEIGHT);
+            TrackWindowSize(mainAppWindow, SettingHelper.MAIN_WINDOW_WIDTH, SettingHelper.MAIN_WINDOW_HEIGHT);
 
             // Run async init on a background task to not block the window
             _ = InitializeAsync(e);
@@ -246,6 +252,86 @@ namespace AllLive.WinUI
             var hwnd = WindowNative.GetWindowHandle(window);
             var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
             return AppWindow.GetFromWindowId(windowId);
+        }
+
+        // 当前处于小窗模式的窗口 ID 集合，小窗模式的尺寸变化不保存为普通窗口尺寸
+        private static readonly HashSet<ulong> _miniAppWindowIds = new HashSet<ulong>();
+
+        /// <summary>
+        /// 标记窗口是否处于小窗模式（小窗模式的尺寸变化不覆盖普通窗口尺寸）。
+        /// </summary>
+        public static void SetMiniModeActive(AppWindow appWindow, bool mini)
+        {
+            if (appWindow == null) return;
+            lock (_miniAppWindowIds)
+            {
+                if (mini) _miniAppWindowIds.Add(appWindow.Id.Value);
+                else _miniAppWindowIds.Remove(appWindow.Id.Value);
+            }
+        }
+
+        /// <summary>
+        /// 判断窗口当前是否处于小窗模式。
+        /// </summary>
+        public static bool IsMiniModeActive(AppWindow appWindow)
+        {
+            if (appWindow == null) return false;
+            lock (_miniAppWindowIds)
+            {
+                return _miniAppWindowIds.Contains(appWindow.Id.Value);
+            }
+        }
+
+        /// <summary>
+        /// 从设置中恢复窗口尺寸（仅当已保存过有效尺寸时生效），并限制在显示器工作区内。
+        /// </summary>
+        public static void RestoreWindowSize(AppWindow appWindow, string widthKey, string heightKey)
+        {
+            if (appWindow == null) return;
+            var width = SettingHelper.GetValue<double>(widthKey, 0);
+            var height = SettingHelper.GetValue<double>(heightKey, 0);
+            if (width <= 0 || height <= 0) return;
+            try
+            {
+                var area = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
+                width = Math.Min(width, area.Width);
+                height = Math.Min(height, area.Height);
+                if (width <= 0 || height <= 0) return;
+                appWindow.Resize(new Windows.Graphics.SizeInt32((int)width, (int)height));
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 保存窗口尺寸到设置；小窗模式的尺寸变化不会覆盖普通窗口尺寸。
+        /// </summary>
+        public static void SaveWindowSize(AppWindow appWindow, string widthKey, string heightKey)
+        {
+            if (appWindow == null) return;
+            if (IsMiniModeActive(appWindow)) return;
+            try
+            {
+                var size = appWindow.Size;
+                if (size.Width <= 0 || size.Height <= 0) return;
+                SettingHelper.SetValue<double>(widthKey, size.Width);
+                SettingHelper.SetValue<double>(heightKey, size.Height);
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 订阅窗口尺寸变化并自动保存（小窗模式除外）。
+        /// </summary>
+        public static void TrackWindowSize(AppWindow appWindow, string widthKey, string heightKey)
+        {
+            if (appWindow == null) return;
+            appWindow.Changed += (s, e) =>
+            {
+                if (e.DidSizeChange)
+                {
+                    SaveWindowSize(appWindow, widthKey, heightKey);
+                }
+            };
         }
     }
 }

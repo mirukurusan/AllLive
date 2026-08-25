@@ -1722,6 +1722,9 @@ namespace AllLive.WinUI.Views
                 var appWindow = GetCurrentAppWindow();
                 if (appWindow != null)
                 {
+                    // 标记小窗模式，避免小窗尺寸变化覆盖普通窗口尺寸
+                    App.SetMiniModeActive(appWindow, true);
+
                     // 记录进入小窗前的窗口尺寸，退出小窗时恢复
                     if (!wasMini)
                     {
@@ -1773,6 +1776,9 @@ namespace AllLive.WinUI.Views
                 var appWindow2 = GetCurrentAppWindow();
                 if (appWindow2 != null)
                 {
+                    // 退出小窗模式，恢复普通窗口尺寸的保存
+                    App.SetMiniModeActive(appWindow2, false);
+
                     // 退出小窗：先保存用户调整后的尺寸，供下次进入小窗复用
                     if (wasMini)
                     {

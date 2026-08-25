@@ -88,6 +88,10 @@ namespace AllLive.WinUI.Helper
                 // 记录直播窗口，并隐藏系统默认标题栏（WinUI Desktop），只保留页面内自定义标题栏
                 App.SetLiveRoomWindow(newWindow);
                 App.ApplyWindowTitleBar(App.GetLiveRoomAppWindow());
+                // 恢复并持久化新窗口播放模式的窗口尺寸
+                var liveRoomAppWindow = App.GetLiveRoomAppWindow();
+                App.RestoreWindowSize(liveRoomAppWindow, SettingHelper.LIVEROOM_WINDOW_WIDTH, SettingHelper.LIVEROOM_WINDOW_HEIGHT);
+                App.TrackWindowSize(liveRoomAppWindow, SettingHelper.LIVEROOM_WINDOW_WIDTH, SettingHelper.LIVEROOM_WINDOW_HEIGHT);
                 newWindow.Closed += (s, e) =>
                 {
                     App.ClearLiveRoomWindow(newWindow);
