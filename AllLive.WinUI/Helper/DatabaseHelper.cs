@@ -31,7 +31,8 @@ id INTEGER PRIMARY KEY AUTOINCREMENT,
 user_name TEXT,
 site_name TEXT,
 photo TEXT,
-room_id TEXT);
+room_id TEXT,
+group_id INTEGER);
 
 CREATE TABLE IF NOT EXISTS FavoriteGroup (
 id INTEGER PRIMARY KEY AUTOINCREMENT,

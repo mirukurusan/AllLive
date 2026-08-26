@@ -651,8 +651,11 @@ namespace AllLive.WinUI.Views
                     }
                     else
                     {
-                        liveRoomVM.AddFavoriteCommand.Execute(null);
-                        WinUIUtils.ShowMessageToast("已添加关注", xamlRoot: this.XamlRoot);
+                        var success = await liveRoomVM.AddFavoriteAsync();
+                        if (success)
+                        {
+                            WinUIUtils.ShowMessageToast("已添加关注", xamlRoot: this.XamlRoot);
+                        }
                     }
 
                     break;

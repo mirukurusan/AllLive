@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml;
 using AllLive.Core.Helper;
 using AllLive.Core.Interface;
 using AllLive.Core.Models;
+using AllLive.WinUI.Controls;
 using AllLive.WinUI.Helper;
 using AllLive.WinUI.Models;
 using WinUIUtils = AllLive.WinUI.Helper.Utils;
@@ -59,6 +60,14 @@ namespace AllLive.WinUI.ViewModels
         /// 所属直播间页面的 XamlRoot
         /// </summary>
         public XamlRoot XamlRoot { get; set; }
+
+        /// <summary>
+        /// 弹窗可用的 XamlRoot（页面未注入时回退到主窗口）
+        /// </summary>
+        private XamlRoot DialogXamlRoot
+        {
+            get { return XamlRoot ?? App.GetMainWindow()?.Content?.XamlRoot; }
+        }
 
         /// <summary>
         /// 保留SC
@@ -501,25 +510,58 @@ namespace AllLive.WinUI.ViewModels
             }
         }
 
-        private void AddFavorite()
+        public async void AddFavorite()
         {
-            if (Site == null || RoomID == null || RoomID == "0" || RoomID == "") return;
+            var success = await AddFavoriteAsync();
+            if (success)
+            {
+                WinUIUtils.ShowMessageToast("已添加关注", xamlRoot: DialogXamlRoot);
+            }
+        }
+
+        /// <summary>
+        /// 关注主播：弹出选组对话框（默认分组/已有分组/新建分组），返回是否关注成功
+        /// </summary>
+        public async Task<bool> AddFavoriteAsync()
+        {
+            if (Site == null || RoomID == null || RoomID == "0" || RoomID == "") return false;
             try
             {
+                var groups = DatabaseHelper.GetFavoriteGroups();
+                var selectResult = await FavoriteGroupDialog.Show(DialogXamlRoot, groups, "关注主播", null);
+                if (!selectResult.IsConfirmed)
+                {
+                    return false;
+                }
+
+                long? groupId = selectResult.GroupID;
+                if (!string.IsNullOrEmpty(selectResult.NewGroupName))
+                {
+                    var newGroupId = DatabaseHelper.AddFavoriteGroup(selectResult.NewGroupName);
+                    if (newGroupId < 0)
+                    {
+                        return false;
+                    }
+                    groupId = newGroupId;
+                }
+
                 DatabaseHelper.AddFavorite(new FavoriteItem()
                 {
                     Photo = Photo,
                     RoomID = RoomID,
                     SiteName = Site.Name,
-                    UserName = Name
+                    UserName = Name,
+                    GroupID = groupId
                 });
                 FavoriteID = DatabaseHelper.CheckFavorite(RoomID, Site.Name);
                 IsFavorite = true;
                 MessageCenter.UpdateFavorite();
+                return true;
             }
             catch (Exception ex)
             {
                 HandleError(ex, "关注失败");
+                return false;
             }
         }
 
