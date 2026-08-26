@@ -19,18 +19,6 @@
             <TextBlock FontSize="24">我的关注</TextBlock>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                 <Button
-                    Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}"
-                    IsEnabled="{x:Bind Path=favoriteVM.CanRefresh, Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon
-                            FontFamily="{StaticResource SegoeFluent}"
-                            FontSize="14"
-                            Glyph="&#xE72C;" />
-                        <TextBlock Margin="8,0,0,0">刷新当前分组</TextBlock>
-                    </StackPanel>
-                </Button>
-                <Button
-                    Margin="8,0,0,0"
                     Command="{x:Bind Path=favoriteVM.RefreshCommand}"
                     IsEnabled="{x:Bind Path=favoriteVM.CanRefresh, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal">
@@ -55,8 +43,8 @@
                             Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}" />
                     </StackPanel>
                 </Button>
-                <Button Margin="8,0" Command="{x:Bind Path=favoriteVM.InputCommand}">导入列表</Button>
-                <Button Command="{x:Bind Path=favoriteVM.OutputCommand}">导出列表</Button>
+                <Button Margin="8,0" Command="{x:Bind Path=favoriteVM.InputCommand}">导入</Button>
+                <Button Command="{x:Bind Path=favoriteVM.OutputCommand}">导出</Button>
                 <HyperlinkButton
                     Margin="8,0,0,0"
                     VerticalContentAlignment="Center"
@@ -126,20 +114,37 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-            <Button
+            <StackPanel
                 Grid.Column="1"
                 Margin="4,0,0,0"
-                Padding="8,4"
-                VerticalAlignment="Center"
-                Command="{x:Bind Path=favoriteVM.AddGroupCommand}">
-                <StackPanel Orientation="Horizontal">
-                    <FontIcon
-                        FontFamily="{StaticResource SegoeFluent}"
-                        FontSize="12"
-                        Glyph="&#xE710;" />
-                    <TextBlock Margin="4,0,0,0" VerticalAlignment="Center">新建分组</TextBlock>
-                </StackPanel>
-            </Button>
+                Orientation="Horizontal">
+                <Button
+                    Padding="8,4"
+                    VerticalAlignment="Center"
+                    Command="{x:Bind Path=favoriteVM.AddGroupCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon
+                            FontFamily="{StaticResource SegoeFluent}"
+                            FontSize="12"
+                            Glyph="&#xE710;" />
+                        <TextBlock Margin="4,0,0,0" VerticalAlignment="Center">新建分组</TextBlock>
+                    </StackPanel>
+                </Button>
+                <Button
+                    Margin="4,0,0,0"
+                    Padding="8,4"
+                    VerticalAlignment="Center"
+                    Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}"
+                    IsEnabled="{x:Bind Path=favoriteVM.CanRefresh, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon
+                            FontFamily="{StaticResource SegoeFluent}"
+                            FontSize="12"
+                            Glyph="&#xE72C;" />
+                        <TextBlock Margin="4,0,0,0" VerticalAlignment="Center">刷新当前分组</TextBlock>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
         <Grid Grid.Row="2">
             <controls:MyAdaptiveGridView

@@ -25,8 +25,8 @@
                         <TextBlock Margin="8,0,0,0">刷新列表</TextBlock>
                     </StackPanel>
                 </Button>
-                <Button Margin="8,0" Command="{x:Bind Path=historyVM.InputCommand}">导入列表</Button>
-                <Button Command="{x:Bind Path=historyVM.OutputCommand}">导出列表</Button>
+                <Button Margin="8,0" Command="{x:Bind Path=historyVM.InputCommand}">导入</Button>
+                <Button Command="{x:Bind Path=historyVM.OutputCommand}">导出</Button>
                 <Button Margin="8,0,0,0" Command="{x:Bind Path=historyVM.CleanCommand}">
                     <StackPanel Orientation="Horizontal">
                         <SymbolIcon Symbol="Delete" />
