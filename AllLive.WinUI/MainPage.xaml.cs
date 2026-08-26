@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Windows.Services.Store;
 using Windows.System;
 using AllLive.Core.Helper;
 using AllLive.Core.Models;
@@ -24,6 +22,8 @@ namespace AllLive.WinUI
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        // 启动时只自动检查一次更新
+        private bool _updateChecked;
 
         public MainPage()
         {
@@ -125,42 +125,14 @@ namespace AllLive.WinUI
         private void navigationView_Loaded(object sender, RoutedEventArgs e)
         {
             navigationView.IsPaneOpen = false;
+            _ = CheckUpdate();
         }
 
         private async Task CheckUpdate()
         {
-            try
-            {
-                StoreContext context = StoreContext.GetDefault();
-                IReadOnlyList<StorePackageUpdate> updates = await context.GetAppAndOptionalStorePackageUpdatesAsync();
-
-                if (updates.Count > 0)
-                {
-                    var dialog = new ContentDialog
-                    {
-                        Title = "发现新版本",
-                        Content = "发现新版本，是否前往应用商店更新？",
-                        PrimaryButtonText = "确定",
-                        SecondaryButtonText = "取消",
-                        XamlRoot = this.XamlRoot
-                    };
-                    var result = await dialog.ShowAsync();
-                    if (result == ContentDialogResult.Primary)
-                    {
-                        var product = await context.GetStoreProductForCurrentAppAsync();
-                        var uri = new Uri($"ms-windows-store://pdp?productid={product.Product.StoreId}");
-                        await Launcher.LaunchUriAsync(uri);
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                LogHelper.Log("CheckUpdate", LogType.ERROR, ex);
-                await WinUIUtils.CheckVersion();
-            }
-
-
+            if (_updateChecked) return;
+            _updateChecked = true;
+            await UpdateHelper.CheckForUpdateAsync(this.XamlRoot, true);
         }
     }
 }

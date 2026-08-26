@@ -6,14 +6,12 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.Storage;
-using Windows.System;
 using Windows.System.Profile;
 using AllLive.Core.Helper;
 using AllLive.WinUI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
-using Newtonsoft.Json;
 
 namespace AllLive.WinUI.Helper
 {
@@ -211,54 +209,11 @@ namespace AllLive.WinUI.Helper
             }
         }
 
-        public async static Task CheckVersion()
-        {
-            try
-            {
-                var url = $"https://cdn.jsdelivr.net/gh/xiaoyaocz/AllLive@master/AllLive.UWP/version.json?ts{new Random().Next(0,99999) }";
-                var result = await HttpUtil.GetString(url);
-                var ver = JsonConvert.DeserializeObject<NewVersion>(result);
-                var appVer = GetAppVersion();
-                var num = $"{appVer.Major}{appVer.Minor:00}{appVer.Build:00}";
-                var v = int.Parse(num);
-                if (ver.versionCode > v)
-                {
-                    var dialog = new ContentDialog();
-                    dialog.XamlRoot = App.GetMainWindow()?.Content?.XamlRoot;
-                    dialog.Title = $"发现新版本 Ver {ver.version}";
-                    TextBlock markdownText = new TextBlock()
-                    {
-                        Text = ver.message,
-                        TextWrapping = TextWrapping.Wrap,
-                        IsTextSelectionEnabled = true,
-                    };
-                    dialog.Content = markdownText;
-                    dialog.PrimaryButtonText = "查看详情";
-                    dialog.SecondaryButtonText = "忽略";
-                    dialog.PrimaryButtonClick += new TypedEventHandler<ContentDialog, ContentDialogButtonClickEventArgs>(async (sender, e) =>
-                    {
-                        await Launcher.LaunchUriAsync(new Uri(ver.url));
-                    });
-                    await dialog.ShowAsync();
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
-
         public static long GetTimeStamp()
         {
             DateTime dt = DateTime.Now;
             TimeSpan ts = dt - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             return (long)ts.TotalMilliseconds;
         }
-    }
-    public class NewVersion
-    {
-        public string version { get; set; }
-        public int versionCode { get; set; }
-        public string message { get; set; }
-        public string url { get; set; }
     }
 }

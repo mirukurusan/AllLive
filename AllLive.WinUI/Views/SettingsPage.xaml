@@ -534,6 +534,12 @@
                             VerticalAlignment="Center"
                             Orientation="Horizontal">
                             <Button
+                                x:Name="BtnCheckUpdate"
+                                Margin="8,0"
+                                Click="BtnCheckUpdate_Click">
+                                检查更新
+                            </Button>
+                            <Button
                                 x:Name="BtnLog"
                                 Margin="8,0"
                                 Click="BtnLog_Click">

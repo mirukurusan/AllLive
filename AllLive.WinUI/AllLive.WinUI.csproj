@@ -6,6 +6,7 @@
     <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <RootNamespace>AllLive.WinUI</RootNamespace>
     <AssemblyName>AllLive.WinUI</AssemblyName>
+    <Version>3.0.1.0</Version>
     <DefaultLanguage>zh-CN</DefaultLanguage>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\App.ico</ApplicationIcon>

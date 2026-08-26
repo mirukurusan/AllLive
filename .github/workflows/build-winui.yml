@@ -62,6 +62,17 @@ jobs:
           $xml.Save($manifest)
           Write-Host "Version updated to: $version"
 
+          # 同步 csproj 中的 <Version>，保证便携版（非打包）读取程序集版本时与 manifest 一致
+          $csproj = "${{ github.workspace }}\AllLive.WinUI\AllLive.WinUI.csproj"
+          $content = Get-Content $csproj -Raw
+          if ($content -match '<Version>[^<]+</Version>') {
+              $content = $content -replace '<Version>[^<]+</Version>', "<Version>$version</Version>"
+          }
+          else {
+              $content = $content -replace '<AssemblyName>AllLive.WinUI</AssemblyName>', "<AssemblyName>AllLive.WinUI</AssemblyName>`n    <Version>$version</Version>"
+          }
+          Set-Content -Path $csproj -Value $content
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:

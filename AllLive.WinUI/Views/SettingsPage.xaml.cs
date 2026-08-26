@@ -273,6 +273,11 @@ namespace AllLive.WinUI.Views
             await Launcher.LaunchUriAsync(new Uri("https://github.com/mirukurusan/AllLive"));
         }
 
+        private async void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateHelper.CheckForUpdateAsync(this.XamlRoot, false);
+        }
+
         private async void BtnLog_Click(object sender, RoutedEventArgs e)
         {
             var storageFolder = await WinUIUtils.GetLocalFolderAsync();
