@@ -29,17 +29,31 @@ namespace AllLive.WinUI.Views
             }
             favoriteVM = _favoriteVM;
             this.InitializeComponent();
+            // Loaded 时页面已挂到可视树，此时 XamlRoot 一定可用
+            this.Loaded += (s, e) => favoriteVM.XamlRoot = XamlRoot;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
+            favoriteVM.XamlRoot = XamlRoot;
             if (favoriteVM.Items.Count == 0)
             {
                 favoriteVM.LoadData(SettingHelper.GetValue<bool>(SettingHelper.AUTO_LOAD_LIVE_STATUS, false));
             }
 
+        }
+
+        private void groupList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is FavoriteGroupItem group)
+            {
+                if (favoriteVM.SelectedGroup != group)
+                {
+                    favoriteVM.SelectedGroup = group;
+                }
+            }
         }
 
         private void ls_ItemClick(object sender, ItemClickEventArgs e)
@@ -81,6 +95,56 @@ namespace AllLive.WinUI.Views
             }
 
             favoriteVM.RemoveItem(item);
+        }
+
+        private void SetGroupMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var item = (sender as MenuFlyoutItem)?.DataContext as FavoriteItem;
+            if (item == null)
+            {
+                return;
+            }
+            favoriteVM.SetItemGroupDialog(item);
+        }
+
+        private void GroupRenameMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var group = (sender as MenuFlyoutItem)?.DataContext as FavoriteGroupItem;
+            if (group == null)
+            {
+                return;
+            }
+            favoriteVM.RenameGroup(group);
+        }
+
+        private void GroupDeleteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var group = (sender as MenuFlyoutItem)?.DataContext as FavoriteGroupItem;
+            if (group == null)
+            {
+                return;
+            }
+            favoriteVM.DeleteGroup(group);
+        }
+
+        private void GroupMoveLeftMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var group = (sender as MenuFlyoutItem)?.DataContext as FavoriteGroupItem;
+            if (group == null)
+            {
+                return;
+            }
+            favoriteVM.MoveGroupLeft(group);
+        }
+
+        private void GroupMoveRightMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var group = (sender as MenuFlyoutItem)?.DataContext as FavoriteGroupItem;
+            if (group == null)
+            {
+                return;
+            }
+            favoriteVM.MoveGroupRight(group);
         }
     }
 }

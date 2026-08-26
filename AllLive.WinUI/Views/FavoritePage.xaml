@@ -12,18 +12,30 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
         <Grid Padding="16,8">
             <TextBlock FontSize="24">我的关注</TextBlock>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button Command="{x:Bind Path=favoriteVM.RefreshCommand}" Visibility="{x:Bind Path=favoriteVM.LoaddingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}">
+                <Button Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}" Visibility="{x:Bind Path=favoriteVM.LoaddingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon
                             FontFamily="{StaticResource SegoeFluent}"
                             FontSize="14"
                             Glyph="&#xE72C;" />
-                        <TextBlock Margin="8,0,0,0">刷新列表</TextBlock>
+                        <TextBlock Margin="8,0,0,0">刷新当前分组</TextBlock>
+                    </StackPanel>
+                </Button>
+                <Button
+                    Margin="8,0,0,0"
+                    Command="{x:Bind Path=favoriteVM.RefreshCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon
+                            FontFamily="{StaticResource SegoeFluent}"
+                            FontSize="14"
+                            Glyph="&#xE895;" />
+                        <TextBlock Margin="8,0,0,0">全部刷新</TextBlock>
                     </StackPanel>
                 </Button>
                 <Button Margin="8,0" Command="{x:Bind Path=favoriteVM.InputCommand}">导入列表</Button>
@@ -39,7 +51,80 @@
                 </HyperlinkButton>
             </StackPanel>
         </Grid>
-        <Grid Grid.Row="1">
+        <!-- 分组条 -->
+        <Grid Grid.Row="1" Padding="16,0,16,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ListView
+                x:Name="groupList"
+                ItemsSource="{x:Bind Path=favoriteVM.Groups, Mode=OneWay}"
+                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                ScrollViewer.HorizontalScrollMode="Enabled"
+                ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                ScrollViewer.VerticalScrollMode="Disabled"
+                SelectedItem="{x:Bind Path=favoriteVM.SelectedGroup, Mode=OneWay}"
+                SelectionChanged="groupList_SelectionChanged"
+                SelectionMode="Single">
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <ItemsStackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="MinWidth" Value="0" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,0,4,0" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:FavoriteGroupItem">
+                        <Grid Padding="12,6">
+                            <Grid.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem
+                                        Click="GroupRenameMenuItem_Click"
+                                        Text="重命名"
+                                        Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
+                                    <MenuFlyoutItem
+                                        Click="GroupDeleteMenuItem_Click"
+                                        Icon="Delete"
+                                        Text="删除"
+                                        Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
+                                    <MenuFlyoutSeparator Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
+                                    <MenuFlyoutItem
+                                        Click="GroupMoveLeftMenuItem_Click"
+                                        Text="左移"
+                                        Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
+                                    <MenuFlyoutItem
+                                        Click="GroupMoveRightMenuItem_Click"
+                                        Text="右移"
+                                        Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
+                                </MenuFlyout>
+                            </Grid.ContextFlyout>
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <Button
+                Grid.Column="1"
+                Margin="4,0,0,0"
+                Padding="8,4"
+                VerticalAlignment="Center"
+                Command="{x:Bind Path=favoriteVM.AddGroupCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon
+                        FontFamily="{StaticResource SegoeFluent}"
+                        FontSize="12"
+                        Glyph="&#xE710;" />
+                    <TextBlock Margin="4,0,0,0" VerticalAlignment="Center">新建分组</TextBlock>
+                </StackPanel>
+            </Button>
+        </Grid>
+        <Grid Grid.Row="2">
             <controls:MyAdaptiveGridView
                 Margin="8,0,8,8"
                 CanLoadMore="False"
@@ -47,7 +132,7 @@
                 IsItemClickEnabled="True"
                 ItemClick="ls_ItemClick"
                 ItemHeight="72"
-                ItemsSource="{x:Bind Path=favoriteVM.Items, Mode=OneWay}"
+                ItemsSource="{x:Bind Path=favoriteVM.CurrentItems, Mode=OneWay}"
                 SelectionMode="None"
                 StretchContentForSingleRow="False">
                 <controls:MyAdaptiveGridView.ItemContainerStyle>
@@ -66,6 +151,10 @@
                         <Grid>
                             <Grid.ContextFlyout>
                                 <MenuFlyout>
+                                    <MenuFlyoutItem
+                                        Click="SetGroupMenuItem_Click"
+                                        Icon="Folder"
+                                        Text="设置分组" />
                                     <MenuFlyoutItem
                                         Click="MenuFlyoutItem_Click"
                                         Icon="Delete"
@@ -163,7 +252,7 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Windows10version1809:CornerRadius="24"
-                Command="{x:Bind Path=favoriteVM.RefreshCommand}"
+                Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}"
                 Visibility="{x:Bind Path=favoriteVM.LoaddingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}">
 
                 <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE72C;" />

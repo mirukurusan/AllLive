@@ -9,6 +9,8 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using AllLive.WinUI.Helper;
 using AllLive.WinUI.Models;
+using AllLive.WinUI.Controls;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Newtonsoft.Json;
 using WinUIUtils = AllLive.WinUI.Helper.Utils;
@@ -20,22 +22,84 @@ namespace AllLive.WinUI.ViewModels
         public FavoriteVM()
         {
             Items = new ObservableCollection<FavoriteItem>();
+            Groups = new ObservableCollection<FavoriteGroupItem>();
             InputCommand = new RelayCommand(Input);
             OutputCommand = new RelayCommand(Output);
             TipCommand = new RelayCommand(Tip);
+            AddGroupCommand = new RelayCommand(AddGroup);
+            RenameGroupCommand = new RelayCommand<FavoriteGroupItem>(RenameGroup);
+            DeleteGroupCommand = new RelayCommand<FavoriteGroupItem>(DeleteGroup);
+            MoveGroupLeftCommand = new RelayCommand<FavoriteGroupItem>(MoveGroupLeft);
+            MoveGroupRightCommand = new RelayCommand<FavoriteGroupItem>(MoveGroupRight);
+            RefreshCurrentGroupCommand = new RelayCommand(RefreshCurrentGroup);
             MessageCenter.UpdateFavoriteEvent += (s, e) => Refresh();
         }
 
         public ICommand InputCommand { get; set; }
         public ICommand OutputCommand { get; set; }
         public ICommand TipCommand { get; set; }
+        public ICommand AddGroupCommand { get; set; }
+        public ICommand RenameGroupCommand { get; set; }
+        public ICommand DeleteGroupCommand { get; set; }
+        public ICommand MoveGroupLeftCommand { get; set; }
+        public ICommand MoveGroupRightCommand { get; set; }
+        public ICommand RefreshCurrentGroupCommand { get; set; }
 
+        /// <summary>
+        /// 所属页面 XamlRoot，用于弹窗
+        /// </summary>
+        public XamlRoot XamlRoot { get; set; }
+
+        /// <summary>
+        /// 弹窗可用的 XamlRoot（页面未注入时回退到主窗口）
+        /// </summary>
+        private XamlRoot DialogXamlRoot
+        {
+            get { return XamlRoot ?? App.GetMainWindow()?.Content?.XamlRoot; }
+        }
 
         private ObservableCollection<FavoriteItem> _items;
         public ObservableCollection<FavoriteItem> Items
         {
             get { return _items; }
             set { _items = value; DoPropertyChanged("Items"); }
+        }
+
+        private ObservableCollection<FavoriteGroupItem> _groups;
+        public ObservableCollection<FavoriteGroupItem> Groups
+        {
+            get { return _groups; }
+            set { _groups = value; DoPropertyChanged("Groups"); }
+        }
+
+        private FavoriteGroupItem _selectedGroup;
+        /// <summary>
+        /// 当前选中的分组；null 或 ID 为 0 表示“全部”
+        /// </summary>
+        public FavoriteGroupItem SelectedGroup
+        {
+            get { return _selectedGroup; }
+            set
+            {
+                _selectedGroup = value;
+                DoPropertyChanged("SelectedGroup");
+                DoPropertyChanged("CurrentItems");
+            }
+        }
+
+        /// <summary>
+        /// 当前分组展示的主播集合
+        /// </summary>
+        public ObservableCollection<FavoriteItem> CurrentItems
+        {
+            get
+            {
+                if (SelectedGroup == null || SelectedGroup.ID == 0)
+                {
+                    return Items;
+                }
+                return SelectedGroup.Items;
+            }
         }
 
 
@@ -58,14 +122,49 @@ namespace AllLive.WinUI.ViewModels
             try
             {
                 Loading = true;
-                foreach (var item in await DatabaseHelper.GetFavorites())
+                Items.Clear();
+                Groups.Clear();
+
+                var favorites = await DatabaseHelper.GetFavorites();
+                var dbGroups = DatabaseHelper.GetFavoriteGroups();
+
+                // 固定分组：全部、默认分组
+                var allGroup = new FavoriteGroupItem() { ID = 0, Name = "全部", IsSpecial = true };
+                var defaultGroup = new FavoriteGroupItem() { ID = -1, Name = "默认分组", IsSpecial = true };
+                Groups.Add(allGroup);
+                Groups.Add(defaultGroup);
+
+                var groupMap = new Dictionary<long, FavoriteGroupItem>();
+                foreach (var group in dbGroups)
+                {
+                    group.IsSpecial = false;
+                    groupMap[group.ID] = group;
+                    Groups.Add(group);
+                }
+
+                foreach (var item in favorites)
                 {
                     Items.Add(item);
+                    if (item.GroupID == null)
+                    {
+                        defaultGroup.Items.Add(item);
+                    }
+                    else if (groupMap.TryGetValue(item.GroupID.Value, out var group))
+                    {
+                        group.Items.Add(item);
+                    }
+                    else
+                    {
+                        // 分组已不存在（异常数据），归入默认分组
+                        defaultGroup.Items.Add(item);
+                    }
                 }
+
+                SelectedGroup = allGroup;
                 IsEmpty = Items.Count == 0;
                 if (!IsEmpty && loadLiveStatus)
                 {
-                    LoadLiveStatus(semaphore);
+                    LoadLiveStatus(semaphore, null);
                 }
             }
             catch (Exception ex)
@@ -79,19 +178,25 @@ namespace AllLive.WinUI.ViewModels
             }
         }
 
-        public async void LoadLiveStatus(SemaphoreSlim semaphore)
+        public async void LoadLiveStatus(SemaphoreSlim semaphore, FavoriteGroupItem group = null)
         {
+            var list = (group == null || group.ID == 0) ? Items : group.Items;
+            if (list.Count == 0)
+            {
+                return;
+            }
+
             LoaddingLiveStatus = true;
             Interlocked.Exchange(ref loadedCount, 0);
             var tasks = new List<Task>();
-            foreach (var item in Items)
+            foreach (var item in list)
             {
                 tasks.Add(Task.Run(async () =>
                 {
                     await semaphore.WaitAsync();
                     try
                     {
-                        await LoadLiveStatusAsync(item, semaphore);
+                        await LoadLiveStatusAsync(item, semaphore, list);
                     }
                     finally
                     {
@@ -102,7 +207,7 @@ namespace AllLive.WinUI.ViewModels
         }
 
         int loadedCount = 0;
-        private async Task LoadLiveStatusAsync(FavoriteItem item, SemaphoreSlim semaphore)
+        private async Task LoadLiveStatusAsync(FavoriteItem item, SemaphoreSlim semaphore, ObservableCollection<FavoriteItem> list)
         {
             try
             {
@@ -151,7 +256,7 @@ namespace AllLive.WinUI.ViewModels
             finally
             {
                 var currentCount = Interlocked.Increment(ref loadedCount);
-                if (currentCount == Items.Count)
+                if (currentCount == list.Count)
                 {
                     // 切换到UI线程更新集合
                     await Dispatcher.RunOnUIThreadAsync(
@@ -159,7 +264,15 @@ namespace AllLive.WinUI.ViewModels
                     {
                         LoaddingLiveStatus = false;
                         // 排序：直播 > 回放 > 未直播
-                        Items = new ObservableCollection<FavoriteItem>(Items.OrderByDescending(x => (int)x.LiveStatus));
+                        var sorted = list.OrderByDescending(x => (int)x.LiveStatus).ToList();
+                        for (int i = 0; i < sorted.Count; i++)
+                        {
+                            var oldIndex = list.IndexOf(sorted[i]);
+                            if (oldIndex != i)
+                            {
+                                list.Move(oldIndex, i);
+                            }
+                        }
                     });
                 }
             }
@@ -179,6 +292,11 @@ namespace AllLive.WinUI.ViewModels
             {
                 DatabaseHelper.DeleteFavorite(item.ID);
                 Items.Remove(item);
+                // 同时从所在分组集合移除
+                foreach (var group in Groups)
+                {
+                    group.Items.Remove(item);
+                }
                 IsEmpty = Items.Count == 0;
             }
             catch (Exception ex)
@@ -186,6 +304,264 @@ namespace AllLive.WinUI.ViewModels
                 HandleError(ex);
             }
 
+        }
+
+        /// <summary>
+        /// 只刷新当前分组内主播的直播状态
+        /// </summary>
+        public async void RefreshCurrentGroup()
+        {
+            if (Items.Count == 0)
+            {
+                return;
+            }
+            int maxConcurrencyLevel = SettingHelper.GetValue(SettingHelper.CONCURRENCY_LEVEL, 4);
+            var semaphore = new SemaphoreSlim(maxConcurrencyLevel);
+            LoadLiveStatus(semaphore, SelectedGroup);
+        }
+
+        public async void AddGroup()
+        {
+            var input = new TextBox() { PlaceholderText = "请输入分组名称" };
+            var dialog = new ContentDialog
+            {
+                Title = "新建分组",
+                Content = input,
+                PrimaryButtonText = "确定",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = DialogXamlRoot
+            };
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            var name = input.Text?.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                WinUIUtils.ShowMessageToast("分组名称不能为空");
+                return;
+            }
+            if (Groups.Any(x => x.Name == name))
+            {
+                WinUIUtils.ShowMessageToast("分组已存在");
+                return;
+            }
+
+            var id = DatabaseHelper.AddFavoriteGroup(name);
+            if (id < 0)
+            {
+                return;
+            }
+
+            var newGroup = new FavoriteGroupItem()
+            {
+                ID = id,
+                Name = name,
+                SortOrder = Groups.Count(x => !x.IsSpecial)
+            };
+            Groups.Add(newGroup);
+            SelectedGroup = newGroup;
+        }
+
+        public async void RenameGroup(FavoriteGroupItem group)
+        {
+            if (group == null || group.IsSpecial)
+            {
+                return;
+            }
+
+            var input = new TextBox() { Text = group.Name };
+            var dialog = new ContentDialog
+            {
+                Title = "重命名分组",
+                Content = input,
+                PrimaryButtonText = "确定",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = DialogXamlRoot
+            };
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            var name = input.Text?.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                WinUIUtils.ShowMessageToast("分组名称不能为空");
+                return;
+            }
+            if (Groups.Any(x => x.ID != group.ID && x.Name == name))
+            {
+                WinUIUtils.ShowMessageToast("分组已存在");
+                return;
+            }
+
+            DatabaseHelper.RenameFavoriteGroup(group.ID, name);
+            group.Name = name;
+        }
+
+        public async void DeleteGroup(FavoriteGroupItem group)
+        {
+            if (group == null || group.IsSpecial)
+            {
+                return;
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "删除分组",
+                Content = $"确定删除分组“{group.Name}”吗？组内主播将移入默认分组。",
+                PrimaryButtonText = "删除",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = DialogXamlRoot
+            };
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            try
+            {
+                DatabaseHelper.DeleteFavoriteGroup(group.ID);
+                var defaultGroup = Groups.FirstOrDefault(x => x.ID == -1);
+                foreach (var item in group.Items.ToList())
+                {
+                    item.GroupID = null;
+                    defaultGroup?.Items.Add(item);
+                }
+                Groups.Remove(group);
+                if (SelectedGroup == group)
+                {
+                    SelectedGroup = Groups.Count > 0 ? Groups[0] : null;
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
+        }
+
+        public void MoveGroupLeft(FavoriteGroupItem group)
+        {
+            if (group == null || group.IsSpecial)
+            {
+                return;
+            }
+            var index = Groups.IndexOf(group);
+            if (index <= 2) // 前两项固定：全部、默认分组
+            {
+                return;
+            }
+            Groups.Move(index, index - 1);
+            SaveGroupOrder();
+        }
+
+        public void MoveGroupRight(FavoriteGroupItem group)
+        {
+            if (group == null || group.IsSpecial)
+            {
+                return;
+            }
+            var index = Groups.IndexOf(group);
+            if (index < 0 || index >= Groups.Count - 1)
+            {
+                return;
+            }
+            Groups.Move(index, index + 1);
+            SaveGroupOrder();
+        }
+
+        private void SaveGroupOrder()
+        {
+            var userGroups = Groups.Where(x => !x.IsSpecial).ToList();
+            for (int i = 0; i < userGroups.Count; i++)
+            {
+                userGroups[i].SortOrder = i;
+            }
+            try
+            {
+                DatabaseHelper.UpdateFavoriteGroupOrder(userGroups);
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
+        }
+
+        /// <summary>
+        /// 设置关注所属分组（groupId 为 null 表示默认分组）
+        /// </summary>
+        public void SetItemGroup(FavoriteItem item, long? groupId)
+        {
+            if (item == null)
+            {
+                return;
+            }
+            try
+            {
+                DatabaseHelper.UpdateFavoriteGroup(item.ID, groupId);
+                item.GroupID = groupId;
+                // 从所有分组集合中移除
+                foreach (var group in Groups)
+                {
+                    group.Items.Remove(item);
+                }
+                // 加入目标分组集合
+                if (groupId == null)
+                {
+                    Groups.FirstOrDefault(x => x.ID == -1)?.Items.Add(item);
+                }
+                else
+                {
+                    Groups.FirstOrDefault(x => x.ID == groupId)?.Items.Add(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
+        }
+
+        /// <summary>
+        /// 弹窗选择分组并设置（支持新建分组）
+        /// </summary>
+        public async void SetItemGroupDialog(FavoriteItem item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+            var assignableGroups = Groups.Where(x => !x.IsSpecial).ToList();
+            var result = await FavoriteGroupDialog.Show(DialogXamlRoot, assignableGroups, "设置分组", item.GroupID);
+            if (!result.IsConfirmed)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(result.NewGroupName))
+            {
+                var id = DatabaseHelper.AddFavoriteGroup(result.NewGroupName);
+                if (id < 0)
+                {
+                    return;
+                }
+                var newGroup = new FavoriteGroupItem()
+                {
+                    ID = id,
+                    Name = result.NewGroupName,
+                    SortOrder = Groups.Count(x => !x.IsSpecial)
+                };
+                Groups.Add(newGroup);
+                result.GroupID = id;
+            }
+            SetItemGroup(item, result.GroupID);
         }
 
         public async void Input()
