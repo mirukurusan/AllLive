@@ -18,7 +18,9 @@
         <Grid Padding="16,8">
             <TextBlock FontSize="24">我的关注</TextBlock>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}">
+                <Button
+                    Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}"
+                    IsEnabled="{x:Bind Path=favoriteVM.CanRefresh, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon
                             FontFamily="{StaticResource SegoeFluent}"
@@ -29,13 +31,28 @@
                 </Button>
                 <Button
                     Margin="8,0,0,0"
-                    Command="{x:Bind Path=favoriteVM.RefreshCommand}">
+                    Command="{x:Bind Path=favoriteVM.RefreshCommand}"
+                    IsEnabled="{x:Bind Path=favoriteVM.CanRefresh, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal">
+                        <ProgressRing
+                            Width="14"
+                            Height="14"
+                            VerticalAlignment="Center"
+                            IsActive="True"
+                            Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay}" />
                         <FontIcon
                             FontFamily="{StaticResource SegoeFluent}"
                             FontSize="14"
-                            Glyph="&#xE895;" />
-                        <TextBlock Margin="8,0,0,0">全部刷新</TextBlock>
+                            Glyph="&#xE895;"
+                            Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            Text="刷新中…"
+                            Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay}" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            Text="全部刷新"
+                            Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}" />
                     </StackPanel>
                 </Button>
                 <Button Margin="8,0" Command="{x:Bind Path=favoriteVM.InputCommand}">导入列表</Button>

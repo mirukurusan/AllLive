@@ -109,8 +109,18 @@ namespace AllLive.WinUI.ViewModels
         public bool LoadingLiveStatus
         {
             get { return _loadingLiveStatus; }
-            set { _loadingLiveStatus = value; DoPropertyChanged("LoaddingLiveStatus"); }
+            set
+            {
+                _loadingLiveStatus = value;
+                DoPropertyChanged("LoadingLiveStatus");
+                DoPropertyChanged("CanRefresh");
+            }
         }
+
+        /// <summary>
+        /// 是否允许点击刷新（加载直播状态期间禁用，避免并发重复加载）
+        /// </summary>
+        public bool CanRefresh => !LoadingLiveStatus;
 
 
 
@@ -174,7 +184,6 @@ namespace AllLive.WinUI.ViewModels
             }
             finally
             {
-                semaphore.Release();
                 Loading = false;
             }
         }
