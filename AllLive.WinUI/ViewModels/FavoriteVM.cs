@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using WinRT.Interop;
 using AllLive.WinUI.Helper;
 using AllLive.WinUI.Models;
 using AllLive.WinUI.Controls;
@@ -574,6 +575,12 @@ namespace AllLive.WinUI.ViewModels
             picker.ViewMode = PickerViewMode.List;
             picker.CommitButtonText = "导入";
 
+            var window = App.GetMainWindow();
+            if (window != null)
+            {
+                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
+            }
+
             var file = await picker.PickSingleFileAsync();
             if (file != null)
             {
@@ -610,6 +617,12 @@ namespace AllLive.WinUI.ViewModels
             picker.FileTypeChoices.Add("Json", new List<string>() { ".json" });
             picker.SuggestedStartLocation = PickerLocationId.Desktop;
             picker.SuggestedFileName = "favorite.json";
+
+            var window = App.GetMainWindow();
+            if (window != null)
+            {
+                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
+            }
 
             var file = await picker.PickSaveFileAsync();
             if (file != null)
