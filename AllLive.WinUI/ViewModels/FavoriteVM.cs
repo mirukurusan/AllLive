@@ -106,7 +106,7 @@ namespace AllLive.WinUI.ViewModels
 
         private bool _loadingLiveStatus;
 
-        public bool LoaddingLiveStatus
+        public bool LoadingLiveStatus
         {
             get { return _loadingLiveStatus; }
             set { _loadingLiveStatus = value; DoPropertyChanged("LoaddingLiveStatus"); }
@@ -187,7 +187,7 @@ namespace AllLive.WinUI.ViewModels
                 return;
             }
 
-            LoaddingLiveStatus = true;
+            LoadingLiveStatus = true;
             Interlocked.Exchange(ref loadedCount, 0);
             var tasks = new List<Task>();
             foreach (var item in list)
@@ -263,7 +263,7 @@ namespace AllLive.WinUI.ViewModels
                     await Dispatcher.RunOnUIThreadAsync(
                         () =>
                     {
-                        LoaddingLiveStatus = false;
+                        LoadingLiveStatus = false;
                         // 排序：直播 > 回放 > 未直播
                         var sorted = list.OrderByDescending(x => (int)x.LiveStatus).ToList();
                         for (int i = 0; i < sorted.Count; i++)

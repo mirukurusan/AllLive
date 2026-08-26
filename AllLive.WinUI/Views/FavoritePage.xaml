@@ -18,7 +18,7 @@
         <Grid Padding="16,8">
             <TextBlock FontSize="24">我的关注</TextBlock>
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}" Visibility="{x:Bind Path=favoriteVM.LoaddingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}">
+                <Button Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon
                             FontFamily="{StaticResource SegoeFluent}"
@@ -244,31 +244,6 @@
                 Visibility="{x:Bind Path=favoriteVM.IsEmpty, Mode=OneWay}">
                 这里还什么都没有~
             </TextBlock>
-            <Button
-                Width="48"
-                Height="48"
-                Margin="12"
-                Padding="0"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                Windows10version1809:CornerRadius="24"
-                Command="{x:Bind Path=favoriteVM.RefreshCurrentGroupCommand}"
-                Visibility="{x:Bind Path=favoriteVM.LoaddingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}">
-
-                <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE72C;" />
-
-            </Button>
-            <Border
-                Width="48"
-                Height="48"
-                Margin="12"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                Background="{ThemeResource ButtonBackground}"
-                CornerRadius="24"
-                Visibility="{x:Bind Path=favoriteVM.LoaddingLiveStatus, Mode=OneWay}">
-                <ProgressRing Width="24" IsActive="True" />
-            </Border>
         </Grid>
     </Grid>
 </Page>
