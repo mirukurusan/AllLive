@@ -52,13 +52,15 @@ namespace AllLive.WinUI.Models
                 _IsLoadingStatus = value;
                 DoPropertyChanged("IsLoadingStatus");
                 DoPropertyChanged("IsLoading");
+                DoPropertyChanged("IsLive");
+                DoPropertyChanged("IsOffline");
             }
         }
 
         /// <summary>
         /// 是否正在直播
         /// </summary>
-        public bool IsLive => LiveStatus == LiveStatusType.Live;
+        public bool IsLive => !IsLoadingStatus && LiveStatus == LiveStatusType.Live;
 
         /// <summary>
         /// 是否正在加载
@@ -68,6 +70,6 @@ namespace AllLive.WinUI.Models
         /// <summary>
         /// 是否未开播
         /// </summary>
-        public bool IsOffline => StatusLoaded && LiveStatus == LiveStatusType.Offline;
+        public bool IsOffline => !IsLoadingStatus && StatusLoaded && LiveStatus == LiveStatusType.Offline;
     }
 }
