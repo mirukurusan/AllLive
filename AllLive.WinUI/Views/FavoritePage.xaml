@@ -22,25 +22,11 @@
                     Command="{x:Bind Path=favoriteVM.RefreshCommand}"
                     IsEnabled="{x:Bind Path=favoriteVM.CanRefresh, Mode=OneWay}">
                     <StackPanel Orientation="Horizontal">
-                        <ProgressRing
-                            Width="14"
-                            Height="14"
-                            VerticalAlignment="Center"
-                            IsActive="True"
-                            Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay}" />
                         <FontIcon
                             FontFamily="{StaticResource SegoeFluent}"
                             FontSize="14"
-                            Glyph="&#xE895;"
-                            Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}" />
-                        <TextBlock
-                            Margin="8,0,0,0"
-                            Text="刷新中…"
-                            Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay}" />
-                        <TextBlock
-                            Margin="8,0,0,0"
-                            Text="全部刷新"
-                            Visibility="{x:Bind Path=favoriteVM.LoadingLiveStatus, Mode=OneWay, Converter={StaticResource displayConvert}}" />
+                            Glyph="&#xE895;" />
+                        <TextBlock Margin="8,0,0,0" Text="全部刷新" />
                     </StackPanel>
                 </Button>
                 <Button Margin="8,0" Command="{x:Bind Path=favoriteVM.InputCommand}">导入</Button>
@@ -56,6 +42,13 @@
                 </HyperlinkButton>
             </StackPanel>
         </Grid>
+        <!-- 刷新时界面顶部的线性加载条 -->
+        <ProgressBar
+            Grid.Row="0"
+            Height="2"
+            VerticalAlignment="Top"
+            IsIndeterminate="True"
+            Visibility="{x:Bind Path=favoriteVM.IsRefreshing, Mode=OneWay}" />
         <!-- 分组条 -->
         <Grid Grid.Row="1" Padding="16,0,16,4">
             <Grid.ColumnDefinitions>

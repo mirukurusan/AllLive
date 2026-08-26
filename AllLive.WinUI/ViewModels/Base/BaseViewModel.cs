@@ -30,7 +30,7 @@ namespace AllLive.WinUI.ViewModels
         public int Page { get; set; } = 1;
 
         private bool _loading;
-        public bool Loading
+        public virtual bool Loading
         {
             get { return _loading; }
             set { _loading = value; DoPropertyChanged("Loading"); }

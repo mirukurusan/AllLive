@@ -104,6 +104,16 @@ namespace AllLive.WinUI.ViewModels
         }
 
 
+        public override bool Loading
+        {
+            get { return base.Loading; }
+            set
+            {
+                base.Loading = value;
+                DoPropertyChanged("IsRefreshing");
+            }
+        }
+
         private bool _loadingLiveStatus;
 
         public bool LoadingLiveStatus
@@ -114,6 +124,7 @@ namespace AllLive.WinUI.ViewModels
                 _loadingLiveStatus = value;
                 DoPropertyChanged("LoadingLiveStatus");
                 DoPropertyChanged("CanRefresh");
+                DoPropertyChanged("IsRefreshing");
             }
         }
 
@@ -121,6 +132,11 @@ namespace AllLive.WinUI.ViewModels
         /// 是否允许点击刷新（加载直播状态期间禁用，避免并发重复加载）
         /// </summary>
         public bool CanRefresh => !LoadingLiveStatus;
+
+        /// <summary>
+        /// 是否正在刷新（加载数据或拉取直播状态）
+        /// </summary>
+        public bool IsRefreshing => Loading || LoadingLiveStatus;
 
 
 
