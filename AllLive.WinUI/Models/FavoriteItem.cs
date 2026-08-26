@@ -10,6 +10,10 @@ namespace AllLive.WinUI.Models
         public string UserName { get; set; }
         public string Photo { get; set; }
         public string SiteName { get; set; }
+        /// <summary>
+        /// 所属分组，NULL 表示默认分组
+        /// </summary>
+        public long? GroupID { get; set; }
 
 
         private LiveStatusType _LiveStatus = LiveStatusType.Offline;
