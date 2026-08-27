@@ -303,12 +303,15 @@ namespace AllLive.WinUI
         }
 
         /// <summary>
-        /// 保存窗口尺寸到设置；小窗模式的尺寸变化不会覆盖普通窗口尺寸。
+        /// 保存窗口尺寸到设置；小窗模式及最大化状态下的尺寸变化不会覆盖普通窗口尺寸。
         /// </summary>
         public static void SaveWindowSize(AppWindow appWindow, string widthKey, string heightKey)
         {
             if (appWindow == null) return;
             if (IsMiniModeActive(appWindow)) return;
+            // 最大化时不保存尺寸，避免恢复时把最大化窗口的尺寸当作普通窗口尺寸
+            if (appWindow.Presenter is OverlappedPresenter overlappedPresenter &&
+                overlappedPresenter.State == OverlappedPresenterState.Maximized) return;
             try
             {
                 var size = appWindow.Size;
@@ -320,7 +323,7 @@ namespace AllLive.WinUI
         }
 
         /// <summary>
-        /// 订阅窗口尺寸变化并自动保存（小窗模式除外）。
+        /// 订阅窗口尺寸变化并自动保存（小窗模式、最大化状态除外）。
         /// </summary>
         public static void TrackWindowSize(AppWindow appWindow, string widthKey, string heightKey)
         {
