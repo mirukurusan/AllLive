@@ -33,7 +33,7 @@ namespace AllLive.WinUI.ViewModels
             MoveGroupLeftCommand = new RelayCommand<FavoriteGroupItem>(MoveGroupLeft);
             MoveGroupRightCommand = new RelayCommand<FavoriteGroupItem>(MoveGroupRight);
             RefreshCurrentGroupCommand = new RelayCommand(RefreshCurrentGroup);
-            MessageCenter.UpdateFavoriteEvent += (s, e) => Refresh();
+            MessageCenter.UpdateFavoriteEvent += (s, e) => RefreshFavorite();
         }
 
         public ICommand InputCommand { get; set; }
@@ -304,6 +304,15 @@ namespace AllLive.WinUI.ViewModels
             }
         }
 
+        /// <summary>
+        /// 重新加载收藏数据但不刷新直播状态
+        /// </summary>
+        private void RefreshFavorite()
+        {
+            base.Refresh();
+            Items.Clear();
+            LoadData(false);
+        }
 
         public override void Refresh()
         {
@@ -625,7 +634,7 @@ namespace AllLive.WinUI.ViewModels
                         });
                     }
                     WinUIUtils.ShowMessageToast("导入成功");
-                    Refresh();
+                    RefreshFavorite();
                 }
                 catch (Exception ex)
                 {
