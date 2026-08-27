@@ -57,6 +57,10 @@
             </Grid.ColumnDefinitions>
             <ListView
                 x:Name="groupList"
+                AllowDrop="True"
+                DragOver="groupList_DragOver"
+                DragLeave="groupList_DragLeave"
+                Drop="groupList_Drop"
                 ItemsSource="{x:Bind Path=favoriteVM.Groups, Mode=OneWay}"
                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
                 ScrollViewer.HorizontalScrollMode="Enabled"
@@ -142,6 +146,8 @@
         <Grid Grid.Row="2">
             <controls:MyAdaptiveGridView
                 Margin="8,0,8,8"
+                CanDragItems="True"
+                DragItemsStarting="grid_DragItemsStarting"
                 CanLoadMore="False"
                 DesiredWidth="400"
                 IsItemClickEnabled="True"
