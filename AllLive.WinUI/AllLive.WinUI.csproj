@@ -55,6 +55,7 @@
     <PackageReference Include="NSDanmaku.WinUI" Version="1.0.0" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
     <PackageReference Include="WebDav.Client" Version="2.9.0" />
+    <PackageReference Include="WinUIEx" Version="2.9.3" />
     <PackageReference Include="ZXing.Net" Version="0.16.11" />
   </ItemGroup>
 

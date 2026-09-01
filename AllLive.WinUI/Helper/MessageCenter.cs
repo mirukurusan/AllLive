@@ -9,6 +9,7 @@ using AllLive.WinUI.ViewModels;
 using AllLive.WinUI.Views;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using WinUIEx;
 using WinUIUtils = AllLive.WinUI.Helper.Utils;
 
 namespace AllLive.WinUI.Helper
@@ -80,6 +81,23 @@ namespace AllLive.WinUI.Helper
                 frame.RequestedTheme = (ElementTheme)SettingHelper.GetValue<int>(SettingHelper.THEME, 0);
                 frame.Navigate(typeof(LiveRoomPage), data);
                 newWindow.Content = frame;
+
+                // 关闭时若仍处于小窗模式，先还原普通窗口尺寸/位置，避免 WinUIEx 持久化小窗状态
+                newWindow.Closed += (s, e) =>
+                {
+                    App.RestorePreMiniState(newWindow.AppWindow);
+                    App.ClearLiveRoomWindow(newWindow);
+                    // 窗口关闭时停止直播播放，避免关闭后仍在播放
+                    if (frame.Content is LiveRoomPage liveRoomPage)
+                    {
+                        liveRoomPage.OnWindowClosed();
+                    }
+                };
+
+                // 使用 WinUIEx 恢复并持久化直播窗口的位置、尺寸与最大化状态（PersistenceId 需在窗口显示前设置）
+                var liveWindowManager = WindowManager.Get(newWindow);
+                liveWindowManager.PersistenceId = "LiveRoomWindow";
+
                 newWindow.Activate();
 
                 // 设置任务栏图标，避免新窗口显示为空白文件图标
@@ -88,19 +106,6 @@ namespace AllLive.WinUI.Helper
                 // 记录直播窗口，并隐藏系统默认标题栏（WinUI Desktop），只保留页面内自定义标题栏
                 App.SetLiveRoomWindow(newWindow);
                 App.ApplyWindowTitleBar(App.GetLiveRoomAppWindow());
-                // 恢复并持久化新窗口播放模式的窗口尺寸
-                var liveRoomAppWindow = App.GetLiveRoomAppWindow();
-                App.RestoreWindowSize(liveRoomAppWindow, SettingHelper.LIVEROOM_WINDOW_WIDTH, SettingHelper.LIVEROOM_WINDOW_HEIGHT);
-                App.TrackWindowSize(liveRoomAppWindow, SettingHelper.LIVEROOM_WINDOW_WIDTH, SettingHelper.LIVEROOM_WINDOW_HEIGHT);
-                newWindow.Closed += (s, e) =>
-                {
-                    App.ClearLiveRoomWindow(newWindow);
-                    // 窗口关闭时停止直播播放，避免关闭后仍在播放
-                    if (frame.Content is LiveRoomPage liveRoomPage)
-                    {
-                        liveRoomPage.OnWindowClosed();
-                    }
-                };
             }
             else
             {

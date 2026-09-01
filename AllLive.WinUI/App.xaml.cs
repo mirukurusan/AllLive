@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Windows.UI;
 using Windows.UI.ViewManagement;
@@ -12,6 +15,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using NSDanmaku.WinUI.Controls;
+using WinUIEx;
 using WinRT.Interop;
 using UnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using WinUIUtils = AllLive.WinUI.Helper.Utils;
@@ -29,6 +33,9 @@ namespace AllLive.WinUI
         {
             this.InitializeComponent();
             Current.UnhandledException += App_UnhandledException;
+
+            // WinUIEx 窗口状态持久化存储：打包/未打包模式统一保存到本地数据目录的 JSON 文件
+            WindowManager.PersistenceStorage = new WindowStatePersistence();
         }
 
         private void App_UnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -45,15 +52,17 @@ namespace AllLive.WinUI
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
             m_window = new MainWindow();
+
+            // 使用 WinUIEx 记忆并恢复主窗口的位置、尺寸与最大化状态（PersistenceId 需在窗口显示前设置）。
+            // 若关闭时仍处于小窗模式，OnMainWindowClosing 会先还原普通窗口尺寸，避免小窗状态被持久化。
+            m_window.Closed += OnMainWindowClosing;
+            var windowManager = WindowManager.Get(m_window);
+            windowManager.PersistenceId = "MainWindow";
+
             m_window.Activate();
 
             // 设置窗口任务栏图标
             ApplyAppIcon(m_window);
-
-            // 恢复并持久化主窗口尺寸
-            var mainAppWindow = GetAppWindow(m_window);
-            RestoreWindowSize(mainAppWindow, SettingHelper.MAIN_WINDOW_WIDTH, SettingHelper.MAIN_WINDOW_HEIGHT);
-            TrackWindowSize(mainAppWindow, SettingHelper.MAIN_WINDOW_WIDTH, SettingHelper.MAIN_WINDOW_HEIGHT);
 
             // Run async init on a background task to not block the window
             _ = InitializeAsync(e);
@@ -145,11 +154,11 @@ namespace AllLive.WinUI
             appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
             appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-            appWindow.TitleBar.ButtonForegroundColor = TitltBarButtonColor();
+            appWindow.TitleBar.ButtonForegroundColor = TitleBarButtonColor();
             appWindow.TitleBar.BackgroundColor = Colors.Transparent;
         }
 
-        private static Color TitltBarButtonColor()
+        private static Color TitleBarButtonColor()
         {
             var settingTheme = SettingHelper.GetValue<int>(SettingHelper.THEME, 0);
             if (settingTheme == 1) return Colors.Black;
@@ -254,8 +263,22 @@ namespace AllLive.WinUI
             return AppWindow.GetFromWindowId(windowId);
         }
 
+        /// <summary>
+        /// 主窗口关闭前：若仍处于小窗模式，先还原进入小窗前的普通窗口尺寸与位置，
+        /// 避免 WinUIEx 把小窗模式的状态持久化为普通窗口状态。
+        /// 必须在 WindowManager 创建前订阅，以保证先于 WinUIEx 的保存逻辑执行。
+        /// </summary>
+        private void OnMainWindowClosing(object sender, WindowEventArgs e)
+        {
+            RestorePreMiniState(GetMainAppWindow());
+        }
+
         // 当前处于小窗模式的窗口 ID 集合，小窗模式的尺寸变化不保存为普通窗口尺寸
         private static readonly HashSet<ulong> _miniAppWindowIds = new HashSet<ulong>();
+
+        // 各窗口进入小窗前的尺寸与位置（按 AppWindow Id）；关闭时若仍处于小窗模式则先还原，避免 WinUIEx 持久化小窗状态
+        private static readonly Dictionary<ulong, (Windows.Graphics.SizeInt32 Size, Windows.Graphics.PointInt32 Position)> _preMiniStates =
+            new Dictionary<ulong, (Windows.Graphics.SizeInt32 Size, Windows.Graphics.PointInt32 Position)>();
 
         /// <summary>
         /// 标记窗口是否处于小窗模式（小窗模式的尺寸变化不覆盖普通窗口尺寸）。
@@ -267,74 +290,140 @@ namespace AllLive.WinUI
             {
                 if (mini) _miniAppWindowIds.Add(appWindow.Id.Value);
                 else _miniAppWindowIds.Remove(appWindow.Id.Value);
+
+                if (mini)
+                {
+                    // 进入小窗前记录普通窗口尺寸与位置；重复调用不覆盖首次记录
+                    if (!_preMiniStates.ContainsKey(appWindow.Id.Value))
+                    {
+                        _preMiniStates[appWindow.Id.Value] = (appWindow.Size, appWindow.Position);
+                    }
+                }
+                else
+                {
+                    _preMiniStates.Remove(appWindow.Id.Value);
+                }
             }
         }
 
         /// <summary>
-        /// 判断窗口当前是否处于小窗模式。
+        /// 若窗口关闭时仍处于小窗模式，还原进入小窗前的普通窗口尺寸与位置，
+        /// 避免 WinUIEx 把小窗状态持久化为普通窗口状态。需在 WindowManager 保存前调用。
         /// </summary>
-        public static bool IsMiniModeActive(AppWindow appWindow)
+        public static void RestorePreMiniState(AppWindow appWindow)
         {
-            if (appWindow == null) return false;
+            if (appWindow == null) return;
+            (Windows.Graphics.SizeInt32 Size, Windows.Graphics.PointInt32 Position)? preMiniState = null;
             lock (_miniAppWindowIds)
             {
-                return _miniAppWindowIds.Contains(appWindow.Id.Value);
-            }
-        }
-
-        /// <summary>
-        /// 从设置中恢复窗口尺寸（仅当已保存过有效尺寸时生效），并限制在显示器工作区内。
-        /// </summary>
-        public static void RestoreWindowSize(AppWindow appWindow, string widthKey, string heightKey)
-        {
-            if (appWindow == null) return;
-            var width = SettingHelper.GetValue<double>(widthKey, 0);
-            var height = SettingHelper.GetValue<double>(heightKey, 0);
-            if (width <= 0 || height <= 0) return;
-            try
-            {
-                var area = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
-                width = Math.Min(width, area.Width);
-                height = Math.Min(height, area.Height);
-                if (width <= 0 || height <= 0) return;
-                appWindow.Resize(new Windows.Graphics.SizeInt32((int)width, (int)height));
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// 保存窗口尺寸到设置；小窗模式及最大化状态下的尺寸变化不会覆盖普通窗口尺寸。
-        /// </summary>
-        public static void SaveWindowSize(AppWindow appWindow, string widthKey, string heightKey)
-        {
-            if (appWindow == null) return;
-            if (IsMiniModeActive(appWindow)) return;
-            // 最大化时不保存尺寸，避免恢复时把最大化窗口的尺寸当作普通窗口尺寸
-            if (appWindow.Presenter is OverlappedPresenter overlappedPresenter &&
-                overlappedPresenter.State == OverlappedPresenterState.Maximized) return;
-            try
-            {
-                var size = appWindow.Size;
-                if (size.Width <= 0 || size.Height <= 0) return;
-                SettingHelper.SetValue<double>(widthKey, size.Width);
-                SettingHelper.SetValue<double>(heightKey, size.Height);
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// 订阅窗口尺寸变化并自动保存（小窗模式、最大化状态除外）。
-        /// </summary>
-        public static void TrackWindowSize(AppWindow appWindow, string widthKey, string heightKey)
-        {
-            if (appWindow == null) return;
-            appWindow.Changed += (s, e) =>
-            {
-                if (e.DidSizeChange)
+                if (_miniAppWindowIds.Contains(appWindow.Id.Value) &&
+                    _preMiniStates.TryGetValue(appWindow.Id.Value, out var state))
                 {
-                    SaveWindowSize(appWindow, widthKey, heightKey);
+                    preMiniState = state;
                 }
-            };
+            }
+            if (preMiniState == null) return;
+            try
+            {
+                appWindow.Move(preMiniState.Value.Position);
+                appWindow.Resize(preMiniState.Value.Size);
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// WinUIEx 窗口状态持久化存储：打包/未打包模式统一保存到本地数据目录的 JSON 文件。
+        /// WinUIEx 只向其中写入字符串值（窗口状态的 base64），因此这里仅持久化字符串。
+        /// </summary>
+        private sealed class WindowStatePersistence : IDictionary<string, object>
+        {
+            private readonly Dictionary<string, object> _data = new Dictionary<string, object>();
+            private readonly string _file;
+
+            public WindowStatePersistence()
+            {
+                _file = Path.Combine(WinUIUtils.GetLocalFolderPath(), "window-state.json");
+                try
+                {
+                    if (File.Exists(_file))
+                    {
+                        using var doc = JsonDocument.Parse(File.ReadAllText(_file));
+                        foreach (var property in doc.RootElement.EnumerateObject())
+                        {
+                            if (property.Value.ValueKind == JsonValueKind.String)
+                            {
+                                _data[property.Name] = property.Value.GetString();
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            private void Save()
+            {
+                try
+                {
+                    var json = new JsonObject();
+                    foreach (var item in _data)
+                    {
+                        if (item.Value is string value)
+                        {
+                            json[item.Key] = value;
+                        }
+                    }
+                    var dir = Path.GetDirectoryName(_file);
+                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                    File.WriteAllText(_file, json.ToJsonString());
+                }
+                catch { }
+            }
+
+            public object this[string key]
+            {
+                get => _data[key];
+                set { _data[key] = value; Save(); }
+            }
+
+            public ICollection<string> Keys => _data.Keys;
+
+            public ICollection<object> Values => _data.Values;
+
+            public int Count => _data.Count;
+
+            public bool IsReadOnly => false;
+
+            public void Add(string key, object value) { _data.Add(key, value); Save(); }
+
+            public void Add(KeyValuePair<string, object> item) { _data.Add(item.Key, item.Value); Save(); }
+
+            public void Clear() { _data.Clear(); Save(); }
+
+            public bool Contains(KeyValuePair<string, object> item) => ((IDictionary<string, object>)_data).Contains(item);
+
+            public bool ContainsKey(string key) => _data.ContainsKey(key);
+
+            public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex) => ((IDictionary<string, object>)_data).CopyTo(array, arrayIndex);
+
+            public IEnumerator<KeyValuePair<string, object>> GetEnumerator() => _data.GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => _data.GetEnumerator();
+
+            public bool Remove(string key)
+            {
+                bool removed = _data.Remove(key);
+                if (removed) Save();
+                return removed;
+            }
+
+            public bool Remove(KeyValuePair<string, object> item)
+            {
+                bool removed = ((IDictionary<string, object>)_data).Remove(item);
+                if (removed) Save();
+                return removed;
+            }
+
+            public bool TryGetValue(string key, out object value) => _data.TryGetValue(key, out value);
         }
     }
 }

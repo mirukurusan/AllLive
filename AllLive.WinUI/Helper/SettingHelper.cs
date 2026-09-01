@@ -106,22 +106,6 @@ namespace AllLive.WinUI.Helper
         /// 小窗窗口高度（物理像素）
         /// </summary>
         public const string MINI_WINDOW_HEIGHT = "MiniWindowHeight";
-        /// <summary>
-        /// 主窗口宽度（物理像素）
-        /// </summary>
-        public const string MAIN_WINDOW_WIDTH = "MainWindowWidth";
-        /// <summary>
-        /// 主窗口高度（物理像素）
-        /// </summary>
-        public const string MAIN_WINDOW_HEIGHT = "MainWindowHeight";
-        /// <summary>
-        /// 新窗口播放模式窗口宽度（物理像素）
-        /// </summary>
-        public const string LIVEROOM_WINDOW_WIDTH = "LiveRoomWindowWidth";
-        /// <summary>
-        /// 新窗口播放模式窗口高度（物理像素）
-        /// </summary>
-        public const string LIVEROOM_WINDOW_HEIGHT = "LiveRoomWindowHeight";
 
         /// <summary>
         /// 新窗口打开直播间
