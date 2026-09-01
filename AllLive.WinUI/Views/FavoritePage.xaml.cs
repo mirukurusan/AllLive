@@ -22,11 +22,17 @@ namespace AllLive.WinUI.Views
     /// </summary>
     public sealed partial class FavoritePage : Page
     {
+        /// <summary>
+        /// 分组拖动使用的自定义数据格式，用于与“拖入主播”的文本格式区分
+        /// </summary>
+        private const string GroupDragFormat = "AllLive.FavoriteGroup";
+
         static FavoriteVM _favoriteVM;
         readonly FavoriteVM favoriteVM;
 
         private ListViewItem _dragHoverContainer;
         private Brush _dragHoverOriginalBrush;
+        private FavoriteGroupItem _dragGroupItem;
 
         public FavoritePage()
         {
@@ -135,26 +141,6 @@ namespace AllLive.WinUI.Views
             favoriteVM.DeleteGroup(group);
         }
 
-        private void GroupMoveLeftMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            var group = (sender as MenuFlyoutItem)?.DataContext as FavoriteGroupItem;
-            if (group == null)
-            {
-                return;
-            }
-            favoriteVM.MoveGroupLeft(group);
-        }
-
-        private void GroupMoveRightMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            var group = (sender as MenuFlyoutItem)?.DataContext as FavoriteGroupItem;
-            if (group == null)
-            {
-                return;
-            }
-            favoriteVM.MoveGroupRight(group);
-        }
-
         /// <summary>
         /// 开始拖动收藏项，将收藏 ID 以文本形式放入 DataPackage
         /// </summary>
@@ -167,8 +153,54 @@ namespace AllLive.WinUI.Views
             }
         }
 
+        /// <summary>
+        /// 开始拖动分组；特殊分组（全部/默认分组）不允许拖动
+        /// </summary>
+        private void groupList_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
+        {
+            if (e.Items.FirstOrDefault() is FavoriteGroupItem group)
+            {
+                if (group.IsSpecial)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+                _dragGroupItem = group;
+                e.Data.SetData(GroupDragFormat, group.ID.ToString());
+                e.Data.RequestedOperation = DataPackageOperation.Move;
+            }
+            else
+            {
+                e.Cancel = true;
+            }
+        }
+
+        private void groupList_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+        {
+            _dragGroupItem = null;
+            ClearDragHover();
+        }
+
         private void groupList_DragOver(object sender, DragEventArgs e)
         {
+            // 分组拖动：仅在非特殊分组上允许落下
+            if (e.DataView.Contains(GroupDragFormat))
+            {
+                var groupTarget = GetGroupAtPoint(e.GetPosition(groupList), out var groupContainer);
+                if (groupTarget == null || groupTarget.IsSpecial || groupTarget == _dragGroupItem)
+                {
+                    ClearDragHover();
+                    e.AcceptedOperation = DataPackageOperation.None;
+                }
+                else
+                {
+                    UpdateDragHover(groupTarget, groupContainer);
+                    e.AcceptedOperation = DataPackageOperation.Move;
+                }
+                e.Handled = true;
+                return;
+            }
+
             if (!e.DataView.Contains(StandardDataFormats.Text))
             {
                 e.AcceptedOperation = DataPackageOperation.None;
@@ -191,6 +223,34 @@ namespace AllLive.WinUI.Views
         private async void groupList_Drop(object sender, DragEventArgs e)
         {
             ClearDragHover();
+            if (e.DataView.Contains(GroupDragFormat))
+            {
+                _dragGroupItem = null;
+                var data = await e.DataView.GetDataAsync(GroupDragFormat);
+                if (data is string groupIdText && long.TryParse(groupIdText, out var draggedId))
+                {
+                    var draggedGroup = favoriteVM.Groups.FirstOrDefault(x => x.ID == draggedId);
+                    if (draggedGroup != null && !draggedGroup.IsSpecial)
+                    {
+                        var point = e.GetPosition(groupList);
+                        var groupTarget = GetGroupAtPoint(point, out var groupContainer);
+                        if (groupTarget != null && !groupTarget.IsSpecial && groupTarget != draggedGroup && groupContainer != null)
+                        {
+                            // 落在目标分组左半区插入其前，右半区插入其后
+                            var topLeft = groupContainer.TransformToVisual(groupList).TransformPoint(new Point(0, 0));
+                            var targetIndex = favoriteVM.Groups.IndexOf(groupTarget);
+                            if (point.X >= topLeft.X + groupContainer.ActualWidth / 2)
+                            {
+                                targetIndex++;
+                            }
+                            favoriteVM.MoveGroup(draggedGroup, targetIndex);
+                        }
+                    }
+                }
+                e.Handled = true;
+                return;
+            }
+
             if (!e.DataView.Contains(StandardDataFormats.Text))
             {
                 return;

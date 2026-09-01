@@ -30,8 +30,6 @@ namespace AllLive.WinUI.ViewModels
             AddGroupCommand = new RelayCommand(AddGroup);
             RenameGroupCommand = new RelayCommand<FavoriteGroupItem>(RenameGroup);
             DeleteGroupCommand = new RelayCommand<FavoriteGroupItem>(DeleteGroup);
-            MoveGroupLeftCommand = new RelayCommand<FavoriteGroupItem>(MoveGroupLeft);
-            MoveGroupRightCommand = new RelayCommand<FavoriteGroupItem>(MoveGroupRight);
             RefreshCurrentGroupCommand = new RelayCommand(RefreshCurrentGroup);
             MessageCenter.UpdateFavoriteEvent += (s, e) => RefreshFavorite();
         }
@@ -42,8 +40,6 @@ namespace AllLive.WinUI.ViewModels
         public ICommand AddGroupCommand { get; set; }
         public ICommand RenameGroupCommand { get; set; }
         public ICommand DeleteGroupCommand { get; set; }
-        public ICommand MoveGroupLeftCommand { get; set; }
-        public ICommand MoveGroupRightCommand { get; set; }
         public ICommand RefreshCurrentGroupCommand { get; set; }
 
         /// <summary>
@@ -483,33 +479,33 @@ namespace AllLive.WinUI.ViewModels
             }
         }
 
-        public void MoveGroupLeft(FavoriteGroupItem group)
+        /// <summary>
+        /// 将分组移动到指定索引（索引基于 Groups 全列表；前两项为固定的“全部/默认分组”）
+        /// </summary>
+        public void MoveGroup(FavoriteGroupItem group, int newIndex)
         {
             if (group == null || group.IsSpecial)
             {
                 return;
             }
             var index = Groups.IndexOf(group);
-            if (index <= 2) // 前两项固定：全部、默认分组
+            if (index < 2) // 固定分组不可移动
             {
                 return;
             }
-            Groups.Move(index, index - 1);
-            SaveGroupOrder();
-        }
-
-        public void MoveGroupRight(FavoriteGroupItem group)
-        {
-            if (group == null || group.IsSpecial)
+            if (newIndex < 2)
+            {
+                newIndex = 2;
+            }
+            if (newIndex > Groups.Count - 1)
+            {
+                newIndex = Groups.Count - 1;
+            }
+            if (index == newIndex)
             {
                 return;
             }
-            var index = Groups.IndexOf(group);
-            if (index < 0 || index >= Groups.Count - 1)
-            {
-                return;
-            }
-            Groups.Move(index, index + 1);
+            Groups.Move(index, newIndex);
             SaveGroupOrder();
         }
 

@@ -59,6 +59,9 @@
             <ListView
                 x:Name="groupList"
                 AllowDrop="True"
+                CanDragItems="True"
+                DragItemsCompleted="groupList_DragItemsCompleted"
+                DragItemsStarting="groupList_DragItemsStarting"
                 DragOver="groupList_DragOver"
                 DragLeave="groupList_DragLeave"
                 Drop="groupList_Drop"
@@ -89,21 +92,13 @@
                                 <MenuFlyout>
                                     <MenuFlyoutItem
                                         Click="GroupRenameMenuItem_Click"
+                                        Icon="Rename"
                                         Text="重命名"
                                         Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
                                     <MenuFlyoutItem
                                         Click="GroupDeleteMenuItem_Click"
                                         Icon="Delete"
                                         Text="删除"
-                                        Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
-                                    <MenuFlyoutSeparator Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
-                                    <MenuFlyoutItem
-                                        Click="GroupMoveLeftMenuItem_Click"
-                                        Text="左移"
-                                        Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
-                                    <MenuFlyoutItem
-                                        Click="GroupMoveRightMenuItem_Click"
-                                        Text="右移"
                                         Visibility="{Binding IsSpecial, Converter={StaticResource displayConvert}}" />
                                 </MenuFlyout>
                             </Grid.ContextFlyout>
