@@ -242,7 +242,12 @@ namespace AllLive.WinUI.Views
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            version.Text = WinUIUtils.GetAppVersion().ToString(3);
+            var appVersion = WinUIUtils.GetAppVersion();
+            version.Text = string.Format("{0}.{1}.{2}.{3}",
+                appVersion.Major,
+                Math.Max(appVersion.Minor, 0),
+                Math.Max(appVersion.Build, 0),
+                Math.Max(appVersion.Revision, 0));
         }
         private void RemoveLiveDanmuWord_Click(object sender, RoutedEventArgs e)
         {
